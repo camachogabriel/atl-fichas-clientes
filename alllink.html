@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Accesos · ATL Fichas Clientes</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+</head>
+<body>
+<div class="top"><img src="" id="logo" alt="AthleteTrainLab"></div>
+<div class="wrap" style="padding-top:28px">
+  <h1>ATL Fichas Clientes</h1>
+  <p class="sub">Todos los accesos del sistema</p>
+
+  <div class="card">
+    <h2>Para clientes</h2>
+    <a class="btn" href="onboarding.html" style="margin-bottom:10px">📝 Ficha de registro (onboarding)</a>
+    <a class="btn oscuro" href="index.html" style="margin-bottom:10px">🔑 Iniciar sesión</a>
+    <a class="btn linea" href="app.html">👤 Mi cuenta (perfil, evaluaciones, pagos)</a>
+  </div>
+
+  <div class="card">
+    <h2>Para el coach</h2>
+    <a class="btn linea" href="coach.html">🧑‍🏫 Panel del coach</a>
+  </div>
+
+  <div class="card">
+    <h2>Administración</h2>
+    <a class="btn linea" href="https://supabase.com/dashboard/project/wmmfsblgrusvbaugcihp" target="_blank" style="margin-bottom:10px">🗄️ Supabase (proyecto ATL Analytics)</a>
+    <a class="btn linea" href="https://app.brevo.com" target="_blank" style="margin-bottom:10px">✉️ Brevo (correos)</a>
+    <a class="btn linea" href="https://github.com/camachogabriel/atl-fichas-clientes" target="_blank">💻 Repositorio GitHub</a>
+  </div>
+</div>
+<script>document.getElementById('logo').src = ATL.LOGO;</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ingresar · AthleteTrainLab</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+</head>
+<body>
+<div class="top"><img src="" id="logo" alt="AthleteTrainLab"></div>
+<div class="wrap" style="padding-top:36px">
+  <div class="card" style="padding:26px 20px">
+    <h1 style="text-align:center">Ingresar</h1>
+    <p class="sub" style="text-align:center">Tu cuenta de cliente AthleteTrainLab</p>
+    <label>Correo</label>
+    <input type="email" id="email" autocomplete="email" placeholder="tucorreo@ejemplo.com">
+    <label>Contraseña</label>
+    <input type="password" id="password" autocomplete="current-password" placeholder="La que te llegó por correo">
+    <div class="error" id="error"></div>
+    <button class="btn" id="entrar" style="margin-top:16px">Entrar</button>
+    <button class="volver" id="olvide" style="margin:14px auto 0;display:block">¿Olvidaste tu contraseña?</button>
+  </div>
+  <div class="aviso ok" id="aviso" style="display:none"></div>
+  <p class="sub" style="text-align:center;margin-top:18px">¿Aún no tienes cuenta? Tu coach te enviará el link de registro.</p>
+</div>
+<script>
+document.getElementById('logo').src = ATL.LOGO;
+const $ = (id) => document.getElementById(id);
+function error(m) { $('error').textContent = m; $('error').style.display = m ? 'block' : 'none'; }
+
+async function destino(session) {
+  const { data } = await sbClient.rpc('fichas_es_coach');
+  location.href = data ? 'coach.html' : 'app.html';
+}
+sbClient.auth.getSession().then(({ data }) => { if (data.session) destino(data.session); });
+
+$('entrar').onclick = async () => {
+  error('');
+  const email = $('email').value.trim(), password = $('password').value;
+  if (!email || !password) return error('Escribe tu correo y contraseña.');
+  $('entrar').disabled = true; $('entrar').textContent = 'Entrando...';
+  const { data, error: e } = await sbClient.auth.signInWithPassword({ email, password });
+  if (e) {
+    $('entrar').disabled = false; $('entrar').textContent = 'Entrar';
+    if (/not confirmed/i.test(e.message)) return error('Debes confirmar tu correo primero. Revisa tu bandeja (y spam).');
+    return error('Correo o contraseña incorrectos.');
+  }
+  destino(data.session);
+};
+$('password').addEventListener('keydown', e => { if (e.key === 'Enter') $('entrar').click(); });
+
+$('olvide').onclick = async () => {
+  error('');
+  const email = $('email').value.trim();
+  if (!email) return error('Escribe tu correo arriba y vuelve a tocar "¿Olvidaste tu contraseña?".');
+  const { error: e } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname.replace('index.html', '') + 'clave.html' });
+  if (e) return error('No pudimos enviar el correo de recuperación.');
+  $('aviso').textContent = '📬 Te enviamos un correo para restablecer tu contraseña.';
+  $('aviso').style.display = 'block';
+};
+</script>
+</body>
+</html>

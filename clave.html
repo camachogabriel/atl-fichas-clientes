@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nueva contraseña · AthleteTrainLab</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+</head>
+<body>
+<div class="top"><img src="" id="logo" alt="AthleteTrainLab"></div>
+<div class="wrap" style="padding-top:36px">
+  <div class="card" style="padding:26px 20px">
+    <h1 style="text-align:center">Nueva contraseña</h1>
+    <p class="sub" style="text-align:center">Define tu nueva contraseña de acceso.</p>
+    <label>Nueva contraseña (mínimo 8 caracteres)</label>
+    <input type="password" id="clave" autocomplete="new-password">
+    <div class="error" id="error"></div>
+    <button class="btn" id="guardar" style="margin-top:16px">Guardar contraseña</button>
+    <div class="aviso ok" id="ok" style="display:none">✅ Contraseña actualizada. <a href="index.html">Inicia sesión aquí</a>.</div>
+  </div>
+</div>
+<script>
+document.getElementById('logo').src = ATL.LOGO;
+const $ = (id) => document.getElementById(id);
+function error(m) { $('error').textContent = m; $('error').style.display = m ? 'block' : 'none'; }
+$('guardar').onclick = async () => {
+  error('');
+  const clave = $('clave').value;
+  if (clave.length < 8) return error('Mínimo 8 caracteres.');
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) return error('El link de recuperación expiró o no es válido. Pide uno nuevo desde la pantalla de inicio.');
+  const { error: e } = await sbClient.auth.updateUser({ password: clave });
+  if (e) return error('No se pudo actualizar: ' + e.message);
+  $('ok').style.display = 'block'; $('clave').value = '';
+};
+</script>
+</body>
+</html>

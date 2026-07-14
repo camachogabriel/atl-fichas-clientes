@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi cuenta · AthleteTrainLab</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+</head>
+<body>
+<div class="top">
+  <img src="" id="logo" alt="AthleteTrainLab">
+  <button class="salir" id="salir">Salir</button>
+</div>
+<div class="wrap">
+  <div class="barra-estado gris" id="barra">Cargando...</div>
+
+  <!-- PERFIL -->
+  <section id="sec-perfil">
+    <div class="card" style="text-align:center">
+      <img class="perfil-foto" id="p-foto" src="" alt="" style="display:none">
+      <h1 id="p-nombre" style="margin-top:8px">—</h1>
+      <p class="sub" id="p-disciplinas" style="margin-bottom:0">—</p>
+    </div>
+    <div class="card">
+      <h2>Mis datos</h2>
+      <div id="p-datos"></div>
+    </div>
+    <div class="card">
+      <h2>📅 Mi disponibilidad</h2>
+      <div id="p-dispo"></div>
+    </div>
+    <div class="card">
+      <h2>🔒 Cambiar contraseña</h2>
+      <label>Nueva contraseña (mínimo 8 caracteres)</label>
+      <input type="password" id="nueva-clave" autocomplete="new-password">
+      <button class="btn linea" id="cambiar-clave" style="margin-top:12px">Cambiar contraseña</button>
+      <div class="aviso ok" id="clave-ok" style="display:none">✅ Contraseña actualizada.</div>
+      <div class="error" id="clave-err"></div>
+    </div>
+  </section>
+
+  <!-- EVALUACIONES -->
+  <section id="sec-evaluaciones" style="display:none">
+    <div class="card">
+      <h2>📂 Mis evaluaciones</h2>
+      <p class="sub">Aquí verás las evaluaciones que tu coach suba para ti.</p>
+      <div id="eva-lista" class="cargando">Cargando...</div>
+    </div>
+  </section>
+
+  <!-- PAGOS -->
+  <section id="sec-pagos" style="display:none">
+    <div class="card">
+      <h2>💳 Registrar pago</h2>
+      <p class="sub" id="pago-info">Sube tu comprobante y el monto pagado.</p>
+      <label>Monto pagado (₡)</label>
+      <input type="number" id="pago-monto" inputmode="decimal" placeholder="Ej: 35000">
+      <label>Comprobante (foto o archivo)</label>
+      <label class="foto-btn" for="pago-archivo" id="pago-archivo-label">📎 Elegir comprobante</label>
+      <input type="file" id="pago-archivo" accept="image/*,.pdf" style="display:none">
+      <div class="error" id="pago-err"></div>
+      <button class="btn" id="pago-enviar" style="margin-top:14px">Enviar pago</button>
+      <div class="aviso ok" id="pago-ok" style="display:none">✅ Comprobante enviado. Tu coach lo revisará pronto.</div>
+    </div>
+    <div class="card">
+      <h2>Historial de pagos</h2>
+      <div id="pago-lista" class="cargando">Cargando...</div>
+    </div>
+  </section>
+</div>
+
+<div class="tabs">
+  <button data-sec="perfil" class="on"><span class="ico">👤</span>Perfil</button>
+  <button data-sec="evaluaciones"><span class="ico">📂</span>Evaluaciones</button>
+  <button data-sec="pagos"><span class="ico">💳</span>Pagos</button>
+</div>
+
+<script>
+document.getElementById('logo').src = ATL.LOGO;
+const $ = (id) => document.getElementById(id);
+let cliente = null;
+
+const FUMADO = { fuma: 'Fumo', exfumador: 'Exfumador', no_fuma: 'No fumo' };
+const RODILLO = { no_tiene: 'No tengo', normal: 'Normal', inteligente: 'Inteligente' };
+const nombreDisc = (id) => (ATL.DISCIPLINAS.find(d => d.id === id) || { nombre: id }).nombre;
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  ['perfil', 'evaluaciones', 'pagos'].forEach(s => $('sec-' + s).style.display = s === b.dataset.sec ? 'block' : 'none');
+  window.scrollTo(0, 0);
+});
+
+$('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
+
+async function init() {
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) { location.href = 'index.html'; return; }
+
+  const { data: cli, error } = await sbClient.from('fichas_clientes').select('*').eq('user_id', session.user.id).maybeSingle();
+  if (error || !cli) {
+    const { data: esCoach } = await sbClient.rpc('fichas_es_coach');
+    if (esCoach) { location.href = 'coach.html'; return; }
+    $('barra').textContent = 'No encontramos tu ficha. Escríbenos por WhatsApp.';
+    return;
+  }
+  cliente = cli;
+  pintarPerfil();
+  cargarEvaluaciones();
+  cargarPagos();
+}
+
+function dato(k, v) { return v ? `<div class="dato"><div class="k">${k}</div><div class="v">${v}</div></div>` : ''; }
+const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
+
+async function pintarPerfil() {
+  $('p-nombre').textContent = cliente.nombre;
+  $('p-disciplinas').textContent = (cliente.disciplinas || []).map(nombreDisc).join(' · ') || '—';
+  if (cliente.foto_path) {
+    const { data } = await sbClient.storage.from('fichas-fotos').createSignedUrl(cliente.foto_path, 3600);
+    if (data) { $('p-foto').src = data.signedUrl; $('p-foto').style.display = 'inline-block'; }
+  }
+  $('p-datos').innerHTML =
+    dato('Correo', esc(cliente.email)) +
+    dato('Teléfono', esc(cliente.telefono)) +
+    dato('Dirección', esc(cliente.direccion)) +
+    dato('Fecha de nacimiento', cliente.fecha_nacimiento ? ATL.fmtFecha(cliente.fecha_nacimiento) : '') +
+    dato('Condición médica', cliente.condicion_medica ? esc(cliente.condicion_medica_detalle || 'Sí') : 'No') +
+    dato('Fumado', FUMADO[cliente.fumado]) +
+    dato('Rodillo', RODILLO[cliente.rodillo]) +
+    dato('Objetivo', esc(cliente.objetivo)) +
+    dato('Mensualidad', cliente.tarifa_mensual ? ATL.fmtMonto(cliente.tarifa_mensual, cliente.moneda) : '') +
+    dato('Fecha de pago mensual', cliente.fecha_pago ? 'Día ' + Number(cliente.fecha_pago.slice(8, 10)) + ' de cada mes' : '');
+
+  const { data: dispo } = await sbClient.from('fichas_disponibilidad').select('*').eq('cliente_id', cliente.id).order('dia');
+  $('p-dispo').innerHTML = (dispo || []).map(d =>
+    `<div class="item"><span class="tit">${ATL.DIAS[d.dia - 1]}</span>` +
+    (d.descanso ? '<span class="pill rojo">Descanso</span>' : `<span class="pill verde">${esc(d.tiempo || '—')}</span>`) + '</div>'
+  ).join('') || '<p class="sub">Sin registros.</p>';
+}
+
+async function actualizarBarra() {
+  const { data: pend } = await sbClient.from('fichas_pagos').select('id').eq('cliente_id', cliente.id).eq('estado', 'pendiente').limit(1);
+  const e = ATL.estadoPago(cliente, pend && pend.length > 0);
+  $('barra').className = 'barra-estado ' + e.clase;
+  $('barra').textContent = e.texto;
+  $('pago-info').textContent = cliente.tarifa_mensual
+    ? `Tu mensualidad es de ${ATL.fmtMonto(cliente.tarifa_mensual, cliente.moneda)}. Sube tu comprobante y el monto pagado.`
+    : 'Sube tu comprobante y el monto pagado.';
+}
+
+async function cargarEvaluaciones() {
+  const { data: evas } = await sbClient.from('fichas_evaluaciones').select('*').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
+  if (!evas || !evas.length) { $('eva-lista').innerHTML = '<p class="sub">Aún no tienes evaluaciones. Tu coach las subirá aquí.</p>'; $('eva-lista').className = ''; return; }
+  $('eva-lista').className = '';
+  $('eva-lista').innerHTML = evas.map(e =>
+    `<div class="item"><div><div class="tit">${esc(e.titulo)}</div><div class="det">${new Date(e.created_at).toLocaleDateString('es-CR')}${e.notas ? ' · ' + esc(e.notas) : ''}</div></div>` +
+    (e.archivo_path ? `<button class="pill verde" style="border:none;cursor:pointer" onclick="abrirEva('${e.archivo_path}')">Ver</button>` : '') + '</div>'
+  ).join('');
+}
+window.abrirEva = async (path) => {
+  const { data } = await sbClient.storage.from('fichas-evaluaciones').createSignedUrl(path, 600);
+  if (data) window.open(data.signedUrl, '_blank');
+};
+
+let comprobante = null;
+$('pago-archivo').addEventListener('change', () => {
+  comprobante = $('pago-archivo').files[0] || null;
+  $('pago-archivo-label').textContent = comprobante ? '📎 ' + comprobante.name : '📎 Elegir comprobante';
+});
+
+$('pago-enviar').onclick = async () => {
+  const err = $('pago-err'); err.style.display = 'none';
+  const monto = Number($('pago-monto').value);
+  if (!monto || monto <= 0) { err.textContent = 'Escribe el monto pagado.'; err.style.display = 'block'; return; }
+  if (!comprobante) { err.textContent = 'Adjunta tu comprobante.'; err.style.display = 'block'; return; }
+  const btn = $('pago-enviar'); btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const { data: { session } } = await sbClient.auth.getSession();
+    const ext = (comprobante.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = `${session.user.id}/${Date.now()}.${ext}`;
+    const { error: eUp } = await sbClient.storage.from('fichas-comprobantes').upload(path, comprobante, { contentType: comprobante.type || 'application/octet-stream' });
+    if (eUp) throw eUp;
+    const { error: eIns } = await sbClient.from('fichas_pagos').insert({ cliente_id: cliente.id, monto, moneda: cliente.moneda || 'CRC', comprobante_path: path });
+    if (eIns) throw eIns;
+    $('pago-ok').style.display = 'block';
+    $('pago-monto').value = ''; comprobante = null; $('pago-archivo').value = ''; $('pago-archivo-label').textContent = '📎 Elegir comprobante';
+    cargarPagos();
+  } catch (e) {
+    err.textContent = 'No pudimos enviar tu pago: ' + (e.message || e); err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Enviar pago';
+};
+
+async function cargarPagos() {
+  actualizarBarra();
+  const { data: pagos } = await sbClient.from('fichas_pagos').select('*').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
+  const PILL = { pendiente: ['amarillo', 'En revisión'], aprobado: ['verde', 'Aprobado'], rechazado: ['rojo', 'Rechazado'] };
+  if (!pagos || !pagos.length) { $('pago-lista').innerHTML = '<p class="sub">Aún no has registrado pagos.</p>'; $('pago-lista').className = ''; return; }
+  $('pago-lista').className = '';
+  $('pago-lista').innerHTML = pagos.map(p => {
+    const [cl, tx] = PILL[p.estado] || ['gris', p.estado];
+    return `<div class="item"><div><div class="tit">${ATL.fmtMonto(p.monto, p.moneda)}</div><div class="det">${new Date(p.created_at).toLocaleDateString('es-CR')}${p.notas_coach ? ' · ' + esc(p.notas_coach) : ''}</div></div><span class="pill ${cl}">${tx}</span></div>`;
+  }).join('');
+}
+
+$('cambiar-clave').onclick = async () => {
+  const err = $('clave-err'); err.style.display = 'none'; $('clave-ok').style.display = 'none';
+  const clave = $('nueva-clave').value;
+  if (clave.length < 8) { err.textContent = 'Mínimo 8 caracteres.'; err.style.display = 'block'; return; }
+  const { error } = await sbClient.auth.updateUser({ password: clave });
+  if (error) { err.textContent = 'No se pudo cambiar: ' + error.message; err.style.display = 'block'; return; }
+  $('nueva-clave').value = ''; $('clave-ok').style.display = 'block';
+};
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel coach · AthleteTrainLab</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+</head>
+<body>
+<div class="top">
+  <img src="" id="logo" alt="AthleteTrainLab">
+  <button class="salir" id="salir">Salir</button>
+</div>
+<div class="wrap">
+
+  <!-- LISTA -->
+  <section id="sec-lista">
+    <h1>Panel del coach</h1>
+    <p class="sub">Clientes, pagos y evaluaciones</p>
+    <div class="card" id="pendientes-card" style="display:none">
+      <h2>⏳ Pagos por revisar</h2>
+      <div id="pagos-pendientes"></div>
+    </div>
+    <div class="card">
+      <h2>👥 Clientes</h2>
+      <input type="text" id="buscar" placeholder="Buscar por nombre o correo..." style="margin-bottom:10px">
+      <div id="lista" class="cargando">Cargando...</div>
+    </div>
+    <div class="card">
+      <h2>🔗 Link de onboarding</h2>
+      <p class="sub" style="margin-bottom:8px">Envía este link por WhatsApp a clientes nuevos:</p>
+      <button class="btn linea" id="copiar-link">📋 Copiar link de registro</button>
+      <div class="aviso ok" id="copiado" style="display:none">✅ Copiado.</div>
+    </div>
+  </section>
+
+  <!-- DETALLE -->
+  <section id="sec-detalle" style="display:none">
+    <button class="volver" id="volver">← Volver a la lista</button>
+    <div class="card" style="text-align:center">
+      <img class="perfil-foto" id="d-foto" src="" alt="" style="display:none">
+      <h1 id="d-nombre" style="margin-top:8px">—</h1>
+      <p class="sub" id="d-resumen" style="margin-bottom:6px">—</p>
+      <span class="pill gris" id="d-estado-pago">—</span>
+    </div>
+
+    <div class="card">
+      <h2>Ficha</h2>
+      <div id="d-datos"></div>
+      <h2 style="margin-top:14px">📅 Disponibilidad</h2>
+      <div id="d-dispo"></div>
+    </div>
+
+    <div class="card">
+      <h2>⚙️ Administración</h2>
+      <label>Tarifa mensual (₡)</label>
+      <input type="number" id="d-tarifa" inputmode="decimal" placeholder="Ej: 35000">
+      <label>Notas del coach (privadas)</label>
+      <textarea id="d-notas"></textarea>
+      <label>Estado</label>
+      <div class="seg" id="d-activo">
+        <div class="chip" data-v="activo">Activo</div>
+        <div class="chip" data-v="inactivo">Inactivo</div>
+      </div>
+      <button class="btn oscuro" id="d-guardar" style="margin-top:14px">Guardar cambios</button>
+      <div class="aviso ok" id="d-guardado" style="display:none">✅ Guardado.</div>
+    </div>
+
+    <div class="card">
+      <h2>💳 Pagos</h2>
+      <div id="d-pagos"></div>
+    </div>
+
+    <div class="card">
+      <h2>📂 Evaluaciones</h2>
+      <div id="d-evas"></div>
+      <label>Título de la nueva evaluación</label>
+      <input type="text" id="eva-titulo" placeholder="Ej: Evaluación inicial FTP">
+      <label>Notas (opcional)</label>
+      <input type="text" id="eva-notas">
+      <label>Archivo</label>
+      <label class="foto-btn" for="eva-archivo" id="eva-archivo-label">📎 Elegir archivo</label>
+      <input type="file" id="eva-archivo" style="display:none">
+      <button class="btn" id="eva-subir" style="margin-top:14px">Subir evaluación</button>
+      <div class="error" id="eva-err"></div>
+      <div class="aviso ok" id="eva-ok" style="display:none">✅ Evaluación subida.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+document.getElementById('logo').src = ATL.LOGO;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
+const nombreDisc = (id) => (ATL.DISCIPLINAS.find(d => d.id === id) || { nombre: id }).nombre;
+const FUMADO = { fuma: 'Fuma', exfumador: 'Exfumador', no_fuma: 'No fuma' };
+const RODILLO = { no_tiene: 'No tiene', normal: 'Normal', inteligente: 'Inteligente' };
+let clientes = [], actual = null;
+
+$('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
+$('volver').onclick = () => { $('sec-detalle').style.display = 'none'; $('sec-lista').style.display = 'block'; cargarLista(); };
+
+$('copiar-link').onclick = async () => {
+  const url = location.origin + location.pathname.replace('coach.html', '') + 'onboarding.html';
+  try { await navigator.clipboard.writeText(url); } catch (_) { prompt('Copia el link:', url); }
+  $('copiado').style.display = 'block'; setTimeout(() => $('copiado').style.display = 'none', 2500);
+};
+
+async function init() {
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) { location.href = 'index.html'; return; }
+  const { data: esCoach } = await sbClient.rpc('fichas_es_coach');
+  if (!esCoach) { location.href = 'app.html'; return; }
+  cargarLista();
+}
+
+function estadoPill(c, pendientes) {
+  const e = ATL.estadoPago(c, pendientes.some(p => p.cliente_id === c.id));
+  return `<span class="pill ${e.clase === 'gris' ? 'gris' : e.clase}">${
+    e.clase === 'gris' ? 'Sin confirmar' : e.clase === 'verde' ? 'Al día' : e.clase === 'amarillo' ? 'Pendiente' : 'Vencido'}</span>`;
+}
+
+async function cargarLista() {
+  const [{ data: cls }, { data: pend }] = await Promise.all([
+    sbClient.from('fichas_clientes').select('*').order('created_at', { ascending: false }),
+    sbClient.from('fichas_pagos').select('id, cliente_id, monto, moneda, created_at').eq('estado', 'pendiente'),
+  ]);
+  clientes = cls || [];
+  const pendientes = pend || [];
+
+  // pagos por revisar
+  if (pendientes.length) {
+    $('pendientes-card').style.display = 'block';
+    $('pagos-pendientes').innerHTML = pendientes.map(p => {
+      const c = clientes.find(x => x.id === p.cliente_id) || { nombre: '—' };
+      return `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${p.cliente_id}')"><div><div class="tit">${esc(c.nombre)}</div><div class="det">${ATL.fmtMonto(p.monto, p.moneda)} · ${new Date(p.created_at).toLocaleDateString('es-CR')}</div></div><span class="pill amarillo">Revisar</span></div>`;
+    }).join('');
+  } else $('pendientes-card').style.display = 'none';
+
+  pintarLista(pendientes);
+  $('buscar').oninput = () => pintarLista(pendientes);
+}
+
+function pintarLista(pendientes) {
+  const q = $('buscar').value.trim().toLowerCase();
+  const vis = clientes.filter(c => !q || c.nombre.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+  $('lista').className = '';
+  $('lista').innerHTML = vis.map(c =>
+    `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${c.id}')"><div><div class="tit">${esc(c.nombre)}</div><div class="det">${esc(c.email)}${c.estado === 'inactivo' ? ' · INACTIVO' : ''}</div></div>${estadoPill(c, pendientes)}</div>`
+  ).join('') || '<p class="sub">No hay clientes todavía.</p>';
+}
+
+window.abrirDetalle = async (id) => {
+  actual = clientes.find(c => c.id === id);
+  if (!actual) return;
+  $('sec-lista').style.display = 'none'; $('sec-detalle').style.display = 'block';
+  window.scrollTo(0, 0);
+
+  $('d-nombre').textContent = actual.nombre;
+  $('d-resumen').textContent = (actual.disciplinas || []).map(nombreDisc).join(' · ') || '—';
+  const { data: pend } = await sbClient.from('fichas_pagos').select('id').eq('cliente_id', actual.id).eq('estado', 'pendiente').limit(1);
+  const e = ATL.estadoPago(actual, pend && pend.length > 0);
+  $('d-estado-pago').className = 'pill ' + e.clase; $('d-estado-pago').textContent = e.texto;
+
+  $('d-foto').style.display = 'none';
+  if (actual.foto_path) {
+    const { data } = await sbClient.storage.from('fichas-fotos').createSignedUrl(actual.foto_path, 3600);
+    if (data) { $('d-foto').src = data.signedUrl; $('d-foto').style.display = 'inline-block'; }
+  }
+
+  const dato = (k, v) => v ? `<div class="dato"><div class="k">${k}</div><div class="v">${v}</div></div>` : '';
+  $('d-datos').innerHTML =
+    dato('Correo', esc(actual.email)) + dato('Teléfono', esc(actual.telefono)) + dato('Dirección', esc(actual.direccion)) +
+    dato('Nacimiento', actual.fecha_nacimiento ? ATL.fmtFecha(actual.fecha_nacimiento) : '') +
+    dato('Condición médica', actual.condicion_medica ? esc(actual.condicion_medica_detalle || 'Sí') : 'No') +
+    dato('Fumado', FUMADO[actual.fumado]) + dato('Rodillo', RODILLO[actual.rodillo]) +
+    dato('Objetivo', esc(actual.objetivo)) +
+    dato('Correo confirmado', actual.correo_confirmado ? 'Sí' : 'No') +
+    dato('Fecha de pago', actual.fecha_pago ? 'Día ' + Number(actual.fecha_pago.slice(8, 10)) + ' de cada mes' : 'Pendiente de confirmar correo') +
+    dato('Próximo pago', actual.proximo_pago ? ATL.fmtFecha(actual.proximo_pago) : '');
+
+  const { data: dispo } = await sbClient.from('fichas_disponibilidad').select('*').eq('cliente_id', actual.id).order('dia');
+  $('d-dispo').innerHTML = (dispo || []).map(d =>
+    `<div class="item"><span class="tit">${ATL.DIAS[d.dia - 1]}</span>` +
+    (d.descanso ? '<span class="pill rojo">Descanso</span>' : `<span class="pill verde">${esc(d.tiempo || '—')}</span>`) + '</div>'
+  ).join('');
+
+  $('d-tarifa').value = actual.tarifa_mensual || '';
+  $('d-notas').value = actual.notas_coach || '';
+  [...$('d-activo').children].forEach(ch => ch.classList.toggle('on', ch.dataset.v === actual.estado));
+  $('d-activo').dataset.valor = actual.estado;
+
+  cargarPagosDetalle(); cargarEvasDetalle();
+};
+
+$('d-activo').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  [...$('d-activo').children].forEach(x => x.classList.remove('on'));
+  chip.classList.add('on'); $('d-activo').dataset.valor = chip.dataset.v;
+});
+
+$('d-guardar').onclick = async () => {
+  const upd = {
+    tarifa_mensual: Number($('d-tarifa').value) || null,
+    notas_coach: $('d-notas').value.trim() || null,
+    estado: $('d-activo').dataset.valor || 'activo',
+  };
+  const { error } = await sbClient.from('fichas_clientes').update(upd).eq('id', actual.id);
+  if (error) { alert('Error: ' + error.message); return; }
+  Object.assign(actual, upd);
+  $('d-guardado').style.display = 'block'; setTimeout(() => $('d-guardado').style.display = 'none', 2500);
+};
+
+async function cargarPagosDetalle() {
+  const { data: pagos } = await sbClient.from('fichas_pagos').select('*').eq('cliente_id', actual.id).order('created_at', { ascending: false });
+  const PILL = { pendiente: ['amarillo', 'Pendiente'], aprobado: ['verde', 'Aprobado'], rechazado: ['rojo', 'Rechazado'] };
+  $('d-pagos').innerHTML = (pagos || []).map(p => {
+    const [cl, tx] = PILL[p.estado] || ['gris', p.estado];
+    const acciones = p.estado === 'pendiente'
+      ? `<div style="display:flex;gap:8px;margin-top:8px">
+           <button class="btn" style="padding:9px" onclick="resolverPago('${p.id}','aprobado')">✓ Aprobar</button>
+           <button class="btn peligro" style="padding:9px" onclick="resolverPago('${p.id}','rechazado')">✗ Rechazar</button>
+         </div>` : '';
+    const verComp = p.comprobante_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verComprobante('${p.comprobante_path}')">Ver comprobante</button>` : '';
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--fondo)">
+      <div class="item" style="padding:0;border:none"><div><div class="tit">${ATL.fmtMonto(p.monto, p.moneda)}</div><div class="det">${new Date(p.created_at).toLocaleDateString('es-CR')}${p.notas_coach ? ' · ' + esc(p.notas_coach) : ''}</div></div><span class="pill ${cl}">${tx}</span></div>
+      <div style="margin-top:6px">${verComp}</div>${acciones}</div>`;
+  }).join('') || '<p class="sub">Sin pagos registrados.</p>';
+}
+
+window.verComprobante = async (path) => {
+  const { data } = await sbClient.storage.from('fichas-comprobantes').createSignedUrl(path, 600);
+  if (data) window.open(data.signedUrl, '_blank');
+};
+
+window.resolverPago = async (pagoId, estado) => {
+  let notas = null;
+  if (estado === 'rechazado') { notas = prompt('Motivo del rechazo (se envía al cliente):') || null; }
+  else if (!confirm('¿Aprobar este pago? Se avanzará la fecha de pago un mes y se avisará al cliente.')) return;
+  const { error } = await sbClient.from('fichas_pagos').update({ estado, notas_coach: notas }).eq('id', pagoId);
+  if (error) { alert('Error: ' + error.message); return; }
+  // refrescar datos del cliente (proximo_pago cambió)
+  const { data: cli } = await sbClient.from('fichas_clientes').select('*').eq('id', actual.id).single();
+  if (cli) { actual = cli; const i = clientes.findIndex(c => c.id === cli.id); if (i >= 0) clientes[i] = cli; }
+  abrirDetalle(actual.id);
+};
+
+async function cargarEvasDetalle() {
+  const { data: evas } = await sbClient.from('fichas_evaluaciones').select('*').eq('cliente_id', actual.id).order('created_at', { ascending: false });
+  $('d-evas').innerHTML = (evas || []).map(e =>
+    `<div class="item"><div><div class="tit">${esc(e.titulo)}</div><div class="det">${new Date(e.created_at).toLocaleDateString('es-CR')}</div></div>
+     <div style="display:flex;gap:6px">${e.archivo_path ? `<button class="pill verde" style="border:none;cursor:pointer" onclick="verEva('${e.archivo_path}')">Ver</button>` : ''}
+     <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarEva('${e.id}','${e.archivo_path || ''}')">Borrar</button></div></div>`
+  ).join('') || '<p class="sub" style="margin-bottom:10px">Sin evaluaciones.</p>';
+}
+window.verEva = async (path) => {
+  const { data } = await sbClient.storage.from('fichas-evaluaciones').createSignedUrl(path, 600);
+  if (data) window.open(data.signedUrl, '_blank');
+};
+window.borrarEva = async (id, path) => {
+  if (!confirm('¿Borrar esta evaluación?')) return;
+  await sbClient.from('fichas_evaluaciones').delete().eq('id', id);
+  if (path) await sbClient.storage.from('fichas-evaluaciones').remove([path]);
+  cargarEvasDetalle();
+};
+
+$('eva-archivo').addEventListener('change', () => {
+  const f = $('eva-archivo').files[0];
+  $('eva-archivo-label').textContent = f ? '📎 ' + f.name : '📎 Elegir archivo';
+});
+
+$('eva-subir').onclick = async () => {
+  const err = $('eva-err'); err.style.display = 'none'; $('eva-ok').style.display = 'none';
+  const titulo = $('eva-titulo').value.trim();
+  const f = $('eva-archivo').files[0];
+  if (!titulo) { err.textContent = 'Escribe un título.'; err.style.display = 'block'; return; }
+  const btn = $('eva-subir'); btn.disabled = true; btn.textContent = 'Subiendo...';
+  try {
+    let path = null;
+    if (f) {
+      const ext = (f.name.split('.').pop() || 'pdf').toLowerCase().replace(/[^a-z0-9]/g, '') || 'pdf';
+      path = `${actual.user_id}/${Date.now()}.${ext}`;
+      const { error: eUp } = await sbClient.storage.from('fichas-evaluaciones').upload(path, f, { contentType: f.type || 'application/octet-stream' });
+      if (eUp) throw eUp;
+    }
+    const { error: eIns } = await sbClient.from('fichas_evaluaciones').insert({ cliente_id: actual.id, titulo, notas: $('eva-notas').value.trim() || null, archivo_path: path });
+    if (eIns) throw eIns;
+    $('eva-titulo').value = ''; $('eva-notas').value = ''; $('eva-archivo').value = ''; $('eva-archivo-label').textContent = '📎 Elegir archivo';
+    $('eva-ok').style.display = 'block';
+    cargarEvasDetalle();
+  } catch (e) { err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = 'Subir evaluación';
+};
+
+init();
+</script>
+</body>
+</html>

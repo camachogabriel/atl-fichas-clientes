@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Correo confirmado · AthleteTrainLab</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+</head>
+<body>
+<div class="top"><img src="" id="logo" alt="AthleteTrainLab"></div>
+<div class="wrap" style="padding-top:36px">
+  <div class="card" style="text-align:center;padding:34px 20px">
+    <div style="font-size:52px" id="icono">⏳</div>
+    <h1 id="titulo" style="margin:10px 0 6px">Verificando...</h1>
+    <p class="sub" id="detalle"></p>
+    <a class="btn" href="index.html" id="accion" style="display:none">Iniciar sesión</a>
+  </div>
+</div>
+<script>
+document.getElementById('logo').src = ATL.LOGO;
+const estado = new URLSearchParams(location.search).get('estado');
+const $ = (id) => document.getElementById(id);
+const casos = {
+  ok: ['🎉', '¡Correo confirmado!', 'Tu cuenta quedó activa y tu fecha de pago mensual se estableció el día de hoy. Ya puedes iniciar sesión con la contraseña que te enviamos por correo.'],
+  yaconfirmado: ['✅', 'Tu correo ya estaba confirmado', 'Puedes iniciar sesión normalmente.'],
+  invalido: ['🤔', 'Link inválido', 'Este link de confirmación no es válido o ya fue usado. Si tienes problemas, escríbenos por WhatsApp.'],
+  error: ['⚠️', 'Algo salió mal', 'No pudimos confirmar tu correo. Intenta abrir el link de nuevo o escríbenos por WhatsApp.'],
+};
+const c = casos[estado] || casos.error;
+$('icono').textContent = c[0]; $('titulo').textContent = c[1]; $('detalle').textContent = c[2];
+$('accion').style.display = (estado === 'ok' || estado === 'yaconfirmado') ? 'block' : 'none';
+</script>
+</body>
+</html>
