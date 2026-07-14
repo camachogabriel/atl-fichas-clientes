@@ -18,6 +18,12 @@
 
   <!-- PERFIL -->
   <section id="sec-perfil">
+    <div class="card" id="onboarding-card" style="display:none">
+      <h2>🚀 Tu proceso de inicio</h2>
+      <div class="pasos" id="pasos"></div>
+      <div class="aviso warn" id="onb-info" style="display:none;margin-bottom:0"></div>
+      <div id="onb-recursos" style="display:none"></div>
+    </div>
     <div class="card" style="text-align:center">
       <img class="perfil-foto" id="p-foto" src="" alt="" style="display:none">
       <h1 id="p-nombre" style="margin-top:8px">—</h1>
@@ -107,9 +113,45 @@ async function init() {
     return;
   }
   cliente = cli;
+  pintarOnboarding();
   pintarPerfil();
   cargarEvaluaciones();
   cargarPagos();
+}
+
+const PASOS_ONB = [
+  { id: 'espera_prueba', nombre: 'Ficha enviada' },
+  { id: 'pendiente_evaluacion', nombre: 'Prueba agendada' },
+  { id: 'evaluacion_completada', nombre: 'Evaluación lista' },
+  { id: 'completado', nombre: 'Onboarding completo' },
+];
+async function pintarOnboarding() {
+  const idx = PASOS_ONB.findIndex(p => p.id === cliente.onboarding_estado);
+  if (idx < 0) return;
+  $('onboarding-card').style.display = 'block';
+  $('pasos').innerHTML = PASOS_ONB.map((p, i) => {
+    const cls = i < idx || cliente.onboarding_estado === 'completado' ? 'hecho' : i === idx ? 'actual' : '';
+    return `<div class="paso ${cls}"><div class="punto">${cls === 'hecho' ? '✓' : i + 1}</div><div class="nom">${p.nombre}</div></div>`;
+  }).join('');
+
+  const info = $('onb-info');
+  if (cliente.onboarding_estado === 'espera_prueba') {
+    info.textContent = '⏳ Estamos coordinando la fecha de tu prueba. Te avisaremos por correo.';
+    info.style.display = 'block';
+  } else if (cliente.onboarding_estado === 'pendiente_evaluacion' && cliente.fecha_prueba) {
+    const f = new Date(cliente.fecha_prueba).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+    info.innerHTML = `📅 Tu prueba: <b>${f}</b>${cliente.nota_prueba ? '<br>' + esc(cliente.nota_prueba) : ''}`;
+    info.style.display = 'block';
+  }
+
+  if (cliente.onboarding_estado === 'evaluacion_completada' || cliente.onboarding_estado === 'completado') {
+    const { data: cfg } = await sbClient.from('fichas_config').select('*').eq('en_correo_final', true).neq('valor', '').order('orden');
+    let html = (cfg || []).map(c => `<a class="btn linea" style="margin-top:10px" target="_blank" href="${esc(c.valor)}">🔗 ${esc(c.etiqueta)}</a>`).join('');
+    if (cliente.onboarding_estado === 'evaluacion_completada') {
+      html += `<a class="btn" style="margin-top:10px" href="completar.html?token=${cliente.onboarding_token}">🏁 Completar mi onboarding</a>`;
+    }
+    if (html) { $('onb-recursos').innerHTML = html; $('onb-recursos').style.display = 'block'; }
+  }
 }
 
 function dato(k, v) { return v ? `<div class="dato"><div class="k">${k}</div><div class="v">${v}</div></div>` : ''; }

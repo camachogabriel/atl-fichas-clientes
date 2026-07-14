@@ -18,13 +18,24 @@ Sistema de fichas de clientes de **AthleteTrainLab** (onboarding, app del client
 6. Barra de estado: **verde** al día · **amarillo** a ≤5 días del pago o comprobante en revisión · **rojo** vencido (con recordatorio diario por correo vía pg_cron, máx. uno cada 3 días).
 7. El coach (`coach.html`): ve fichas, asigna tarifa (₡ por cliente), aprueba/rechaza comprobantes (aprobar avanza la fecha de pago +1 mes y avisa por correo) y sube evaluaciones.
 
+## Estados del onboarding
+
+`espera_prueba` → `pendiente_evaluacion` → `evaluacion_completada` → `completado`
+
+1. **espera_prueba**: estado inicial al enviar la ficha.
+2. El coach agenda la prueba (fecha + hora + nota) en el panel → correo con la cita y el link de la **evaluación perceptiva** (configurable en `fichas_config`) → pasa a **pendiente_evaluacion** automáticamente.
+3. Hecha la prueba, el coach sube los resultados en Evaluaciones y marca **evaluación completada** → correo con: acceso a la app (registro de pagos), links configurables (chat ATL, recursos de alimentación, los que se agreguen) y botón **Completar mi onboarding**.
+4. El botón lleva a `completar.html`, donde el cliente deja un mensaje de mejora (o lo omite) → estado **completado**. El mensaje se ve en el panel del coach.
+
+El cliente sigue su progreso con el stepper en la pestaña Perfil de `app.html`. Los correos de cita/recursos se disparan por triggers de BD (`fichas_onboarding_notifica`) vía `pg_net` → `fichas-notificar`. Los links de los correos se editan en el panel del coach (tabla `fichas_config`).
+
 ## Componentes en Supabase
 
 | Pieza | Nombre |
 |---|---|
-| Tablas | `fichas_clientes`, `fichas_disponibilidad`, `fichas_evaluaciones`, `fichas_pagos`, `fichas_coaches` (todas con RLS) |
+| Tablas | `fichas_clientes`, `fichas_disponibilidad`, `fichas_evaluaciones`, `fichas_pagos`, `fichas_coaches`, `fichas_config` (todas con RLS) |
 | Buckets privados | `fichas-fotos`, `fichas-comprobantes`, `fichas-evaluaciones` (rutas `{user_id}/...`) |
-| Edge Functions | `fichas-onboarding`, `fichas-confirmar`, `fichas-notificar` (protegida con header `x-atl-secret`) |
+| Edge Functions | `fichas-onboarding`, `fichas-confirmar`, `fichas-feedback`, `fichas-notificar` (protegida con header `x-atl-secret`) |
 | Vault | `BREVO_API_KEY`, `FROM_EMAIL`, `ATL_CRON_SECRET` (función `public.get_secret`, solo service_role) |
 | Cron | `fichas-recordatorios-diarios` a las 14:00 UTC (8:00 am CR) |
 
@@ -47,6 +58,8 @@ Las credenciales le llegan por correo.
 - [ ] **Recuperación de contraseña:** usa el correo integrado de Supabase (limitado a ~2/hora y remitente genérico). Configurar en el dashboard: Authentication → URL Configuration → Site URL = URL de GitHub Pages, y agregar `.../clave.html` a Redirect URLs. Ideal: SMTP de Brevo en Authentication → SMTP Settings.
 - [ ] Mover el sistema a un proyecto Supabase propio si se libera espacio o se pasa a plan Pro.
 - [ ] RLS deshabilitado en las tablas de analytics preexistentes (`athletes`, `workouts`, etc.) — advertencia de seguridad de Supabase, no pertenece a fichas pero conviene resolverla.
+- [ ] Borrar/limpiar tablas de proyectos anteriores en ATL Analytics (backlog acordado).
+- [ ] Recordatorio automático al cliente el día antes de la prueba (hoy solo el correo al agendar).
 - [ ] Notificación al coach cuando un cliente sube un comprobante (hoy se ve en el panel).
 - [ ] Bloqueo/aviso al cliente con varios meses de atraso (hoy solo barra roja + recordatorios).
 - [ ] Editar la ficha desde la app del cliente (hoy solo lectura; el coach puede editar en BD).

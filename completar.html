@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Completar onboarding · AthleteTrainLab</title>
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+</head>
+<body>
+<div class="top"><img src="" id="logo" alt="AthleteTrainLab"></div>
+<div class="wrap" style="padding-top:30px">
+
+  <div id="form-zona">
+    <div class="card" style="padding:26px 20px">
+      <div style="text-align:center;font-size:44px">🏁</div>
+      <h1 style="text-align:center;margin:8px 0 4px">Último paso</h1>
+      <p class="sub" style="text-align:center">Tu opinión nos ayuda a mejorar. ¿Cómo fue tu experiencia en este proceso de inicio con ATL?</p>
+      <label>Tu mensaje</label>
+      <textarea id="mensaje" style="min-height:130px" placeholder="Cuéntanos qué te gustó, qué mejorarías, o cualquier comentario..."></textarea>
+      <div class="error" id="error"></div>
+      <button class="btn" id="enviar" style="margin-top:14px">Enviar y completar</button>
+      <button class="volver" id="omitir" style="margin:12px auto 0;display:block">Completar sin dejar mensaje</button>
+    </div>
+  </div>
+
+  <div id="exito-zona" style="display:none">
+    <div class="card" style="text-align:center;padding:34px 20px">
+      <div style="font-size:52px">🎉</div>
+      <h1 style="margin:10px 0 6px">¡Onboarding completado!</h1>
+      <p class="sub" id="gracias">Gracias por tu mensaje. ¡Bienvenido oficialmente a AthleteTrainLab!</p>
+      <a class="btn" href="index.html" style="margin-top:8px">Ir a mi cuenta</a>
+    </div>
+  </div>
+
+</div>
+<script>
+document.getElementById('logo').src = ATL.LOGO;
+const $ = (id) => document.getElementById(id);
+const token = new URLSearchParams(location.search).get('token') || '';
+function error(m) { $('error').textContent = m; $('error').style.display = m ? 'block' : 'none'; }
+
+async function enviar(conMensaje) {
+  error('');
+  const mensaje = conMensaje ? $('mensaje').value.trim() : '';
+  if (conMensaje && !mensaje) return error('Escribe tu mensaje, o usa "Completar sin dejar mensaje".');
+  $('enviar').disabled = true; $('omitir').disabled = true;
+  try {
+    const r = await fetch(ATL.SUPABASE_URL + '/functions/v1/fichas-feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, mensaje }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error inesperado');
+    $('form-zona').style.display = 'none';
+    $('exito-zona').style.display = 'block';
+    if (!mensaje) $('gracias').textContent = '¡Bienvenido oficialmente a AthleteTrainLab!';
+    window.scrollTo(0, 0);
+  } catch (e) {
+    error(e.message);
+    $('enviar').disabled = false; $('omitir').disabled = false;
+  }
+}
+$('enviar').onclick = () => enviar(true);
+$('omitir').onclick = () => enviar(false);
+if (!token) { error('Este link no es válido. Usa el botón del correo que te enviamos.'); $('enviar').disabled = true; $('omitir').disabled = true; }
+</script>
+</body>
+</html>

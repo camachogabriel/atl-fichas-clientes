@@ -29,6 +29,13 @@
       <div id="lista" class="cargando">Cargando...</div>
     </div>
     <div class="card">
+      <h2>⚙️ Links y recursos (correos)</h2>
+      <p class="sub" style="margin-bottom:8px">Se usan en los correos del onboarding. Los marcados "correo final" van en el correo de evaluación completada.</p>
+      <div id="config-lista"></div>
+      <button class="btn linea" id="config-guardar" style="margin-top:10px">Guardar links</button>
+      <div class="aviso ok" id="config-ok" style="display:none">✅ Guardado.</div>
+    </div>
+    <div class="card">
       <h2>🔗 Link de onboarding</h2>
       <p class="sub" style="margin-bottom:8px">Envía este link por WhatsApp a clientes nuevos:</p>
       <button class="btn linea" id="copiar-link">📋 Copiar link de registro</button>
@@ -51,6 +58,14 @@
       <div id="d-datos"></div>
       <h2 style="margin-top:14px">📅 Disponibilidad</h2>
       <div id="d-dispo"></div>
+    </div>
+
+    <div class="card">
+      <h2>🚀 Onboarding</h2>
+      <div class="pasos" id="d-pasos" style="margin-bottom:10px"></div>
+      <div id="d-onb-zona"></div>
+      <div class="aviso ok" id="d-onb-ok" style="display:none"></div>
+      <div class="error" id="d-onb-err"></div>
     </div>
 
     <div class="card">
@@ -114,6 +129,7 @@ async function init() {
   const { data: esCoach } = await sbClient.rpc('fichas_es_coach');
   if (!esCoach) { location.href = 'app.html'; return; }
   cargarLista();
+  cargarConfig();
 }
 
 function estadoPill(c, pendientes) {
@@ -192,7 +208,119 @@ window.abrirDetalle = async (id) => {
   [...$('d-activo').children].forEach(ch => ch.classList.toggle('on', ch.dataset.v === actual.estado));
   $('d-activo').dataset.valor = actual.estado;
 
+  pintarOnboardingDetalle();
   cargarPagosDetalle(); cargarEvasDetalle();
+};
+
+// ===== Onboarding (coach) =====
+const PASOS_ONB = [
+  { id: 'espera_prueba', nombre: 'Ficha enviada' },
+  { id: 'pendiente_evaluacion', nombre: 'Prueba agendada' },
+  { id: 'evaluacion_completada', nombre: 'Evaluación lista' },
+  { id: 'completado', nombre: 'Completado' },
+];
+function fmtFechaHora(ts) {
+  return new Date(ts).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+}
+// datetime-local en hora de Costa Rica (UTC-6, sin DST)
+function aISO(dtLocal) { return new Date(dtLocal + ':00-06:00').toISOString(); }
+function aLocal(iso) {
+  const d = new Date(new Date(iso).getTime() - 6 * 3600000);
+  return d.toISOString().slice(0, 16);
+}
+
+function pintarOnboardingDetalle() {
+  const est = actual.onboarding_estado || 'espera_prueba';
+  const idx = PASOS_ONB.findIndex(p => p.id === est);
+  $('d-pasos').innerHTML = PASOS_ONB.map((p, i) => {
+    const cls = i < idx || est === 'completado' ? 'hecho' : i === idx ? 'actual' : '';
+    return `<div class="paso ${cls}"><div class="punto">${cls === 'hecho' ? '✓' : i + 1}</div><div class="nom">${p.nombre}</div></div>`;
+  }).join('');
+
+  let html = '';
+  if (est === 'espera_prueba' || est === 'pendiente_evaluacion') {
+    html += `<label>Fecha y hora de la prueba</label>
+      <input type="datetime-local" id="onb-fecha" value="${actual.fecha_prueba ? aLocal(actual.fecha_prueba) : ''}">
+      <label>Nota para el cliente (lugar, qué llevar...)</label>
+      <input type="text" id="onb-nota" value="${esc(actual.nota_prueba || '')}">
+      <button class="btn oscuro" id="onb-agendar" style="margin-top:12px">${actual.fecha_prueba ? '📅 Reagendar y reenviar correo' : '📅 Agendar prueba y enviar correo'}</button>`;
+  }
+  if (est === 'pendiente_evaluacion') {
+    html += `<p class="sub" style="margin:14px 0 6px">Cuando la prueba esté hecha y hayas subido los resultados en <b>Evaluaciones</b>:</p>
+      <button class="btn" id="onb-completar">✅ Marcar evaluación completada y enviar recursos</button>`;
+  }
+  if (est === 'evaluacion_completada') {
+    html += `<p class="sub">Correo de recursos enviado. Esperando que el cliente complete el onboarding.</p>
+      <button class="btn linea" id="onb-reenviar">↺ Reenviar correo de recursos</button>`;
+  }
+  if (actual.feedback) {
+    html += `<div class="aviso ok" style="margin-top:12px"><b>💬 Mensaje del cliente:</b><br>${esc(actual.feedback)}</div>`;
+  } else if (est === 'completado') {
+    html += `<p class="sub">Onboarding completado (sin mensaje).</p>`;
+  }
+  $('d-onb-zona').innerHTML = html;
+
+  const ok = (m) => { $('d-onb-ok').textContent = m; $('d-onb-ok').style.display = 'block'; setTimeout(() => $('d-onb-ok').style.display = 'none', 3500); };
+  const err = (m) => { $('d-onb-err').textContent = m; $('d-onb-err').style.display = m ? 'block' : 'none'; };
+
+  const btnAg = document.getElementById('onb-agendar');
+  if (btnAg) btnAg.onclick = async () => {
+    err('');
+    const f = document.getElementById('onb-fecha').value;
+    if (!f) return err('Selecciona fecha y hora.');
+    const { error } = await sbClient.from('fichas_clientes')
+      .update({ fecha_prueba: aISO(f), nota_prueba: document.getElementById('onb-nota').value.trim() || null })
+      .eq('id', actual.id);
+    if (error) return err(error.message);
+    await refrescarActual();
+    ok('📬 Cita guardada y correo enviado al cliente.');
+  };
+  const btnComp = document.getElementById('onb-completar');
+  if (btnComp) btnComp.onclick = async () => {
+    err('');
+    if (!confirm('¿Marcar la evaluación como completada? Se enviará el correo con los recursos y el link para cerrar el onboarding.')) return;
+    const { error } = await sbClient.from('fichas_clientes').update({ onboarding_estado: 'evaluacion_completada' }).eq('id', actual.id);
+    if (error) return err(error.message);
+    await refrescarActual();
+    ok('📬 Estado actualizado y correo de recursos enviado.');
+  };
+  const btnRe = document.getElementById('onb-reenviar');
+  if (btnRe) btnRe.onclick = async () => {
+    err('');
+    // truco: repasar por el mismo estado dispara de nuevo el correo
+    let r = await sbClient.from('fichas_clientes').update({ onboarding_estado: 'pendiente_evaluacion' }).eq('id', actual.id);
+    if (r.error) return err(r.error.message);
+    r = await sbClient.from('fichas_clientes').update({ onboarding_estado: 'evaluacion_completada' }).eq('id', actual.id);
+    if (r.error) return err(r.error.message);
+    await refrescarActual();
+    ok('📬 Correo de recursos reenviado.');
+  };
+}
+
+async function refrescarActual() {
+  const { data: cli } = await sbClient.from('fichas_clientes').select('*').eq('id', actual.id).single();
+  if (cli) {
+    actual = cli;
+    const i = clientes.findIndex(c => c.id === cli.id);
+    if (i >= 0) clientes[i] = cli;
+    pintarOnboardingDetalle();
+  }
+}
+
+// ===== Config de links =====
+async function cargarConfig() {
+  const { data: cfg } = await sbClient.from('fichas_config').select('*').order('orden');
+  $('config-lista').innerHTML = (cfg || []).map(c =>
+    `<label style="margin-top:10px">${esc(c.etiqueta)}${c.en_correo_final ? ' <span class="pill verde" style="font-size:10px">correo final</span>' : ''}</label>
+     <input type="text" data-clave="${esc(c.clave)}" class="config-input" value="${esc(c.valor)}" placeholder="https://...">`
+  ).join('');
+}
+$('config-guardar').onclick = async () => {
+  for (const inp of document.querySelectorAll('.config-input')) {
+    const { error } = await sbClient.from('fichas_config').update({ valor: inp.value.trim() }).eq('clave', inp.dataset.clave);
+    if (error) { alert('Error: ' + error.message); return; }
+  }
+  $('config-ok').style.display = 'block'; setTimeout(() => $('config-ok').style.display = 'none', 2500);
 };
 
 $('d-activo').addEventListener('click', (e) => {
