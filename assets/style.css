@@ -1,0 +1,87 @@
+/* ATL Fichas - estilos compartidos (mobile-first) */
+:root {
+  --dark: #0d1117;
+  --ink: #1a1a2e;
+  --gris: #5a6472;
+  --gris-claro: #8b95a3;
+  --borde: #e6e8eb;
+  --fondo: #f4f5f7;
+  --verde: #4fa96e;
+  --verde-suave: #f0f9f4;
+  --rojo: #c33a5b;
+  --amarillo: #e7c13c;
+  --amarillo-suave: #fdf8ec;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--fondo); color: var(--ink); min-height: 100vh; }
+.top { background: var(--dark); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 20; }
+.top img { height: 40px; }
+.top .salir { color: #9aa4b2; font-size: 13px; text-decoration: none; background: none; border: 1px solid #2d333b; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 16px 14px 90px; }
+.card { background: #fff; border: 1px solid var(--borde); border-radius: 14px; padding: 18px 16px; margin-bottom: 14px; }
+h1 { font-size: 21px; margin-bottom: 4px; }
+h2 { font-size: 16px; margin: 4px 0 10px; }
+.sub { color: var(--gris); font-size: 14px; margin-bottom: 14px; }
+label { display: block; font-size: 13px; font-weight: 600; color: var(--ink); margin: 12px 0 5px; }
+input[type=text], input[type=email], input[type=tel], input[type=date], input[type=number], input[type=password], textarea, select {
+  width: 100%; padding: 12px 13px; border: 1px solid var(--borde); border-radius: 10px; font-size: 16px; background: #fff; color: var(--ink);
+}
+textarea { min-height: 84px; resize: vertical; }
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--verde); border-color: transparent; }
+.btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 11px; background: var(--verde); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; }
+.btn:disabled { opacity: .55; }
+.btn.oscuro { background: var(--dark); }
+.btn.linea { background: #fff; color: var(--ink); border: 1px solid var(--borde); }
+.btn.peligro { background: var(--rojo); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1.5px solid var(--borde); border-radius: 999px; padding: 10px 14px; font-size: 14px; cursor: pointer; user-select: none; background: #fff; }
+.chip.on { border-color: var(--verde); background: var(--verde-suave); font-weight: 700; }
+.seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.seg .chip { flex: 1; text-align: center; min-width: 90px; }
+.error { color: var(--rojo); font-size: 13px; margin-top: 8px; display: none; }
+.aviso { border-radius: 10px; padding: 12px 14px; font-size: 14px; margin: 10px 0; }
+.aviso.ok { background: var(--verde-suave); border: 1px solid #d5ead9; color: #2c6e46; }
+.aviso.warn { background: var(--amarillo-suave); border: 1px solid #f0e2b6; color: #8a6d1a; }
+.aviso.err { background: #fdf0f3; border: 1px solid #f2cdd7; color: var(--rojo); }
+/* Barra de estado de pago */
+.barra-estado { border-radius: 12px; padding: 14px 16px; font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; }
+.barra-estado.verde { background: var(--verde); }
+.barra-estado.amarillo { background: #d9a916; }
+.barra-estado.rojo { background: var(--rojo); }
+.barra-estado.gris { background: var(--gris-claro); }
+/* Tabs inferiores (app cliente) */
+.tabs { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: flex; z-index: 30; padding-bottom: env(safe-area-inset-bottom); }
+.tabs button { flex: 1; background: none; border: none; padding: 10px 4px 12px; font-size: 12px; color: var(--gris-claro); cursor: pointer; }
+.tabs button .ico { display: block; font-size: 20px; margin-bottom: 2px; }
+.tabs button.on { color: var(--verde); font-weight: 700; }
+/* Disponibilidad */
+.dia-fila { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--fondo); }
+.dia-fila:last-child { border-bottom: none; }
+.dia-fila .nombre { width: 86px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+.dia-fila input { flex: 1; padding: 10px 12px; }
+.dia-fila .desc-btn { flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid var(--borde); background: #fff; font-size: 16px; font-weight: 800; color: var(--gris-claro); cursor: pointer; }
+.dia-fila.descanso .desc-btn { border-color: var(--rojo); color: var(--rojo); background: #fdf0f3; }
+.dia-fila.descanso input { opacity: .35; pointer-events: none; }
+/* Foto */
+.foto-zona { text-align: center; }
+.foto-prev { width: 132px; height: 132px; border-radius: 50%; object-fit: cover; border: 3px solid var(--verde); display: none; margin: 0 auto 10px; }
+.foto-btn { display: inline-block; border: 1.5px dashed var(--gris-claro); border-radius: 12px; padding: 14px 18px; font-size: 14px; color: var(--gris); cursor: pointer; }
+/* Listas */
+.item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 13px 2px; border-bottom: 1px solid var(--fondo); }
+.item:last-child { border-bottom: none; }
+.item .tit { font-size: 14px; font-weight: 600; }
+.item .det { font-size: 12.5px; color: var(--gris-claro); margin-top: 2px; }
+.pill { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.verde { background: var(--verde-suave); color: #2c6e46; }
+.pill.amarillo { background: var(--amarillo-suave); color: #8a6d1a; }
+.pill.rojo { background: #fdf0f3; color: var(--rojo); }
+.pill.gris { background: var(--fondo); color: var(--gris); }
+.cargando { text-align: center; color: var(--gris-claro); padding: 30px 0; font-size: 14px; }
+.perfil-foto { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; border: 3px solid var(--verde); }
+.dato { padding: 8px 0; border-bottom: 1px solid var(--fondo); }
+.dato:last-child { border-bottom: none; }
+.dato .k { font-size: 11.5px; color: var(--gris-claro); text-transform: uppercase; letter-spacing: .4px; }
+.dato .v { font-size: 14.5px; margin-top: 2px; white-space: pre-wrap; }
+.volver { color: var(--verde); text-decoration: none; font-size: 14px; font-weight: 600; display: inline-block; margin-bottom: 10px; cursor: pointer; background: none; border: none; }
+@media (min-width: 700px) { .wrap { padding-top: 24px; } }
