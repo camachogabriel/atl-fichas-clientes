@@ -244,9 +244,16 @@ async function cargarPagos() {
   const PILL = { pendiente: ['amarillo', 'En revisión'], aprobado: ['verde', 'Aprobado'], rechazado: ['rojo', 'Rechazado'] };
   if (!pagos || !pagos.length) { $('pago-lista').innerHTML = '<p class="sub">Aún no has registrado pagos.</p>'; $('pago-lista').className = ''; return; }
   $('pago-lista').className = '';
+  const METODO = { sinpe: 'SINPE', efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', otro: 'Otro' };
   $('pago-lista').innerHTML = pagos.map(p => {
     const [cl, tx] = PILL[p.estado] || ['gris', p.estado];
-    return `<div class="item"><div><div class="tit">${ATL.fmtMonto(p.monto, p.moneda)}</div><div class="det">${new Date(p.created_at).toLocaleDateString('es-CR')}${p.notas_coach ? ' · ' + esc(p.notas_coach) : ''}</div></div><span class="pill ${cl}">${tx}</span></div>`;
+    const det = [
+      new Date(p.created_at).toLocaleDateString('es-CR'),
+      p.metodo ? METODO[p.metodo] || p.metodo : null,
+      p.referencia ? 'Ref: ' + esc(p.referencia) : null,
+      p.notas_coach ? esc(p.notas_coach) : null,
+    ].filter(Boolean).join(' · ');
+    return `<div class="item"><div><div class="tit">${ATL.fmtMonto(p.monto, p.moneda)}</div><div class="det">${det}</div></div><span class="pill ${cl}">${tx}</span></div>`;
   }).join('');
 }
 

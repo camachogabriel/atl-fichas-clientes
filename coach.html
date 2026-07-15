@@ -94,6 +94,25 @@
     <div class="card">
       <h2>💳 Pagos</h2>
       <div id="d-pagos"></div>
+      <h2 style="margin-top:16px">➕ Registrar pago manual</h2>
+      <p class="sub" style="margin-bottom:4px">Para pagos por SINPE, efectivo, etc. Queda aprobado de una vez: avanza la fecha de pago y avisa al cliente por correo.</p>
+      <label>Monto (₡)</label>
+      <input type="number" id="mp-monto" inputmode="decimal" placeholder="Ej: 35000">
+      <label>Método</label>
+      <select id="mp-metodo">
+        <option value="sinpe">SINPE Móvil</option>
+        <option value="efectivo">Efectivo (contado)</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="tarjeta">Tarjeta</option>
+        <option value="otro">Otro</option>
+      </select>
+      <label>Referencia / número de recibo (opcional)</label>
+      <input type="text" id="mp-referencia" placeholder="Ej: comprobante SINPE 12345678">
+      <label>Nota (opcional)</label>
+      <input type="text" id="mp-nota" placeholder="Ej: primer pago, aún sin cuenta">
+      <button class="btn" id="mp-registrar" style="margin-top:14px">Registrar pago aprobado</button>
+      <div class="error" id="mp-err"></div>
+      <div class="aviso ok" id="mp-ok" style="display:none">✅ Pago registrado y aprobado.</div>
     </div>
 
     <div class="card">
@@ -223,19 +242,68 @@ window.abrirDetalle = async (id) => {
 };
 
 // ===== Análisis de limitaciones (quiz perceptivo ligado por ?atl=) =====
+const HIP_NOMBRES = {
+  H001: 'Disponibilidad energética / estrategia nutricional insuficiente',
+  H002: 'Durabilidad limitada',
+  H003: 'Pacing inadecuado',
+  H004: 'Base aeróbica insuficiente',
+  H005: 'Limitación glucolítica-oxidativa',
+  H006: 'Déficit explosivo / neuromuscular',
+  H007: 'Hidratación / estrés térmico',
+  H008: 'Recuperación insuficiente / sobrecarga',
+  H009: 'Entrenamiento sin estructura, siempre en zona media',
+  H010: 'Relación peso-potencia limitante en subida',
+  H011: 'Déficit de fuerza',
+  H012: 'Entrenamiento poco estructurado, faltan estímulos específicos',
+  H013: 'Respuesta cardíaca individual (probablemente normal)',
+  H015: 'Sobrecarga localizada por técnica o posición',
+};
+const hipNombre = (c) => HIP_NOMBRES[c] ? `${HIP_NOMBRES[c]} (${c})` : c;
+let evalsCache = [];
+
+function detalleEvaluacion(e) {
+  const puntos = Object.entries(e.estado || {}).filter(([, p]) => p > 0).sort((a, b) => b[1] - a[1]);
+  const maxP = Math.max(15, ...puntos.map(([, p]) => p));
+  const barras = puntos.map(([cod, p]) => `
+    <div style="margin:7px 0">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${esc(hipNombre(cod))}</span><b>${p} pts</b></div>
+      <div style="background:var(--fondo);border-radius:6px;height:8px;margin-top:3px"><div style="background:var(--verde);height:8px;border-radius:6px;width:${Math.min(100, p / maxP * 100)}%"></div></div>
+    </div>`).join('') || '<p class="sub">Sin puntajes registrados.</p>';
+  const otras = Array.isArray(e.hipotesis_otras) && e.hipotesis_otras.length
+    ? `<div class="dato"><div class="k">Hallazgos secundarios</div><div class="v">${e.hipotesis_otras.map(hipNombre).map(esc).join('; ')}</div></div>` : '';
+  const meta = [
+    ['Modo', e.modo], ['Limitación declarada', e.limitacion], ['Objetivo', e.objetivo],
+    ['Sexo', e.sexo], ['IMC', e.imc], ['Preguntas respondidas', e.n_preguntas], ['Código', e.codigo],
+  ].filter(([, v]) => v !== null && v !== undefined && v !== '')
+   .map(([k, v]) => `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`).join('');
+  return `<div style="background:#fafbfc;border:1px solid var(--borde);border-radius:10px;padding:12px 14px;margin:4px 0 10px">
+    ${meta}${otras}
+    <div class="k" style="font-size:11.5px;color:var(--gris-claro);text-transform:uppercase;letter-spacing:.4px;margin-top:10px">Puntajes por área</div>
+    ${barras}
+  </div>`;
+}
+
+window.toggleEval = (id) => {
+  const div = document.getElementById('eval-det-' + id);
+  if (!div) return;
+  if (div.innerHTML) { div.innerHTML = ''; return; }
+  const e = evalsCache.find(x => x.id === id);
+  if (e) div.innerHTML = detalleEvaluacion(e);
+};
+
 async function cargarLimitaciones() {
   const { data: evals } = await sbClient.from('evaluaciones')
-    .select('id, created_at, modo, limitacion, objetivo, hipotesis_principal, hipotesis_otras, preliminar, n_preguntas')
+    .select('id, created_at, codigo, modo, limitacion, objetivo, hipotesis_principal, hipotesis_otras, preliminar, n_preguntas, imc, sexo, estado')
     .eq('cliente_id', actual.id)
     .order('created_at', { ascending: false });
-  const n = (evals || []).length;
+  evalsCache = evals || [];
+  const n = evalsCache.length;
   $('d-limit-titulo').textContent = `🧠 Análisis de limitaciones (${n})`;
-  $('d-limitaciones').innerHTML = n ? evals.map(e => {
-    const otras = Array.isArray(e.hipotesis_otras) && e.hipotesis_otras.length ? ' · también: ' + e.hipotesis_otras.join(', ') : '';
-    return `<div class="item"><div>
-      <div class="tit">${esc(e.hipotesis_principal || 'Sin hipótesis')}${e.preliminar ? ' <span class="pill amarillo">preliminar</span>' : ''}</div>
-      <div class="det">${new Date(e.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', year: 'numeric' })} · ${esc(e.modo || '')}${e.limitacion ? ' · ' + esc(e.limitacion) : ''}${otras} · ${e.n_preguntas || 0} preguntas</div>
-    </div></div>`;
+  $('d-limitaciones').innerHTML = n ? evalsCache.map(e => {
+    return `<div class="item" style="cursor:pointer" onclick="toggleEval('${e.id}')"><div>
+      <div class="tit" style="color:var(--verde)">${esc(e.hipotesis_principal ? hipNombre(e.hipotesis_principal) : 'Sin hipótesis')}${e.preliminar ? ' <span class="pill amarillo">preliminar</span>' : ''}</div>
+      <div class="det">${new Date(e.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', year: 'numeric' })} · ${esc(e.modo || '')}${e.limitacion ? ' · ' + esc(e.limitacion) : ''} · ${e.n_preguntas || 0} preguntas · <u>ver detalle</u></div>
+    </div></div><div id="eval-det-${e.id}"></div>`;
   }).join('') : '<p class="sub">Aún no hay evaluaciones ligadas. Copia el link personalizado y envíaselo.</p>';
 
   const btn = $('d-copiar-eval');
@@ -378,6 +446,7 @@ $('d-guardar').onclick = async () => {
   $('d-guardado').style.display = 'block'; setTimeout(() => $('d-guardado').style.display = 'none', 2500);
 };
 
+const METODO = { sinpe: 'SINPE', efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta', otro: 'Otro' };
 async function cargarPagosDetalle() {
   const { data: pagos } = await sbClient.from('fichas_pagos').select('*').eq('cliente_id', actual.id).order('created_at', { ascending: false });
   const PILL = { pendiente: ['amarillo', 'Pendiente'], aprobado: ['verde', 'Aprobado'], rechazado: ['rojo', 'Rechazado'] };
@@ -389,11 +458,61 @@ async function cargarPagosDetalle() {
            <button class="btn peligro" style="padding:9px" onclick="resolverPago('${p.id}','rechazado')">✗ Rechazar</button>
          </div>` : '';
     const verComp = p.comprobante_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verComprobante('${p.comprobante_path}')">Ver comprobante</button>` : '';
+    const detalles = [
+      new Date(p.created_at).toLocaleDateString('es-CR'),
+      p.metodo ? METODO[p.metodo] || p.metodo : null,
+      p.referencia ? 'Ref: ' + esc(p.referencia) : null,
+      p.registrado_por_coach ? 'registrado por coach' : null,
+      p.notas_coach ? esc(p.notas_coach) : null,
+    ].filter(Boolean).join(' · ');
     return `<div style="padding:12px 0;border-bottom:1px solid var(--fondo)">
-      <div class="item" style="padding:0;border:none"><div><div class="tit">${ATL.fmtMonto(p.monto, p.moneda)}</div><div class="det">${new Date(p.created_at).toLocaleDateString('es-CR')}${p.notas_coach ? ' · ' + esc(p.notas_coach) : ''}</div></div><span class="pill ${cl}">${tx}</span></div>
-      <div style="margin-top:6px">${verComp}</div>${acciones}</div>`;
+      <div class="item" style="padding:0;border:none"><div><div class="tit">${ATL.fmtMonto(p.monto, p.moneda)}</div><div class="det">${detalles}</div></div><span class="pill ${cl}">${tx}</span></div>
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center">${verComp}<button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarPago('${p.id}','${p.estado}')">🗑 Eliminar</button></div>${acciones}</div>`;
   }).join('') || '<p class="sub">Sin pagos registrados.</p>';
+
+  $('mp-registrar').onclick = registrarPagoManual;
 }
+
+async function registrarPagoManual() {
+  const err = $('mp-err'); err.style.display = 'none'; $('mp-ok').style.display = 'none';
+  const monto = Number($('mp-monto').value);
+  if (!monto || monto <= 0) { err.textContent = 'Escribe el monto.'; err.style.display = 'block'; return; }
+  const btn = $('mp-registrar'); btn.disabled = true; btn.textContent = 'Registrando...';
+  try {
+    const fila = {
+      cliente_id: actual.id,
+      monto,
+      moneda: actual.moneda || 'CRC',
+      metodo: $('mp-metodo').value,
+      referencia: $('mp-referencia').value.trim() || null,
+      notas_coach: $('mp-nota').value.trim() || null,
+      registrado_por_coach: true,
+    };
+    const { data: pago, error: e1 } = await sbClient.from('fichas_pagos').insert(fila).select('id').single();
+    if (e1) throw e1;
+    // aprobarlo dispara el avance de fecha + correo al cliente
+    const { error: e2 } = await sbClient.from('fichas_pagos').update({ estado: 'aprobado' }).eq('id', pago.id);
+    if (e2) throw e2;
+    $('mp-monto').value = ''; $('mp-referencia').value = ''; $('mp-nota').value = '';
+    $('mp-ok').style.display = 'block';
+    await refrescarActual();
+    cargarPagosDetalle();
+    abrirDetalle(actual.id);
+  } catch (e) { err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = 'Registrar pago aprobado';
+}
+
+window.borrarPago = async (pagoId, estado) => {
+  const msg = estado === 'aprobado'
+    ? '¿Eliminar este pago APROBADO? La fecha de próximo pago del cliente retrocederá 1 mes.'
+    : '¿Eliminar este pago?';
+  if (!confirm(msg)) return;
+  const { error } = await sbClient.from('fichas_pagos').delete().eq('id', pagoId);
+  if (error) { alert('Error: ' + error.message); return; }
+  await refrescarActual();
+  cargarPagosDetalle();
+  abrirDetalle(actual.id);
+};
 
 window.verComprobante = async (path) => {
   const { data } = await sbClient.storage.from('fichas-comprobantes').createSignedUrl(path, 600);
