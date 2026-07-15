@@ -259,7 +259,7 @@ const HIP_NOMBRES = {
   H015: 'Sobrecarga localizada por técnica o posición',
 };
 const hipNombre = (c) => HIP_NOMBRES[c] ? `${HIP_NOMBRES[c]} (${c})` : c;
-let evalsCache = [];
+let evalsCache = [], linkEvalBase = '';
 
 function detalleEvaluacion(e) {
   const puntos = Object.entries(e.estado || {}).filter(([, p]) => p > 0).sort((a, b) => b[1] - a[1]);
@@ -276,10 +276,14 @@ function detalleEvaluacion(e) {
     ['Sexo', e.sexo], ['IMC', e.imc], ['Preguntas respondidas', e.n_preguntas], ['Código', e.codigo],
   ].filter(([, v]) => v !== null && v !== undefined && v !== '')
    .map(([k, v]) => `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`).join('');
+  const reproducir = (e.codigo && linkEvalBase)
+    ? `<a class="btn linea" style="margin-top:12px" target="_blank" href="${esc(linkEvalBase)}${linkEvalBase.includes('?') ? '&' : '?'}rev=${encodeURIComponent(e.codigo)}">🔍 Reproducir evaluación (pregunta por pregunta)</a>`
+    : '';
   return `<div style="background:#fafbfc;border:1px solid var(--borde);border-radius:10px;padding:12px 14px;margin:4px 0 10px">
     ${meta}${otras}
     <div class="k" style="font-size:11.5px;color:var(--gris-claro);text-transform:uppercase;letter-spacing:.4px;margin-top:10px">Puntajes por área</div>
     ${barras}
+    ${reproducir}
   </div>`;
 }
 
@@ -292,6 +296,10 @@ window.toggleEval = (id) => {
 };
 
 async function cargarLimitaciones() {
+  if (!linkEvalBase) {
+    const { data: cfgLink } = await sbClient.from('fichas_config').select('valor').eq('clave', 'link_evaluacion_perceptiva').single();
+    linkEvalBase = (cfgLink && cfgLink.valor) || '';
+  }
   const { data: evals } = await sbClient.from('evaluaciones')
     .select('id, created_at, codigo, modo, limitacion, objetivo, hipotesis_principal, hipotesis_otras, preliminar, n_preguntas, imc, sexo, estado')
     .eq('cliente_id', actual.id)
