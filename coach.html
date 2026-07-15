@@ -84,6 +84,14 @@
     </div>
 
     <div class="card">
+      <h2 id="d-limit-titulo">🧠 Análisis de limitaciones</h2>
+      <p class="sub" style="margin-bottom:8px">Evaluaciones perceptivas ligadas a este cliente (al inicio, tras entrenos fuertes o carreras).</p>
+      <div id="d-limitaciones"></div>
+      <button class="btn linea" id="d-copiar-eval" style="margin-top:10px">📋 Copiar link de evaluación personalizado</button>
+      <div class="aviso ok" id="d-eval-copiado" style="display:none">✅ Copiado. Envíalo por WhatsApp cuando quieras una nueva evaluación.</div>
+    </div>
+
+    <div class="card">
       <h2>💳 Pagos</h2>
       <div id="d-pagos"></div>
     </div>
@@ -112,6 +120,7 @@ const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({ '<': '&lt;', '>':
 const nombreDisc = (id) => (ATL.DISCIPLINAS.find(d => d.id === id) || { nombre: id }).nombre;
 const FUMADO = { fuma: 'Fuma', exfumador: 'Exfumador', no_fuma: 'No fuma' };
 const RODILLO = { no_tiene: 'No tiene', normal: 'Normal', inteligente: 'Inteligente' };
+const FUERZA = { gym_con_ayuda: 'Gym, quiere ayuda con programación 💪', gym_sin_ayuda: 'Gym por su cuenta', casa_funcionales: 'Funcionales en casa 💪', ninguno: 'No por ahora' };
 let clientes = [], actual = null;
 
 $('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
@@ -192,6 +201,7 @@ window.abrirDetalle = async (id) => {
     dato('Nacimiento', actual.fecha_nacimiento ? ATL.fmtFecha(actual.fecha_nacimiento) : '') +
     dato('Condición médica', actual.condicion_medica ? esc(actual.condicion_medica_detalle || 'Sí') : 'No') +
     dato('Fumado', FUMADO[actual.fumado]) + dato('Rodillo', RODILLO[actual.rodillo]) +
+    dato('Trabajo de fuerza', FUERZA[actual.fuerza]) +
     dato('Objetivo', esc(actual.objetivo)) +
     dato('Correo confirmado', actual.correo_confirmado ? 'Sí' : 'No') +
     dato('Fecha de pago', actual.fecha_pago ? 'Día ' + Number(actual.fecha_pago.slice(8, 10)) + ' de cada mes' : 'Pendiente de confirmar correo') +
@@ -209,8 +219,35 @@ window.abrirDetalle = async (id) => {
   $('d-activo').dataset.valor = actual.estado;
 
   pintarOnboardingDetalle();
-  cargarPagosDetalle(); cargarEvasDetalle();
+  cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones();
 };
+
+// ===== Análisis de limitaciones (quiz perceptivo ligado por ?atl=) =====
+async function cargarLimitaciones() {
+  const { data: evals } = await sbClient.from('evaluaciones')
+    .select('id, created_at, modo, limitacion, objetivo, hipotesis_principal, hipotesis_otras, preliminar, n_preguntas')
+    .eq('cliente_id', actual.id)
+    .order('created_at', { ascending: false });
+  const n = (evals || []).length;
+  $('d-limit-titulo').textContent = `🧠 Análisis de limitaciones (${n})`;
+  $('d-limitaciones').innerHTML = n ? evals.map(e => {
+    const otras = Array.isArray(e.hipotesis_otras) && e.hipotesis_otras.length ? ' · también: ' + e.hipotesis_otras.join(', ') : '';
+    return `<div class="item"><div>
+      <div class="tit">${esc(e.hipotesis_principal || 'Sin hipótesis')}${e.preliminar ? ' <span class="pill amarillo">preliminar</span>' : ''}</div>
+      <div class="det">${new Date(e.created_at).toLocaleDateString('es-CR', { day: 'numeric', month: 'short', year: 'numeric' })} · ${esc(e.modo || '')}${e.limitacion ? ' · ' + esc(e.limitacion) : ''}${otras} · ${e.n_preguntas || 0} preguntas</div>
+    </div></div>`;
+  }).join('') : '<p class="sub">Aún no hay evaluaciones ligadas. Copia el link personalizado y envíaselo.</p>';
+
+  const btn = $('d-copiar-eval');
+  btn.onclick = async () => {
+    const { data: cfg } = await sbClient.from('fichas_config').select('valor').eq('clave', 'link_evaluacion_perceptiva').single();
+    const base = (cfg && cfg.valor) || '';
+    if (!base) { alert('Configura primero el link de la evaluación perceptiva en "Links y recursos".'); return; }
+    const url = base + (base.includes('?') ? '&' : '?') + 'atl=' + actual.id;
+    try { await navigator.clipboard.writeText(url); } catch (_) { prompt('Copia el link:', url); }
+    $('d-eval-copiado').style.display = 'block'; setTimeout(() => $('d-eval-copiado').style.display = 'none', 3000);
+  };
+}
 
 // ===== Onboarding (coach) =====
 const PASOS_ONB = [

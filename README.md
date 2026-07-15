@@ -29,6 +29,17 @@ Sistema de fichas de clientes de **AthleteTrainLab** (onboarding, app del client
 
 El cliente sigue su progreso con el stepper en la pestaña Perfil de `app.html`. Los correos de cita/recursos se disparan por triggers de BD (`fichas_onboarding_notifica`) vía `pg_net` → `fichas-notificar`. Los links de los correos se editan en el panel del coach (tabla `fichas_config`).
 
+## Evaluaciones de limitaciones (quiz perceptivo)
+
+El quiz (repo `ATLKSYS`, tabla `evaluaciones`) queda ligado a la ficha del cliente mediante el parámetro **`?atl=<cliente_id>`** en el link: el quiz lo lee y guarda `evaluaciones.cliente_id` al enviar. Sin parámetro (leads externos) la evaluación queda sin ligar, como siempre.
+
+- El correo de la cita envía automáticamente el link personalizado.
+- En el panel del coach, cada cliente tiene la sección **Análisis de limitaciones** con el historial y un botón para copiar el link personalizado (para evaluaciones periódicas: inicio, después de entrenos fuertes o carreras).
+
+## Trabajo de fuerza
+
+Campo único `fuerza` en la ficha: gym con ayuda de programación / gym por su cuenta / funcionales en casa / no por ahora. El correo final de onboarding incluye el contacto de **Susan Camacho** (+506 7143 2592, WhatsApp), personalizado si el cliente pidió ayuda.
+
 ## Componentes en Supabase
 
 | Pieza | Nombre |

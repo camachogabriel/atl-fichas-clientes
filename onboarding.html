@@ -67,6 +67,13 @@
         <div class="chip" data-v="normal">Normal</div>
         <div class="chip" data-v="inteligente">Inteligente</div>
       </div>
+      <label>💪 Trabajo de fuerza (elige una)</label>
+      <div class="chips" id="fuerza">
+        <div class="chip" data-v="gym_con_ayuda">Voy al gym y quiero ayuda con la programación</div>
+        <div class="chip" data-v="gym_sin_ayuda">Voy al gym por mi cuenta</div>
+        <div class="chip" data-v="casa_funcionales">Quiero funcionales en casa</div>
+        <div class="chip" data-v="ninguno">No por ahora</div>
+      </div>
     </div>
 
     <div class="card">
@@ -121,7 +128,7 @@ function seg(id, cb) {
   });
 }
 seg('condicion', v => { $('condicion-det').style.display = v === 'si' ? 'block' : 'none'; });
-seg('fumado'); seg('rodillo');
+seg('fumado'); seg('rodillo'); seg('fuerza');
 
 // Disponibilidad
 ATL.DIAS.forEach((nombre, i) => {
@@ -191,6 +198,7 @@ $('enviar').onclick = async () => {
         condicion_medica_detalle: $('condicion_detalle').value.trim(),
         fumado: $('fumado').dataset.valor || null,
         rodillo: $('rodillo').dataset.valor || null,
+        fuerza: $('fuerza').dataset.valor || null,
         objetivo: $('objetivo').value.trim(),
         disponibilidad: dispo,
         foto_base64: fotoB64, foto_mime: fotoMime,

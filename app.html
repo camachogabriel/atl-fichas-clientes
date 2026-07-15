@@ -90,6 +90,7 @@ let cliente = null;
 
 const FUMADO = { fuma: 'Fumo', exfumador: 'Exfumador', no_fuma: 'No fumo' };
 const RODILLO = { no_tiene: 'No tengo', normal: 'Normal', inteligente: 'Inteligente' };
+const FUERZA = { gym_con_ayuda: 'Gimnasio, con ayuda en la programación', gym_sin_ayuda: 'Gimnasio, por mi cuenta', casa_funcionales: 'Funcionales en casa', ninguno: 'No por ahora' };
 const nombreDisc = (id) => (ATL.DISCIPLINAS.find(d => d.id === id) || { nombre: id }).nombre;
 
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
@@ -172,6 +173,7 @@ async function pintarPerfil() {
     dato('Condición médica', cliente.condicion_medica ? esc(cliente.condicion_medica_detalle || 'Sí') : 'No') +
     dato('Fumado', FUMADO[cliente.fumado]) +
     dato('Rodillo', RODILLO[cliente.rodillo]) +
+    dato('Trabajo de fuerza', FUERZA[cliente.fuerza]) +
     dato('Objetivo', esc(cliente.objetivo)) +
     dato('Mensualidad', cliente.tarifa_mensual ? ATL.fmtMonto(cliente.tarifa_mensual, cliente.moneda) : '') +
     dato('Fecha de pago mensual', cliente.fecha_pago ? 'Día ' + Number(cliente.fecha_pago.slice(8, 10)) + ' de cada mes' : '');
