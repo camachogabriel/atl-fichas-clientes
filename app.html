@@ -146,8 +146,8 @@ async function pintarPrueba() {
       <span style="background:${color};color:#fff;border-radius:6px;padding:3px 8px;font-weight:700;min-width:76px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
   $('p-prueba').innerHTML =
     fila('Fecha de la prueba', ATL.fmtFecha(p.fecha)) +
-    fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' W' : null].filter(Boolean).join(' · ')) +
-    fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' W' : null].filter(Boolean).join(' · ')) +
+    fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
+    fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
     fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null) +
     fila('FTP', p.ftp ? p.ftp + ' W' + (p.peso ? ' · ' + (p.ftp / p.peso).toFixed(2) + ' W/kg' : '') : null) +
     fila('Peso en la prueba', p.peso ? p.peso + ' kg' : null) +

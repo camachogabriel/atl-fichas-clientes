@@ -158,8 +158,9 @@
           <div style="flex:1"><label>Pulso U. anaeróbico</label><input type="number" id="pr-puan" placeholder="150"></div>
         </div>
         <div style="display:flex;gap:10px">
-          <div style="flex:1"><label>Potencia U. aeróbico (W)</label><input type="number" id="pr-poa" placeholder="170"></div>
-          <div style="flex:1"><label>Potencia U. anaeróbico (W)</label><input type="number" id="pr-poan" placeholder="205"></div>
+          <div style="flex:1"><label>Potencia U. aeróbico</label><input type="number" id="pr-poa" step="0.1" placeholder="170"></div>
+          <div style="flex:1"><label>Potencia U. anaeróbico</label><input type="number" id="pr-poan" step="0.1" placeholder="205"></div>
+          <div style="width:92px"><label>Unidad</label><select id="pr-unidad" style="padding:12px 8px"><option value="W">W</option><option value="km/h">km/h</option></select></div>
         </div>
         <label>Pulso máximo alcanzado</label>
         <input type="number" id="pr-pmax" placeholder="165">
@@ -287,7 +288,7 @@ async function cargarLista() {
   const [{ data: cls }, { data: pend }, { data: prs }] = await Promise.all([
     sbClient.from('fichas_clientes').select('*').order('created_at', { ascending: false }),
     sbClient.from('fichas_pagos').select('id, cliente_id, monto, moneda, created_at').eq('estado', 'pendiente'),
-    sbClient.from('fichas_pruebas').select('cliente_id, fecha, ftp, peso, pulso_umbral_anaerobico, potencia_umbral_anaerobico').order('fecha', { ascending: false }),
+    sbClient.from('fichas_pruebas').select('cliente_id, fecha, ftp, peso, pulso_umbral_anaerobico, potencia_umbral_anaerobico, unidad_potencia').order('fecha', { ascending: false }),
   ]);
   clientes = cls || [];
   pendientesGlobal = pend || [];
@@ -346,7 +347,7 @@ function pintarLista() {
     const stats = p ? [
       '📅 ' + new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: '2-digit' }),
       p.ftp ? 'FTP <b>' + p.ftp + 'W</b>' + (p.peso ? ' (' + (p.ftp / p.peso).toFixed(1) + ' W/kg)' : '') : null,
-      (p.pulso_umbral_anaerobico || p.potencia_umbral_anaerobico) ? 'LT2 <b>' + [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + 'ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + 'W' : null].filter(Boolean).join('/') + '</b>' : null,
+      (p.pulso_umbral_anaerobico || p.potencia_umbral_anaerobico) ? 'LT2 <b>' + [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + 'ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + (p.unidad_potencia === 'km/h' ? 'km/h' : 'W') : null].filter(Boolean).join('/') + '</b>' : null,
       p.peso ? p.peso + ' kg' : null,
     ].filter(Boolean).join(' · ') : '<span style="color:var(--gris-claro)">Sin prueba registrada</span>';
     const nota = c.notas_coach ? `<div class="det" style="color:#8a6d1a;margin-top:3px">📝 ${esc(c.notas_coach.length > 90 ? c.notas_coach.slice(0, 90) + '…' : c.notas_coach)}</div>` : '';
@@ -435,8 +436,8 @@ function pruebaHTML(p, conBorrar, esActual) {
         <button class="pill gris" style="border:none;cursor:pointer" onclick="editarPrueba('${p.id}')">✏️ Editar</button>
         <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarPrueba('${p.id}')">🗑</button></span>` : ''}
     </div>
-    ${fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' W' : null].filter(Boolean).join(' · '))}
-    ${fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' W' : null].filter(Boolean).join(' · '))}
+    ${fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · '))}
+    ${fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · '))}
     ${fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null)}
     ${fila('FTP', p.ftp ? p.ftp + ' W' + (p.peso ? ' · ' + (p.ftp / p.peso).toFixed(2) + ' W/kg' : '') : null)}
     ${fila('Peso', p.peso ? p.peso + ' kg' : null)}
@@ -499,6 +500,24 @@ function pdfValorAbajo(paginas, regex, min = 1, max = 99) {
   }
   return null;
 }
+// Potencia de umbral: acepta "170 watts" (ciclismo) o "11km/h" / "14,5 km/h" (carrera)
+function pdfPotencia(paginas, labelRegex) {
+  const RX = /(\d+(?:[.,]\d+)?)\s*(km\/h|watts?|w\b)/i;
+  for (const items of paginas) {
+    const lab = items.find(it => labelRegex.test(it.s));
+    if (!lab) continue;
+    const candidatos = [lab, ...items.filter(it => it !== lab && Math.abs(it.y - lab.y) < 5 && it.x > lab.x).sort((a, b) => a.x - b.x)];
+    for (const it of candidatos) {
+      const m = it.s.match(RX);
+      if (m) {
+        const valor = Number(m[1].replace(',', '.'));
+        const unidad = /km/i.test(m[2]) ? 'km/h' : 'W';
+        if ((unidad === 'W' && valor >= 40 && valor <= 700) || (unidad === 'km/h' && valor >= 4 && valor <= 30)) return { valor, unidad };
+      }
+    }
+  }
+  return null;
+}
 function pdfValorAbajoUnidad(paginas, labelRegex, valorRegex, min, max) {
   for (const items of paginas) {
     for (const lab of items.filter(it => labelRegex.test(it.s))) {
@@ -527,14 +546,22 @@ async function cargarDesdePDF() {
     let llenos = 0;
     const cuenta = (v) => { if (v !== null && v !== undefined) llenos++; return v; };
 
-    // fecha (dd-mm-yyyy en la portada)
-    const fItem = pgs.flat().find(it => /\d{2}-\d{2}-\d{4}/.test(it.s));
-    if (fItem) { const m = fItem.s.match(/(\d{2})-(\d{2})-(\d{4})/); setV('pr-fecha', cuenta(`${m[3]}-${m[2]}-${m[1]}`)); }
+    // fecha (dd-mm-yyyy o d/m/yyyy en la portada)
+    const fItem = pgs.flat().find(it => /\b\d{1,2}[-\/]\d{1,2}[-\/]\d{4}\b/.test(it.s) && !/Nac/i.test(it.s));
+    if (fItem) {
+      const m = fItem.s.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+      setV('pr-fecha', cuenta(`${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`));
+    }
 
     setV('pr-pua', cuenta(pdfValorFila(pgs, /Pulso umbral aer/i, 60, 220)));
     setV('pr-puan', cuenta(pdfValorFila(pgs, /Pulso umbral anaer/i, 60, 230)));
-    setV('pr-poa', cuenta(pdfValorFila(pgs, /Potencia umbral aer/i, 40, 600)));
-    setV('pr-poan', cuenta(pdfValorFila(pgs, /Potencia umbral anaer/i, 40, 700)));
+    // potencias: watts (ciclismo) o km/h (carrera)
+    const poa = pdfPotencia(pgs, /Potencia umbral aer/i);
+    const poan = pdfPotencia(pgs, /Potencia umbral anaer/i);
+    if (poa) { setV('pr-poa', cuenta(poa.valor)); }
+    if (poan) { setV('pr-poan', cuenta(poan.valor)); }
+    const unidad = (poan || poa || {}).unidad;
+    if (unidad) document.getElementById('pr-unidad').value = unidad;
     setV('pr-pmax', cuenta(pdfValorFila(pgs, /Pulso m[áa]ximo/i, 100, 230)));
     setV('pr-ftp', cuenta(pdfValorAbajoUnidad(pgs, /^FTP$/, /^(\d+)\s*watts?$/i, 40, 600)));
     setV('pr-peso', cuenta(pdfValorAbajoUnidad(pgs, /^Peso$/, /^(\d+(?:\.\d+)?)\s*kg$/i, 30, 200)));
@@ -567,6 +594,7 @@ window.editarPrueba = (id) => {
   set('pr-fecha', p.fecha); set('pr-pua', p.pulso_umbral_aerobico); set('pr-puan', p.pulso_umbral_anaerobico);
   set('pr-poa', p.potencia_umbral_aerobico); set('pr-poan', p.potencia_umbral_anaerobico); set('pr-pmax', p.pulso_maximo);
   set('pr-ftp', p.ftp); set('pr-peso', p.peso);
+  document.getElementById('pr-unidad').value = p.unidad_potencia || 'W';
   const z = p.zonas || {};
   set('pr-z0', z.z0); set('pr-z1', z.z1); set('pr-z2', z.z2); set('pr-z3', z.z3); set('pr-z4', z.z4); set('pr-z5', z.z5); set('pr-zmax', z.max);
   set('pr-rec1', p.rec_1min); set('pr-rec2', p.rec_2min);
@@ -580,6 +608,7 @@ function cancelarEdicionPrueba() {
   $('pr-guardar').textContent = 'Guardar prueba';
   ['pr-fecha','pr-pua','pr-puan','pr-poa','pr-poan','pr-pmax','pr-ftp','pr-peso','pr-z0','pr-z1','pr-z2','pr-z3','pr-z4','pr-z5','pr-zmax','pr-rec1','pr-rec2','pr-lim1','pr-lim2','pr-notas'].forEach(id => document.getElementById(id).value = '');
   prPdfFile = null; $('pr-pdf').value = '';
+  document.getElementById('pr-unidad').value = 'W';
   $('pr-pdf-ok').style.display = 'none';
 }
 
@@ -598,6 +627,7 @@ async function guardarPrueba() {
     potencia_umbral_aerobico: numOrNull('pr-poa'),
     potencia_umbral_anaerobico: numOrNull('pr-poan'),
     pulso_maximo: numOrNull('pr-pmax'),
+    unidad_potencia: document.getElementById('pr-unidad').value || 'W',
     ftp: numOrNull('pr-ftp'),
     peso: numOrNull('pr-peso'),
     zonas: Object.keys(zonas).length ? zonas : null,
