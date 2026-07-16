@@ -124,6 +124,9 @@
       <h2>⚙️ Administración</h2>
       <label>Tarifa mensual (₡)</label>
       <input type="number" id="d-tarifa" inputmode="decimal" placeholder="Ej: 35000">
+      <label>Próxima fecha de pago</label>
+      <input type="date" id="d-proximo-pago">
+      <p class="sub" style="margin:4px 0 0;font-size:12px">Cámbiala solo por solicitud del cliente. La fecha avanza sola al aprobar pagos.</p>
       <label>Notas del coach (privadas, visibles en el dashboard)</label>
       <textarea id="d-notas"></textarea>
       <label>Estado</label>
@@ -398,6 +401,7 @@ window.abrirDetalle = async (id) => {
   ).join('');
 
   $('d-tarifa').value = actual.tarifa_mensual || '';
+  $('d-proximo-pago').value = actual.proximo_pago || '';
   $('d-notas').value = actual.notas_coach || '';
   [...$('d-activo').children].forEach(ch => ch.classList.toggle('on', ch.dataset.v === actual.estado));
   $('d-activo').dataset.valor = actual.estado;
@@ -916,6 +920,12 @@ $('d-guardar').onclick = async () => {
     notas_coach: $('d-notas').value.trim() || null,
     estado: $('d-activo').dataset.valor || 'activo',
   };
+  // Cambio de fecha de pago (solo si el coach la modificó)
+  const nuevaFecha = $('d-proximo-pago').value || null;
+  if (nuevaFecha !== (actual.proximo_pago || null)) {
+    upd.proximo_pago = nuevaFecha;
+    upd.fecha_pago = nuevaFecha;
+  }
   const { error } = await sbClient.from('fichas_clientes').update(upd).eq('id', actual.id);
   if (error) { alert('Error: ' + error.message); return; }
   Object.assign(actual, upd);

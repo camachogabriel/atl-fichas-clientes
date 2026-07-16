@@ -28,6 +28,11 @@
       <input type="text" id="direccion" autocomplete="street-address" placeholder="Provincia, cantón, distrito">
       <label>Fecha de nacimiento</label>
       <input type="date" id="fecha_nacimiento">
+      <div id="fecha-pago-zona" style="display:none">
+        <label>📅 Tu próxima fecha de pago *</label>
+        <input type="date" id="fecha_pago">
+        <p class="sub" style="margin:6px 0 0;font-size:12.5px">Como ya eres cliente de ATL, tú conoces tu fecha de pago: indícanos cuándo es tu próximo pago mensual.</p>
+      </div>
       <input type="text" id="website" style="display:none" tabindex="-1" autocomplete="off">
     </div>
 
@@ -122,6 +127,8 @@ const TIPO_CLIENTE = new URLSearchParams(location.search).get('tipo') === 'actua
 if (TIPO_CLIENTE === 'actual') {
   $('titulo-form').textContent = 'Tu ficha ATL';
   $('sub-form').textContent = 'Como ya eres parte de ATL, solo necesitamos completar tu ficha para activar tu cuenta en el nuevo sistema. Toma menos de 5 minutos.';
+  $('fecha-pago-zona').style.display = 'block';
+  $('fecha_pago').min = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
 }
 
 // Disciplinas (multi)
@@ -193,6 +200,7 @@ $('enviar').onclick = async () => {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return error('Revisa tu correo electrónico.');
   if (!telefono) return error('Escribe tu teléfono.');
   if (!discSel.size) return error('Selecciona al menos una disciplina.');
+  if (TIPO_CLIENTE === 'actual' && !$('fecha_pago').value) return error('Indica tu próxima fecha de pago.');
   const dispo = [...document.querySelectorAll('.dia-fila')].map(f => ({
     dia: Number(f.dataset.dia),
     descanso: f.classList.contains('descanso'),
@@ -222,6 +230,7 @@ $('enviar').onclick = async () => {
         disponibilidad: dispo,
         foto_base64: fotoB64, foto_mime: fotoMime,
         tipo_cliente: TIPO_CLIENTE,
+        fecha_pago: TIPO_CLIENTE === 'actual' ? $('fecha_pago').value : null,
         website: $('website').value,
       }),
     });
