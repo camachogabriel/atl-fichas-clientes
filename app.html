@@ -33,6 +33,10 @@
       <h2>Mis datos</h2>
       <div id="p-datos"></div>
     </div>
+    <div class="card" id="p-prueba-card" style="display:none">
+      <h2>🧪 Mi prueba fisiológica</h2>
+      <div id="p-prueba"></div>
+    </div>
     <div class="card">
       <h2>📅 Mi disponibilidad</h2>
       <div id="p-dispo"></div>
@@ -116,8 +120,39 @@ async function init() {
   cliente = cli;
   pintarOnboarding();
   pintarPerfil();
+  pintarPrueba();
   cargarEvaluaciones();
   cargarPagos();
+}
+
+// ===== Última prueba fisiológica =====
+const ZONAS_DEF = [
+  ['z0', 'Z0 · Ritmo basal', '#8b95a3'],
+  ['z1', 'Z1 · Regenerativa', '#5a6472'],
+  ['z2', 'Z2 · Resistencia aeróbica', '#3b82c4'],
+  ['z3', 'Z3 · Intensidad aeróbica', '#4fa96e'],
+  ['z4', 'Z4 · Umbral anaeróbico', '#d9a916'],
+  ['z5', 'Z5 · Intensidad máxima', '#e07856'],
+  ['max', 'MAX', '#c33a5b'],
+];
+async function pintarPrueba() {
+  const { data: pruebas } = await sbClient.from('fichas_pruebas').select('*').eq('cliente_id', cliente.id).order('fecha', { ascending: false }).limit(1);
+  if (!pruebas || !pruebas.length) return;
+  const p = pruebas[0];
+  $('p-prueba-card').style.display = 'block';
+  const fila = (k, v) => v ? `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
+  const zonas = p.zonas ? ZONAS_DEF.filter(([k]) => p.zonas[k]).map(([k, nom, color]) =>
+    `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13.5px">
+      <span style="background:${color};color:#fff;border-radius:6px;padding:3px 8px;font-weight:700;min-width:76px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
+  $('p-prueba').innerHTML =
+    fila('Fecha de la prueba', ATL.fmtFecha(p.fecha)) +
+    fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' W' : null].filter(Boolean).join(' · ')) +
+    fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' W' : null].filter(Boolean).join(' · ')) +
+    fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null) +
+    fila('Recuperación cardiaca', [p.rec_1min != null ? '1 min: ' + p.rec_1min + '%' : null, p.rec_2min != null ? '2 min: ' + p.rec_2min + '%' : null].filter(Boolean).join(' · ')) +
+    fila('Limitación principal', p.limitacion_principal) +
+    fila('Limitación secundaria', p.limitacion_secundaria) +
+    (zonas ? `<div class="dato"><div class="k">Mis zonas de entrenamiento</div><div style="margin-top:6px">${zonas}</div></div>` : '');
 }
 
 const PASOS_ONB = [
@@ -171,6 +206,8 @@ async function pintarPerfil() {
     dato('Dirección', esc(cliente.direccion)) +
     dato('Fecha de nacimiento', cliente.fecha_nacimiento ? ATL.fmtFecha(cliente.fecha_nacimiento) : '') +
     dato('Condición médica', cliente.condicion_medica ? esc(cliente.condicion_medica_detalle || 'Sí') : 'No') +
+    dato('Hipertensión', cliente.hipertension === null ? '' : cliente.hipertension ? 'Sí' : 'No') +
+    dato('Diabetes', cliente.diabetes === null ? '' : cliente.diabetes ? 'Sí' : 'No') +
     dato('Fumado', FUMADO[cliente.fumado]) +
     dato('Rodillo', RODILLO[cliente.rodillo]) +
     dato('Trabajo de fuerza', FUERZA[cliente.fuerza]) +

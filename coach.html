@@ -84,6 +84,49 @@
     </div>
 
     <div class="card">
+      <h2 id="d-pruebas-titulo">🧪 Pruebas fisiológicas</h2>
+      <div id="d-pruebas"></div>
+      <button class="btn linea" id="pr-toggle" style="margin-top:10px">➕ Registrar prueba</button>
+      <div id="pr-form" style="display:none">
+        <label>Fecha de la prueba</label>
+        <input type="date" id="pr-fecha">
+        <div style="display:flex;gap:10px">
+          <div style="flex:1"><label>Pulso U. aeróbico</label><input type="number" id="pr-pua" placeholder="140"></div>
+          <div style="flex:1"><label>Pulso U. anaeróbico</label><input type="number" id="pr-puan" placeholder="150"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1"><label>Potencia U. aeróbico (W)</label><input type="number" id="pr-poa" placeholder="170"></div>
+          <div style="flex:1"><label>Potencia U. anaeróbico (W)</label><input type="number" id="pr-poan" placeholder="205"></div>
+        </div>
+        <label>Pulso máximo alcanzado</label>
+        <input type="number" id="pr-pmax" placeholder="165">
+        <label>Zonas de entrenamiento (ppm)</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div style="flex:1;min-width:70px"><label style="margin-top:4px;font-size:11px">Z0</label><input type="number" id="pr-z0"></div>
+          <div style="flex:1;min-width:70px"><label style="margin-top:4px;font-size:11px">Z1</label><input type="number" id="pr-z1"></div>
+          <div style="flex:1;min-width:70px"><label style="margin-top:4px;font-size:11px">Z2</label><input type="number" id="pr-z2"></div>
+          <div style="flex:1;min-width:70px"><label style="margin-top:4px;font-size:11px">Z3</label><input type="number" id="pr-z3"></div>
+          <div style="flex:1;min-width:70px"><label style="margin-top:4px;font-size:11px">Z4</label><input type="number" id="pr-z4"></div>
+          <div style="flex:1;min-width:70px"><label style="margin-top:4px;font-size:11px">Z5</label><input type="number" id="pr-z5"></div>
+          <div style="flex:1;min-width:70px"><label style="margin-top:4px;font-size:11px">MAX</label><input type="number" id="pr-zmax"></div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1"><label>Recuperación 1 min (%)</label><input type="number" id="pr-rec1" min="0" max="100" placeholder="25"></div>
+          <div style="flex:1"><label>Recuperación 2 min (%)</label><input type="number" id="pr-rec2" min="0" max="100" placeholder="54"></div>
+        </div>
+        <label>Limitación principal</label>
+        <input type="text" id="pr-lim1" placeholder="Ej: Aeróbico Bajo">
+        <label>Limitación secundaria</label>
+        <input type="text" id="pr-lim2" placeholder="Ej: Vo2Max">
+        <label>Notas</label>
+        <textarea id="pr-notas"></textarea>
+        <button class="btn" id="pr-guardar" style="margin-top:14px">Guardar prueba</button>
+        <div class="error" id="pr-err"></div>
+        <div class="aviso ok" id="pr-ok" style="display:none">✅ Prueba guardada.</div>
+      </div>
+    </div>
+
+    <div class="card">
       <h2 id="d-limit-titulo">🧠 Análisis de limitaciones</h2>
       <p class="sub" style="margin-bottom:8px">Evaluaciones perceptivas ligadas a este cliente (al inicio, tras entrenos fuertes o carreras).</p>
       <div id="d-limitaciones"></div>
@@ -219,6 +262,8 @@ window.abrirDetalle = async (id) => {
     dato('Correo', esc(actual.email)) + dato('Teléfono', esc(actual.telefono)) + dato('Dirección', esc(actual.direccion)) +
     dato('Nacimiento', actual.fecha_nacimiento ? ATL.fmtFecha(actual.fecha_nacimiento) : '') +
     dato('Condición médica', actual.condicion_medica ? esc(actual.condicion_medica_detalle || 'Sí') : 'No') +
+    dato('Hipertensión', actual.hipertension === null ? '' : actual.hipertension ? '⚠️ Sí' : 'No') +
+    dato('Diabetes', actual.diabetes === null ? '' : actual.diabetes ? '⚠️ Sí' : 'No') +
     dato('Fumado', FUMADO[actual.fumado]) + dato('Rodillo', RODILLO[actual.rodillo]) +
     dato('Trabajo de fuerza', FUERZA[actual.fuerza]) +
     dato('Objetivo', esc(actual.objetivo)) +
@@ -238,7 +283,84 @@ window.abrirDetalle = async (id) => {
   $('d-activo').dataset.valor = actual.estado;
 
   pintarOnboardingDetalle();
-  cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones();
+  cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones(); cargarPruebas();
+};
+
+// ===== Pruebas fisiológicas =====
+const ZONAS_DEF = [
+  ['z0', 'Z0 · Ritmo basal', '#8b95a3'],
+  ['z1', 'Z1 · Regenerativa', '#5a6472'],
+  ['z2', 'Z2 · Resistencia aeróbica', '#3b82c4'],
+  ['z3', 'Z3 · Intensidad aeróbica', '#4fa96e'],
+  ['z4', 'Z4 · Umbral anaeróbico', '#d9a916'],
+  ['z5', 'Z5 · Intensidad máxima', '#e07856'],
+  ['max', 'MAX', '#c33a5b'],
+];
+function pruebaHTML(p, conBorrar) {
+  const zonas = p.zonas ? ZONAS_DEF.filter(([k]) => p.zonas[k]).map(([k, nom, color]) =>
+    `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px">
+      <span style="background:${color};color:#fff;border-radius:6px;padding:2px 8px;font-weight:700;min-width:74px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
+  const fila = (k, v) => v !== null && v !== undefined && v !== '' ? `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
+  return `<div style="background:#fafbfc;border:1px solid var(--borde);border-radius:10px;padding:12px 14px;margin:8px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b style="font-size:14px">📅 ${ATL.fmtFecha(p.fecha)}</b>
+      ${conBorrar ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarPrueba('${p.id}')">🗑</button>` : ''}
+    </div>
+    ${fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' W' : null].filter(Boolean).join(' · '))}
+    ${fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' W' : null].filter(Boolean).join(' · '))}
+    ${fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null)}
+    ${fila('Recuperación cardiaca', [p.rec_1min != null ? '1 min: ' + p.rec_1min + '%' : null, p.rec_2min != null ? '2 min: ' + p.rec_2min + '%' : null].filter(Boolean).join(' · '))}
+    ${fila('Limitación principal', p.limitacion_principal)}
+    ${fila('Limitación secundaria', p.limitacion_secundaria)}
+    ${fila('Notas', p.notas)}
+    ${zonas ? `<div class="k" style="font-size:11.5px;color:var(--gris-claro);text-transform:uppercase;letter-spacing:.4px;margin-top:8px">Zonas</div>${zonas}` : ''}
+  </div>`;
+}
+
+async function cargarPruebas() {
+  const { data: pruebas } = await sbClient.from('fichas_pruebas').select('*').eq('cliente_id', actual.id).order('fecha', { ascending: false });
+  $('d-pruebas-titulo').textContent = `🧪 Pruebas fisiológicas (${(pruebas || []).length})`;
+  $('d-pruebas').innerHTML = (pruebas || []).map(p => pruebaHTML(p, true)).join('') || '<p class="sub">Sin pruebas registradas.</p>';
+  $('pr-toggle').onclick = () => { const f = $('pr-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none'; };
+  $('pr-guardar').onclick = guardarPrueba;
+}
+
+const numOrNull = (id) => { const v = document.getElementById(id).value; return v === '' ? null : Number(v); };
+async function guardarPrueba() {
+  const err = $('pr-err'); err.style.display = 'none'; $('pr-ok').style.display = 'none';
+  if (!$('pr-fecha').value) { err.textContent = 'Selecciona la fecha de la prueba.'; err.style.display = 'block'; return; }
+  const zonas = {};
+  ['z0', 'z1', 'z2', 'z3', 'z4', 'z5'].forEach(z => { const v = numOrNull('pr-' + z); if (v) zonas[z] = v; });
+  const vmax = numOrNull('pr-zmax'); if (vmax) zonas.max = vmax;
+  const fila = {
+    cliente_id: actual.id,
+    fecha: $('pr-fecha').value,
+    pulso_umbral_aerobico: numOrNull('pr-pua'),
+    pulso_umbral_anaerobico: numOrNull('pr-puan'),
+    potencia_umbral_aerobico: numOrNull('pr-poa'),
+    potencia_umbral_anaerobico: numOrNull('pr-poan'),
+    pulso_maximo: numOrNull('pr-pmax'),
+    zonas: Object.keys(zonas).length ? zonas : null,
+    rec_1min: numOrNull('pr-rec1'),
+    rec_2min: numOrNull('pr-rec2'),
+    limitacion_principal: $('pr-lim1').value.trim() || null,
+    limitacion_secundaria: $('pr-lim2').value.trim() || null,
+    notas: $('pr-notas').value.trim() || null,
+  };
+  const btn = $('pr-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
+  const { error } = await sbClient.from('fichas_pruebas').insert(fila);
+  btn.disabled = false; btn.textContent = 'Guardar prueba';
+  if (error) { err.textContent = 'Error: ' + error.message; err.style.display = 'block'; return; }
+  ['pr-fecha','pr-pua','pr-puan','pr-poa','pr-poan','pr-pmax','pr-z0','pr-z1','pr-z2','pr-z3','pr-z4','pr-z5','pr-zmax','pr-rec1','pr-rec2','pr-lim1','pr-lim2','pr-notas'].forEach(id => document.getElementById(id).value = '');
+  $('pr-form').style.display = 'none';
+  $('pr-ok').style.display = 'block';
+  cargarPruebas();
+}
+
+window.borrarPrueba = async (id) => {
+  if (!confirm('¿Borrar esta prueba?')) return;
+  await sbClient.from('fichas_pruebas').delete().eq('id', id);
+  cargarPruebas();
 };
 
 // ===== Análisis de limitaciones (quiz perceptivo ligado por ?atl=) =====

@@ -53,7 +53,17 @@
       </div>
       <div id="condicion-det" style="display:none">
         <label>Cuéntanos el detalle</label>
-        <textarea id="condicion_detalle" placeholder="Ej: asma, hipertensión, lesión de rodilla..."></textarea>
+        <textarea id="condicion_detalle" placeholder="Ej: asma, lesión de rodilla..."></textarea>
+      </div>
+      <label>¿Padeces de presión alta (hipertensión)?</label>
+      <div class="seg" id="hipertension">
+        <div class="chip" data-v="no">No</div>
+        <div class="chip" data-v="si">Sí</div>
+      </div>
+      <label>¿Padeces de diabetes?</label>
+      <div class="seg" id="diabetes">
+        <div class="chip" data-v="no">No</div>
+        <div class="chip" data-v="si">Sí</div>
       </div>
       <label>Fumado</label>
       <div class="seg" id="fumado">
@@ -128,7 +138,7 @@ function seg(id, cb) {
   });
 }
 seg('condicion', v => { $('condicion-det').style.display = v === 'si' ? 'block' : 'none'; });
-seg('fumado'); seg('rodillo'); seg('fuerza');
+seg('fumado'); seg('rodillo'); seg('fuerza'); seg('hipertension'); seg('diabetes');
 
 // Disponibilidad
 ATL.DIAS.forEach((nombre, i) => {
@@ -196,6 +206,8 @@ $('enviar').onclick = async () => {
         disciplinas: [...discSel],
         condicion_medica: $('condicion').dataset.valor === 'si',
         condicion_medica_detalle: $('condicion_detalle').value.trim(),
+        hipertension: $('hipertension').dataset.valor ? $('hipertension').dataset.valor === 'si' : null,
+        diabetes: $('diabetes').dataset.valor ? $('diabetes').dataset.valor === 'si' : null,
         fumado: $('fumado').dataset.valor || null,
         rodillo: $('rodillo').dataset.valor || null,
         fuerza: $('fuerza').dataset.valor || null,
