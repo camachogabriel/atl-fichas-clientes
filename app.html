@@ -149,6 +149,8 @@ async function pintarPrueba() {
     fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' W' : null].filter(Boolean).join(' · ')) +
     fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' W' : null].filter(Boolean).join(' · ')) +
     fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null) +
+    fila('FTP', p.ftp ? p.ftp + ' W' + (p.peso ? ' · ' + (p.ftp / p.peso).toFixed(2) + ' W/kg' : '') : null) +
+    fila('Peso en la prueba', p.peso ? p.peso + ' kg' : null) +
     fila('Recuperación cardiaca', [p.rec_1min != null ? '1 min: ' + p.rec_1min + '%' : null, p.rec_2min != null ? '2 min: ' + p.rec_2min + '%' : null].filter(Boolean).join(' · ')) +
     fila('Limitación principal', p.limitacion_principal) +
     fila('Limitación secundaria', p.limitacion_secundaria) +

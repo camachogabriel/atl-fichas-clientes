@@ -26,7 +26,24 @@
     </div>
     <div class="card">
       <h2>👥 Clientes</h2>
-      <input type="text" id="buscar" placeholder="Buscar por nombre o correo..." style="margin-bottom:10px">
+      <input type="text" id="buscar" placeholder="Buscar por nombre o correo..." style="margin-bottom:8px">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <select id="orden" style="flex:1;padding:9px 10px;font-size:14px">
+          <option value="recientes">Orden: más recientes</option>
+          <option value="nombre">Orden: nombre A-Z</option>
+          <option value="ftp">Orden: FTP (mayor primero)</option>
+          <option value="wkg">Orden: W/kg (mayor primero)</option>
+          <option value="pago">Orden: estado de pago</option>
+          <option value="prueba">Orden: prueba más antigua</option>
+        </select>
+        <select id="filtro-pago" style="flex:1;padding:9px 10px;font-size:14px">
+          <option value="">Pago: todos</option>
+          <option value="rojo">Vencidos</option>
+          <option value="amarillo">Pendientes</option>
+          <option value="verde">Al día</option>
+          <option value="gris">Sin confirmar</option>
+        </select>
+      </div>
       <div id="lista" class="cargando">Cargando...</div>
     </div>
     <div class="card">
@@ -106,7 +123,7 @@
       <h2>⚙️ Administración</h2>
       <label>Tarifa mensual (₡)</label>
       <input type="number" id="d-tarifa" inputmode="decimal" placeholder="Ej: 35000">
-      <label>Notas del coach (privadas)</label>
+      <label>Notas del coach (privadas, visibles en el dashboard)</label>
       <textarea id="d-notas"></textarea>
       <label>Estado</label>
       <div class="seg" id="d-activo">
@@ -142,6 +159,10 @@
         </div>
         <label>Pulso máximo alcanzado</label>
         <input type="number" id="pr-pmax" placeholder="165">
+        <div style="display:flex;gap:10px">
+          <div style="flex:1"><label>FTP (W)</label><input type="number" id="pr-ftp" placeholder="207"></div>
+          <div style="flex:1"><label>Peso (kg)</label><input type="number" id="pr-peso" step="0.1" placeholder="80"></div>
+        </div>
         <label>Zonas de entrenamiento (ppm)</label>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <div style="flex:1;min-width:70px"><label style="margin-top:4px;font-size:11px">Z0</label><input type="number" id="pr-z0"></div>
@@ -251,34 +272,86 @@ function estadoPill(c, pendientes) {
     e.clase === 'gris' ? 'Sin confirmar' : e.clase === 'verde' ? 'Al día' : e.clase === 'amarillo' ? 'Pendiente' : 'Vencido'}</span>`;
 }
 
+let ultimaPrueba = {}; // cliente_id -> última prueba
+let pendientesGlobal = [];
+
 async function cargarLista() {
-  const [{ data: cls }, { data: pend }] = await Promise.all([
+  const [{ data: cls }, { data: pend }, { data: prs }] = await Promise.all([
     sbClient.from('fichas_clientes').select('*').order('created_at', { ascending: false }),
     sbClient.from('fichas_pagos').select('id, cliente_id, monto, moneda, created_at').eq('estado', 'pendiente'),
+    sbClient.from('fichas_pruebas').select('cliente_id, fecha, ftp, peso, pulso_umbral_anaerobico, potencia_umbral_anaerobico').order('fecha', { ascending: false }),
   ]);
   clientes = cls || [];
-  const pendientes = pend || [];
+  pendientesGlobal = pend || [];
+  ultimaPrueba = {};
+  for (const p of prs || []) if (!ultimaPrueba[p.cliente_id]) ultimaPrueba[p.cliente_id] = p;
 
   // pagos por revisar
-  if (pendientes.length) {
+  if (pendientesGlobal.length) {
     $('pendientes-card').style.display = 'block';
-    $('pagos-pendientes').innerHTML = pendientes.map(p => {
+    $('pagos-pendientes').innerHTML = pendientesGlobal.map(p => {
       const c = clientes.find(x => x.id === p.cliente_id) || { nombre: '—' };
       return `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${p.cliente_id}')"><div><div class="tit">${esc(c.nombre)}</div><div class="det">${ATL.fmtMonto(p.monto, p.moneda)} · ${new Date(p.created_at).toLocaleDateString('es-CR')}</div></div><span class="pill amarillo">Revisar</span></div>`;
     }).join('');
   } else $('pendientes-card').style.display = 'none';
 
-  pintarLista(pendientes);
-  $('buscar').oninput = () => pintarLista(pendientes);
+  pintarLista();
+  $('buscar').oninput = pintarLista;
+  $('orden').onchange = pintarLista;
+  $('filtro-pago').onchange = pintarLista;
 }
 
-function pintarLista(pendientes) {
+function claseEstadoPago(c) {
+  return ATL.estadoPago(c, pendientesGlobal.some(p => p.cliente_id === c.id)).clase;
+}
+function wkg(c) {
+  const p = ultimaPrueba[c.id];
+  return p && p.ftp && p.peso ? p.ftp / p.peso : null;
+}
+
+function pintarLista() {
   const q = $('buscar').value.trim().toLowerCase();
-  const vis = clientes.filter(c => !q || c.nombre.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+  const fpago = $('filtro-pago').value;
+  const orden = $('orden').value;
+  let vis = clientes.filter(c => !q || c.nombre.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+  if (fpago) vis = vis.filter(c => claseEstadoPago(c) === fpago);
+
+  const RANGO_PAGO = { rojo: 0, amarillo: 1, verde: 2, gris: 3 };
+  const cmp = {
+    recientes: (a, b) => new Date(b.created_at) - new Date(a.created_at),
+    nombre: (a, b) => a.nombre.localeCompare(b.nombre, 'es'),
+    ftp: (a, b) => ((ultimaPrueba[b.id]?.ftp) ?? -1) - ((ultimaPrueba[a.id]?.ftp) ?? -1),
+    wkg: (a, b) => (wkg(b) ?? -1) - (wkg(a) ?? -1),
+    pago: (a, b) => RANGO_PAGO[claseEstadoPago(a)] - RANGO_PAGO[claseEstadoPago(b)],
+    prueba: (a, b) => {
+      const fa = ultimaPrueba[a.id]?.fecha, fb = ultimaPrueba[b.id]?.fecha;
+      if (!fa && !fb) return 0; if (!fa) return -1; if (!fb) return 1;
+      return new Date(fa) - new Date(fb);
+    },
+  }[orden] || (() => 0);
+  vis.sort(cmp);
+
+  const PILL_TXT = { rojo: 'Vencido', amarillo: 'Pendiente', verde: 'Al día', gris: 'Sin confirmar' };
   $('lista').className = '';
-  $('lista').innerHTML = vis.map(c =>
-    `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${c.id}')"><div><div class="tit">${esc(c.nombre)}</div><div class="det">${esc(c.email)}${c.estado === 'inactivo' ? ' · INACTIVO' : ''}</div></div>${estadoPill(c, pendientes)}</div>`
-  ).join('') || '<p class="sub">No hay clientes todavía.</p>';
+  $('lista').innerHTML = vis.map(c => {
+    const p = ultimaPrueba[c.id];
+    const stats = p ? [
+      '📅 ' + new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: '2-digit' }),
+      p.ftp ? 'FTP <b>' + p.ftp + 'W</b>' + (p.peso ? ' (' + (p.ftp / p.peso).toFixed(1) + ' W/kg)' : '') : null,
+      (p.pulso_umbral_anaerobico || p.potencia_umbral_anaerobico) ? 'LT2 <b>' + [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + 'ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + 'W' : null].filter(Boolean).join('/') + '</b>' : null,
+      p.peso ? p.peso + ' kg' : null,
+    ].filter(Boolean).join(' · ') : '<span style="color:var(--gris-claro)">Sin prueba registrada</span>';
+    const nota = c.notas_coach ? `<div class="det" style="color:#8a6d1a;margin-top:3px">📝 ${esc(c.notas_coach.length > 90 ? c.notas_coach.slice(0, 90) + '…' : c.notas_coach)}</div>` : '';
+    const cl = claseEstadoPago(c);
+    return `<div class="item" style="cursor:pointer;align-items:flex-start" onclick="abrirDetalle('${c.id}')">
+      <div style="flex:1;min-width:0">
+        <div class="tit">${esc(c.nombre)}${c.estado === 'inactivo' ? ' <span class="pill gris">inactivo</span>' : ''}</div>
+        <div class="det" style="margin-top:3px">${stats}</div>
+        ${nota}
+      </div>
+      <span class="pill ${cl}" style="margin-top:2px">${PILL_TXT[cl]}</span>
+    </div>`;
+  }).join('') || '<p class="sub">Sin resultados con estos filtros.</p>';
 }
 
 window.abrirDetalle = async (id) => {
@@ -356,6 +429,8 @@ function pruebaHTML(p, conBorrar, esActual) {
     ${fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' W' : null].filter(Boolean).join(' · '))}
     ${fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' W' : null].filter(Boolean).join(' · '))}
     ${fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null)}
+    ${fila('FTP', p.ftp ? p.ftp + ' W' + (p.peso ? ' · ' + (p.ftp / p.peso).toFixed(2) + ' W/kg' : '') : null)}
+    ${fila('Peso', p.peso ? p.peso + ' kg' : null)}
     ${fila('Recuperación cardiaca', [p.rec_1min != null ? '1 min: ' + p.rec_1min + '%' : null, p.rec_2min != null ? '2 min: ' + p.rec_2min + '%' : null].filter(Boolean).join(' · '))}
     ${fila('Limitación principal', p.limitacion_principal)}
     ${fila('Limitación secundaria', p.limitacion_secundaria)}
@@ -415,6 +490,16 @@ function pdfValorAbajo(paginas, regex, min = 1, max = 99) {
   }
   return null;
 }
+function pdfValorAbajoUnidad(paginas, labelRegex, valorRegex, min, max) {
+  for (const items of paginas) {
+    for (const lab of items.filter(it => labelRegex.test(it.s))) {
+      const cand = items.filter(it => it.y < lab.y && lab.y - it.y < 60 && Math.abs(it.x - lab.x) < 80 && valorRegex.test(it.s))
+        .sort((a, b) => b.y - a.y);
+      for (const it of cand) { const v = Number(it.s.match(valorRegex)[1]); if (v >= min && v <= max) return v; }
+    }
+  }
+  return null;
+}
 const pdfTextoAbajo = (paginas, regex) => conLabel(paginas, regex, (items, lab) => {
   const cand = items.filter(it => it.y < lab.y && lab.y - it.y < 45 && Math.abs(it.x - lab.x) < 220 && !/^\d/.test(it.s) && !regex.test(it.s) && it.s.length > 1)
     .sort((a, b) => b.y - a.y);
@@ -442,6 +527,8 @@ async function cargarDesdePDF() {
     setV('pr-poa', cuenta(pdfValorFila(pgs, /Potencia umbral aer/i, 40, 600)));
     setV('pr-poan', cuenta(pdfValorFila(pgs, /Potencia umbral anaer/i, 40, 700)));
     setV('pr-pmax', cuenta(pdfValorFila(pgs, /Pulso m[áa]ximo/i, 100, 230)));
+    setV('pr-ftp', cuenta(pdfValorAbajoUnidad(pgs, /^FTP$/, /^(\d+)\s*watts?$/i, 40, 600)));
+    setV('pr-peso', cuenta(pdfValorAbajoUnidad(pgs, /^Peso$/, /^(\d+(?:\.\d+)?)\s*kg$/i, 30, 200)));
 
     const zonas = [['pr-z0', /^Zona 0$/], ['pr-z1', /^Zona 1$/], ['pr-z2', /^Zona 2$/], ['pr-z3', /^Zona 3$/], ['pr-z4', /^Zona 4$/], ['pr-z5', /^Zona 5$/], ['pr-zmax', /^MAX$/]];
     for (const [id, rx] of zonas) setV(id, cuenta(pdfValorFila(pgs, rx, 40, 230)));
@@ -470,6 +557,7 @@ window.editarPrueba = (id) => {
   const set = (i, v) => document.getElementById(i).value = v ?? '';
   set('pr-fecha', p.fecha); set('pr-pua', p.pulso_umbral_aerobico); set('pr-puan', p.pulso_umbral_anaerobico);
   set('pr-poa', p.potencia_umbral_aerobico); set('pr-poan', p.potencia_umbral_anaerobico); set('pr-pmax', p.pulso_maximo);
+  set('pr-ftp', p.ftp); set('pr-peso', p.peso);
   const z = p.zonas || {};
   set('pr-z0', z.z0); set('pr-z1', z.z1); set('pr-z2', z.z2); set('pr-z3', z.z3); set('pr-z4', z.z4); set('pr-z5', z.z5); set('pr-zmax', z.max);
   set('pr-rec1', p.rec_1min); set('pr-rec2', p.rec_2min);
@@ -481,7 +569,7 @@ function cancelarEdicionPrueba() {
   prEditId = null;
   $('pr-modo-edicion').style.display = 'none';
   $('pr-guardar').textContent = 'Guardar prueba';
-  ['pr-fecha','pr-pua','pr-puan','pr-poa','pr-poan','pr-pmax','pr-z0','pr-z1','pr-z2','pr-z3','pr-z4','pr-z5','pr-zmax','pr-rec1','pr-rec2','pr-lim1','pr-lim2','pr-notas'].forEach(id => document.getElementById(id).value = '');
+  ['pr-fecha','pr-pua','pr-puan','pr-poa','pr-poan','pr-pmax','pr-ftp','pr-peso','pr-z0','pr-z1','pr-z2','pr-z3','pr-z4','pr-z5','pr-zmax','pr-rec1','pr-rec2','pr-lim1','pr-lim2','pr-notas'].forEach(id => document.getElementById(id).value = '');
   prPdfFile = null; $('pr-pdf').value = '';
   $('pr-pdf-ok').style.display = 'none';
 }
@@ -501,6 +589,8 @@ async function guardarPrueba() {
     potencia_umbral_aerobico: numOrNull('pr-poa'),
     potencia_umbral_anaerobico: numOrNull('pr-poan'),
     pulso_maximo: numOrNull('pr-pmax'),
+    ftp: numOrNull('pr-ftp'),
+    peso: numOrNull('pr-peso'),
     zonas: Object.keys(zonas).length ? zonas : null,
     rec_1min: numOrNull('pr-rec1'),
     rec_2min: numOrNull('pr-rec2'),
