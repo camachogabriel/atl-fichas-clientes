@@ -164,6 +164,27 @@ const PASOS_ONB = [
   { id: 'completado', nombre: 'Onboarding completo' },
 ];
 async function pintarOnboarding() {
+  // Clientes activos: no se muestra el onboarding; solo su próxima reevaluación y la opción de agendar
+  if (cliente.onboarding_estado === 'completado') {
+    $('onboarding-card').style.display = 'block';
+    document.querySelector('#onboarding-card h2').textContent = '📅 Evaluaciones';
+    let html = '';
+    if (cliente.fecha_prueba && new Date(cliente.fecha_prueba) > new Date()) {
+      const f = new Date(cliente.fecha_prueba).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+      html += `<div class="aviso ok" style="margin-bottom:10px">📅 Tu próxima evaluación: <b>${f}</b>${cliente.nota_prueba ? '<br>' + esc(cliente.nota_prueba) : ''}</div>`;
+    } else {
+      html += `<p class="sub" style="margin-bottom:10px">¿Sientes que es momento de medir tu progreso? Agenda una evaluación con tu coach.</p>`;
+    }
+    const msj = encodeURIComponent(`Hola, soy ${cliente.nombre}. Me gustaría agendar una evaluación en ATL.`);
+    html += `<a class="btn" style="background:#25d366" target="_blank" href="${ATL.WHATSAPP}?text=${msj}">💬 Agendar una evaluación por WhatsApp</a>`;
+    const { data: cfg } = await sbClient.from('fichas_config').select('*').eq('en_correo_final', true).neq('valor', '').order('orden');
+    html += (cfg || []).map(c => `<a class="btn linea" style="margin-top:10px" target="_blank" href="${esc(c.valor)}">🔗 ${esc(c.etiqueta)}</a>`).join('');
+    $('pasos').innerHTML = '';
+    $('onb-info').style.display = 'none';
+    $('onb-recursos').innerHTML = html;
+    $('onb-recursos').style.display = 'block';
+    return;
+  }
   const idx = PASOS_ONB.findIndex(p => p.id === cliente.onboarding_estado);
   if (idx < 0) return;
   $('onboarding-card').style.display = 'block';

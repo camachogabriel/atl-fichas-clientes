@@ -54,9 +54,10 @@
       <div class="aviso ok" id="config-ok" style="display:none">✅ Guardado.</div>
     </div>
     <div class="card">
-      <h2>🔗 Link de onboarding</h2>
-      <p class="sub" style="margin-bottom:8px">Envía este link por WhatsApp a clientes nuevos:</p>
-      <button class="btn linea" id="copiar-link">📋 Copiar link de registro</button>
+      <h2>🔗 Links de registro</h2>
+      <p class="sub" style="margin-bottom:8px">Envíalos por WhatsApp según el tipo de cliente:</p>
+      <button class="btn linea" id="copiar-link" style="margin-bottom:10px">📋 Cliente nuevo (con onboarding)</button>
+      <button class="btn linea" id="copiar-link-actual">📋 Cliente actual de ATL (entra activo)</button>
       <div class="aviso ok" id="copiado" style="display:none">✅ Copiado.</div>
     </div>
   </section>
@@ -251,11 +252,15 @@ let clientes = [], actual = null;
 $('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
 $('volver').onclick = () => { $('sec-detalle').style.display = 'none'; $('sec-lista').style.display = 'block'; cargarLista(); };
 
-$('copiar-link').onclick = async () => {
-  const url = location.origin + location.pathname.replace('coach.html', '') + 'onboarding.html';
-  try { await navigator.clipboard.writeText(url); } catch (_) { prompt('Copia el link:', url); }
-  $('copiado').style.display = 'block'; setTimeout(() => $('copiado').style.display = 'none', 2500);
-};
+function copiarLinkRegistro(sufijo) {
+  return async () => {
+    const url = location.origin + location.pathname.replace('coach.html', '') + 'onboarding.html' + sufijo;
+    try { await navigator.clipboard.writeText(url); } catch (_) { prompt('Copia el link:', url); }
+    $('copiado').style.display = 'block'; setTimeout(() => $('copiado').style.display = 'none', 2500);
+  };
+}
+$('copiar-link').onclick = copiarLinkRegistro('');
+$('copiar-link-actual').onclick = copiarLinkRegistro('?tipo=actual');
 
 async function init() {
   const { data: { session } } = await sbClient.auth.getSession();
@@ -794,13 +799,28 @@ function aLocal(iso) {
 
 function pintarOnboardingDetalle() {
   const est = actual.onboarding_estado || 'espera_prueba';
-  const idx = PASOS_ONB.findIndex(p => p.id === est);
-  $('d-pasos').innerHTML = PASOS_ONB.map((p, i) => {
-    const cls = i < idx || est === 'completado' ? 'hecho' : i === idx ? 'actual' : '';
-    return `<div class="paso ${cls}"><div class="punto">${cls === 'hecho' ? '✓' : i + 1}</div><div class="nom">${p.nombre}</div></div>`;
-  }).join('');
+  if (est === 'completado') {
+    $('d-pasos').innerHTML = '';
+  } else {
+    const idx = PASOS_ONB.findIndex(p => p.id === est);
+    $('d-pasos').innerHTML = PASOS_ONB.map((p, i) => {
+      const cls = i < idx ? 'hecho' : i === idx ? 'actual' : '';
+      return `<div class="paso ${cls}"><div class="punto">${cls === 'hecho' ? '✓' : i + 1}</div><div class="nom">${p.nombre}</div></div>`;
+    }).join('');
+  }
 
   let html = '';
+  if (est === 'completado') {
+    const proxima = actual.fecha_prueba && new Date(actual.fecha_prueba) > new Date()
+      ? `<div class="aviso ok" style="margin-bottom:10px">📅 Reevaluación agendada: <b>${fmtFechaHora(actual.fecha_prueba)}</b>${actual.nota_prueba ? '<br>' + esc(actual.nota_prueba) : ''}</div>` : '';
+    html += `<span class="pill verde" style="margin-bottom:10px;display:inline-block">✓ Cliente activo — onboarding completado</span>
+      ${proxima}
+      <label>Fecha y hora de la reevaluación</label>
+      <input type="datetime-local" id="onb-fecha" value="${actual.fecha_prueba ? aLocal(actual.fecha_prueba) : ''}">
+      <label>Nota para el cliente (lugar, qué llevar...)</label>
+      <input type="text" id="onb-nota" value="${esc(actual.nota_prueba || '')}">
+      <button class="btn oscuro" id="onb-agendar" style="margin-top:12px">🔄 Agendar reevaluación y enviar correo</button>`;
+  }
   if (est === 'espera_prueba' || est === 'pendiente_evaluacion') {
     html += `<label>Fecha y hora de la prueba</label>
       <input type="datetime-local" id="onb-fecha" value="${actual.fecha_prueba ? aLocal(actual.fecha_prueba) : ''}">
@@ -818,8 +838,6 @@ function pintarOnboardingDetalle() {
   }
   if (actual.feedback) {
     html += `<div class="aviso ok" style="margin-top:12px"><b>💬 Mensaje del cliente:</b><br>${esc(actual.feedback)}</div>`;
-  } else if (est === 'completado') {
-    html += `<p class="sub">Onboarding completado (sin mensaje).</p>`;
   }
   $('d-onb-zona').innerHTML = html;
 

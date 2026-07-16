@@ -13,8 +13,8 @@
 <div class="wrap">
 
   <div id="form-zona">
-    <h1>Tu ficha de cliente</h1>
-    <p class="sub">Cuéntanos de ti para preparar tu plan de entrenamiento. Toma menos de 5 minutos.</p>
+    <h1 id="titulo-form">Tu ficha de cliente</h1>
+    <p class="sub" id="sub-form">Cuéntanos de ti para preparar tu plan de entrenamiento. Toma menos de 5 minutos.</p>
 
     <div class="card">
       <h2>📋 Datos personales</h2>
@@ -117,6 +117,13 @@
 document.getElementById('logo').src = ATL.LOGO;
 const $ = (id) => document.getElementById(id);
 
+// ?tipo=actual → cliente existente de ATL: entra activo, sin flujo de onboarding
+const TIPO_CLIENTE = new URLSearchParams(location.search).get('tipo') === 'actual' ? 'actual' : 'nuevo';
+if (TIPO_CLIENTE === 'actual') {
+  $('titulo-form').textContent = 'Tu ficha ATL';
+  $('sub-form').textContent = 'Como ya eres parte de ATL, solo necesitamos completar tu ficha para activar tu cuenta en el nuevo sistema. Toma menos de 5 minutos.';
+}
+
 // Disciplinas (multi)
 const discSel = new Set();
 ATL.DISCIPLINAS.forEach(d => {
@@ -214,6 +221,7 @@ $('enviar').onclick = async () => {
         objetivo: $('objetivo').value.trim(),
         disponibilidad: dispo,
         foto_base64: fotoB64, foto_mime: fotoMime,
+        tipo_cliente: TIPO_CLIENTE,
         website: $('website').value,
       }),
     });
