@@ -6,6 +6,7 @@
 <title>Panel coach · AthleteTrainLab</title>
 <link rel="stylesheet" href="assets/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="assets/config.js"></script>
 </head>
 <body>
@@ -56,6 +57,39 @@
     <div class="card">
       <h2>Ficha</h2>
       <div id="d-datos"></div>
+      <button class="btn linea" id="ed-toggle" style="margin-top:12px">✏️ Editar ficha</button>
+      <div id="ed-form" style="display:none">
+        <label>Nombre completo</label>
+        <input type="text" id="ed-nombre">
+        <label>Teléfono</label>
+        <input type="tel" id="ed-telefono">
+        <label>Dirección</label>
+        <input type="text" id="ed-direccion">
+        <label>Fecha de nacimiento</label>
+        <input type="date" id="ed-nacimiento">
+        <label>Disciplinas</label>
+        <div class="chips" id="ed-disciplinas"></div>
+        <label>¿Condición médica?</label>
+        <select id="ed-condicion"><option value="no">No</option><option value="si">Sí</option></select>
+        <label>Detalle condición médica</label>
+        <input type="text" id="ed-condicion-det">
+        <label>Hipertensión</label>
+        <select id="ed-hipertension"><option value="">Sin responder</option><option value="no">No</option><option value="si">Sí</option></select>
+        <label>Diabetes</label>
+        <select id="ed-diabetes"><option value="">Sin responder</option><option value="no">No</option><option value="si">Sí</option></select>
+        <label>Fumado</label>
+        <select id="ed-fumado"><option value="">—</option><option value="no_fuma">No fuma</option><option value="exfumador">Exfumador</option><option value="fuma">Fuma</option></select>
+        <label>Rodillo</label>
+        <select id="ed-rodillo"><option value="">—</option><option value="no_tiene">No tiene</option><option value="normal">Normal</option><option value="inteligente">Inteligente</option></select>
+        <label>Trabajo de fuerza</label>
+        <select id="ed-fuerza"><option value="">—</option><option value="gym_con_ayuda">Gym, con ayuda</option><option value="gym_sin_ayuda">Gym por su cuenta</option><option value="casa_funcionales">Funcionales en casa</option><option value="ninguno">No por ahora</option></select>
+        <label>Objetivo</label>
+        <textarea id="ed-objetivo"></textarea>
+        <p class="sub" style="margin-top:8px;font-size:12px">El correo no se edita aquí porque está ligado a la cuenta de acceso del cliente.</p>
+        <button class="btn oscuro" id="ed-guardar" style="margin-top:10px">Guardar ficha</button>
+        <div class="error" id="ed-err"></div>
+        <div class="aviso ok" id="ed-ok" style="display:none">✅ Ficha actualizada.</div>
+      </div>
       <h2 style="margin-top:14px">📅 Disponibilidad</h2>
       <div id="d-dispo"></div>
     </div>
@@ -88,6 +122,14 @@
       <div id="d-pruebas"></div>
       <button class="btn linea" id="pr-toggle" style="margin-top:10px">➕ Registrar prueba</button>
       <div id="pr-form" style="display:none">
+        <div class="aviso warn" id="pr-modo-edicion" style="display:none">✏️ Editando prueba existente. <button class="volver" id="pr-cancelar-edicion" style="margin:0">Cancelar edición</button></div>
+        <label class="foto-btn" for="pr-pdf" style="margin-top:12px;display:block;text-align:center">📄 Cargar datos desde el PDF del reporte</label>
+        <input type="file" id="pr-pdf" accept=".pdf" style="display:none">
+        <div class="aviso ok" id="pr-pdf-ok" style="display:none"></div>
+        <div class="error" id="pr-pdf-err"></div>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-top:10px">
+          <input type="checkbox" id="pr-pdf-subir" checked style="width:auto"> Subir también el PDF a Evaluaciones del cliente
+        </label>
         <label>Fecha de la prueba</label>
         <input type="date" id="pr-fecha">
         <div style="display:flex;gap:10px">
@@ -284,6 +326,9 @@ window.abrirDetalle = async (id) => {
 
   pintarOnboardingDetalle();
   cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones(); cargarPruebas();
+  $('ed-form').style.display = 'none';
+  $('ed-toggle').onclick = abrirEdicionFicha;
+  $('ed-guardar').onclick = guardarFicha;
 };
 
 // ===== Pruebas fisiológicas =====
@@ -296,15 +341,17 @@ const ZONAS_DEF = [
   ['z5', 'Z5 · Intensidad máxima', '#e07856'],
   ['max', 'MAX', '#c33a5b'],
 ];
-function pruebaHTML(p, conBorrar) {
+function pruebaHTML(p, conBorrar, esActual) {
   const zonas = p.zonas ? ZONAS_DEF.filter(([k]) => p.zonas[k]).map(([k, nom, color]) =>
     `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px">
       <span style="background:${color};color:#fff;border-radius:6px;padding:2px 8px;font-weight:700;min-width:74px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
   const fila = (k, v) => v !== null && v !== undefined && v !== '' ? `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
   return `<div style="background:#fafbfc;border:1px solid var(--borde);border-radius:10px;padding:12px 14px;margin:8px 0">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <b style="font-size:14px">📅 ${ATL.fmtFecha(p.fecha)}</b>
-      ${conBorrar ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarPrueba('${p.id}')">🗑</button>` : ''}
+      <b style="font-size:14px">📅 ${ATL.fmtFecha(p.fecha)}${esActual ? ' <span class="pill verde">vigente para entrenar</span>' : ''}</b>
+      ${conBorrar ? `<span style="display:flex;gap:6px">
+        <button class="pill gris" style="border:none;cursor:pointer" onclick="editarPrueba('${p.id}')">✏️ Editar</button>
+        <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarPrueba('${p.id}')">🗑</button></span>` : ''}
     </div>
     ${fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' W' : null].filter(Boolean).join(' · '))}
     ${fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' W' : null].filter(Boolean).join(' · '))}
@@ -317,12 +364,126 @@ function pruebaHTML(p, conBorrar) {
   </div>`;
 }
 
+let pruebasCache = [], prEditId = null, prPdfFile = null;
+
 async function cargarPruebas() {
   const { data: pruebas } = await sbClient.from('fichas_pruebas').select('*').eq('cliente_id', actual.id).order('fecha', { ascending: false });
-  $('d-pruebas-titulo').textContent = `🧪 Pruebas fisiológicas (${(pruebas || []).length})`;
-  $('d-pruebas').innerHTML = (pruebas || []).map(p => pruebaHTML(p, true)).join('') || '<p class="sub">Sin pruebas registradas.</p>';
-  $('pr-toggle').onclick = () => { const f = $('pr-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none'; };
+  pruebasCache = pruebas || [];
+  $('d-pruebas-titulo').textContent = `🧪 Pruebas fisiológicas (${pruebasCache.length})`;
+  $('d-pruebas').innerHTML = pruebasCache.map((p, i) => pruebaHTML(p, true, i === 0)).join('') || '<p class="sub">Sin pruebas registradas.</p>';
+  $('pr-toggle').onclick = () => { const f = $('pr-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none'; if (f.style.display === 'none') cancelarEdicionPrueba(); };
   $('pr-guardar').onclick = guardarPrueba;
+  $('pr-pdf').onchange = cargarDesdePDF;
+  $('pr-cancelar-edicion').onclick = cancelarEdicionPrueba;
+}
+
+// ===== Cargar datos desde el PDF del reporte ATL =====
+async function extraerPaginasPDF(file) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  const paginas = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    paginas.push(tc.items.map(it => ({ s: it.str.trim(), x: it.transform[4], y: it.transform[5] })).filter(it => it.s));
+  }
+  return paginas;
+}
+// Busca el label en cualquier página, pero el valor SOLO dentro de la misma página
+function conLabel(paginas, regex, fn) {
+  for (const items of paginas) {
+    const lab = items.find(it => regex.test(it.s));
+    if (lab) { const v = fn(items, lab); if (v !== null && v !== undefined) return v; }
+  }
+  return null;
+}
+const pdfValorFila = (paginas, regex, min = 0, max = 99999) => conLabel(paginas, regex, (items, lab) => {
+  const propio = lab.s.match(/(\d+(?:\.\d+)?)\s*(?:ppm|watts|w)?\s*$/i);
+  if (propio && +propio[1] >= min && +propio[1] <= max) return Number(propio[1]);
+  const fila = items.filter(it => it !== lab && Math.abs(it.y - lab.y) < 5 && it.x > lab.x).sort((a, b) => a.x - b.x);
+  for (const it of fila) { const m = it.s.match(/(\d+(?:\.\d+)?)/); if (m && +m[1] >= min && +m[1] <= max) return Number(m[1]); }
+  return null;
+});
+function pdfValorAbajo(paginas, regex, min = 1, max = 99) {
+  for (const items of paginas) {
+    for (const lab of items.filter(it => regex.test(it.s))) {
+      const cand = items.filter(it => it.y < lab.y && lab.y - it.y < 80 && Math.abs(it.x - lab.x) < 60 && /^\d{1,3}$/.test(it.s) && +it.s >= min && +it.s <= max)
+        .sort((a, b) => (b.y - a.y) || (Math.abs(a.x - lab.x) - Math.abs(b.x - lab.x)));
+      if (cand.length) return Number(cand[0].s);
+    }
+  }
+  return null;
+}
+const pdfTextoAbajo = (paginas, regex) => conLabel(paginas, regex, (items, lab) => {
+  const cand = items.filter(it => it.y < lab.y && lab.y - it.y < 45 && Math.abs(it.x - lab.x) < 220 && !/^\d/.test(it.s) && !regex.test(it.s) && it.s.length > 1)
+    .sort((a, b) => b.y - a.y);
+  return cand.length ? cand[0].s : null;
+});
+
+async function cargarDesdePDF() {
+  const okd = $('pr-pdf-ok'), errd = $('pr-pdf-err');
+  okd.style.display = 'none'; errd.style.display = 'none';
+  const file = $('pr-pdf').files[0];
+  if (!file) return;
+  prPdfFile = file;
+  try {
+    const pgs = await extraerPaginasPDF(file);
+    const setV = (id, v) => { if (v !== null && v !== undefined) document.getElementById(id).value = v; };
+    let llenos = 0;
+    const cuenta = (v) => { if (v !== null && v !== undefined) llenos++; return v; };
+
+    // fecha (dd-mm-yyyy en la portada)
+    const fItem = pgs.flat().find(it => /\d{2}-\d{2}-\d{4}/.test(it.s));
+    if (fItem) { const m = fItem.s.match(/(\d{2})-(\d{2})-(\d{4})/); setV('pr-fecha', cuenta(`${m[3]}-${m[2]}-${m[1]}`)); }
+
+    setV('pr-pua', cuenta(pdfValorFila(pgs, /Pulso umbral aer/i, 60, 220)));
+    setV('pr-puan', cuenta(pdfValorFila(pgs, /Pulso umbral anaer/i, 60, 230)));
+    setV('pr-poa', cuenta(pdfValorFila(pgs, /Potencia umbral aer/i, 40, 600)));
+    setV('pr-poan', cuenta(pdfValorFila(pgs, /Potencia umbral anaer/i, 40, 700)));
+    setV('pr-pmax', cuenta(pdfValorFila(pgs, /Pulso m[áa]ximo/i, 100, 230)));
+
+    const zonas = [['pr-z0', /^Zona 0$/], ['pr-z1', /^Zona 1$/], ['pr-z2', /^Zona 2$/], ['pr-z3', /^Zona 3$/], ['pr-z4', /^Zona 4$/], ['pr-z5', /^Zona 5$/], ['pr-zmax', /^MAX$/]];
+    for (const [id, rx] of zonas) setV(id, cuenta(pdfValorFila(pgs, rx, 40, 230)));
+
+    setV('pr-rec1', cuenta(pdfValorAbajo(pgs, /^Rec\.?\s*1\s*min$/i)));
+    setV('pr-rec2', cuenta(pdfValorAbajo(pgs, /^Rec\.?\s*2\s*min$/i)));
+
+    setV('pr-lim1', cuenta(pdfTextoAbajo(pgs, /^Limitaci[óo]n principal$/i)));
+    setV('pr-lim2', cuenta(pdfTextoAbajo(pgs, /^Limitaci[óo]n secundaria$/i)));
+
+    okd.textContent = `📄 ${llenos} campos cargados desde el PDF. Revisa y corrige lo que haga falta antes de guardar.`;
+    okd.style.display = 'block';
+  } catch (e) {
+    errd.textContent = 'No pude leer el PDF: ' + (e.message || e) + '. Llena los campos manualmente.';
+    errd.style.display = 'block';
+  }
+}
+
+// ===== Editar prueba existente =====
+window.editarPrueba = (id) => {
+  const p = pruebasCache.find(x => x.id === id);
+  if (!p) return;
+  prEditId = id;
+  $('pr-form').style.display = 'block';
+  $('pr-modo-edicion').style.display = 'block';
+  const set = (i, v) => document.getElementById(i).value = v ?? '';
+  set('pr-fecha', p.fecha); set('pr-pua', p.pulso_umbral_aerobico); set('pr-puan', p.pulso_umbral_anaerobico);
+  set('pr-poa', p.potencia_umbral_aerobico); set('pr-poan', p.potencia_umbral_anaerobico); set('pr-pmax', p.pulso_maximo);
+  const z = p.zonas || {};
+  set('pr-z0', z.z0); set('pr-z1', z.z1); set('pr-z2', z.z2); set('pr-z3', z.z3); set('pr-z4', z.z4); set('pr-z5', z.z5); set('pr-zmax', z.max);
+  set('pr-rec1', p.rec_1min); set('pr-rec2', p.rec_2min);
+  set('pr-lim1', p.limitacion_principal); set('pr-lim2', p.limitacion_secundaria); set('pr-notas', p.notas);
+  $('pr-guardar').textContent = 'Guardar cambios de la prueba';
+  $('pr-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+function cancelarEdicionPrueba() {
+  prEditId = null;
+  $('pr-modo-edicion').style.display = 'none';
+  $('pr-guardar').textContent = 'Guardar prueba';
+  ['pr-fecha','pr-pua','pr-puan','pr-poa','pr-poan','pr-pmax','pr-z0','pr-z1','pr-z2','pr-z3','pr-z4','pr-z5','pr-zmax','pr-rec1','pr-rec2','pr-lim1','pr-lim2','pr-notas'].forEach(id => document.getElementById(id).value = '');
+  prPdfFile = null; $('pr-pdf').value = '';
+  $('pr-pdf-ok').style.display = 'none';
 }
 
 const numOrNull = (id) => { const v = document.getElementById(id).value; return v === '' ? null : Number(v); };
@@ -348,13 +509,90 @@ async function guardarPrueba() {
     notas: $('pr-notas').value.trim() || null,
   };
   const btn = $('pr-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
-  const { error } = await sbClient.from('fichas_pruebas').insert(fila);
+  try {
+    if (prEditId) {
+      delete fila.cliente_id;
+      const { error } = await sbClient.from('fichas_pruebas').update(fila).eq('id', prEditId);
+      if (error) throw error;
+    } else {
+      const { error } = await sbClient.from('fichas_pruebas').insert(fila);
+      if (error) throw error;
+      // subir el PDF del reporte a Evaluaciones si se cargó y está marcado
+      if (prPdfFile && $('pr-pdf-subir').checked && actual.user_id) {
+        const path = `${actual.user_id}/${Date.now()}.pdf`;
+        const { error: eUp } = await sbClient.storage.from('fichas-evaluaciones').upload(path, prPdfFile, { contentType: 'application/pdf' });
+        if (!eUp) {
+          await sbClient.from('fichas_evaluaciones').insert({ cliente_id: actual.id, titulo: 'Prueba fisiológica ' + ATL.fmtFecha(fila.fecha), archivo_path: path });
+          cargarEvasDetalle();
+        }
+      }
+    }
+    cancelarEdicionPrueba();
+    $('pr-form').style.display = 'none';
+    $('pr-ok').style.display = 'block';
+    cargarPruebas();
+  } catch (e) {
+    err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block';
+  }
   btn.disabled = false; btn.textContent = 'Guardar prueba';
+}
+
+// ===== Editar ficha del cliente =====
+let edDisc = new Set();
+function abrirEdicionFicha() {
+  const f = $('ed-form');
+  if (f.style.display === 'block') { f.style.display = 'none'; return; }
+  f.style.display = 'block';
+  $('ed-nombre').value = actual.nombre || '';
+  $('ed-telefono').value = actual.telefono || '';
+  $('ed-direccion').value = actual.direccion || '';
+  $('ed-nacimiento').value = actual.fecha_nacimiento || '';
+  $('ed-condicion').value = actual.condicion_medica ? 'si' : 'no';
+  $('ed-condicion-det').value = actual.condicion_medica_detalle || '';
+  $('ed-hipertension').value = actual.hipertension === null ? '' : actual.hipertension ? 'si' : 'no';
+  $('ed-diabetes').value = actual.diabetes === null ? '' : actual.diabetes ? 'si' : 'no';
+  $('ed-fumado').value = actual.fumado || '';
+  $('ed-rodillo').value = actual.rodillo || '';
+  $('ed-fuerza').value = actual.fuerza || '';
+  $('ed-objetivo').value = actual.objetivo || '';
+  edDisc = new Set(actual.disciplinas || []);
+  $('ed-disciplinas').innerHTML = '';
+  ATL.DISCIPLINAS.forEach(d => {
+    const c = document.createElement('div');
+    c.className = 'chip' + (edDisc.has(d.id) ? ' on' : '');
+    c.textContent = d.icono + ' ' + d.nombre;
+    c.onclick = () => { edDisc.has(d.id) ? edDisc.delete(d.id) : edDisc.add(d.id); c.classList.toggle('on'); };
+    $('ed-disciplinas').appendChild(c);
+  });
+}
+async function guardarFicha() {
+  const err = $('ed-err'); err.style.display = 'none'; $('ed-ok').style.display = 'none';
+  const nombre = $('ed-nombre').value.trim();
+  if (nombre.length < 3) { err.textContent = 'Nombre inválido.'; err.style.display = 'block'; return; }
+  const triple = (id) => { const v = document.getElementById(id).value; return v === '' ? null : v === 'si'; };
+  const upd = {
+    nombre,
+    telefono: $('ed-telefono').value.trim() || null,
+    direccion: $('ed-direccion').value.trim() || null,
+    fecha_nacimiento: $('ed-nacimiento').value || null,
+    disciplinas: [...edDisc],
+    condicion_medica: $('ed-condicion').value === 'si',
+    condicion_medica_detalle: $('ed-condicion-det').value.trim() || null,
+    hipertension: triple('ed-hipertension'),
+    diabetes: triple('ed-diabetes'),
+    fumado: $('ed-fumado').value || null,
+    rodillo: $('ed-rodillo').value || null,
+    fuerza: $('ed-fuerza').value || null,
+    objetivo: $('ed-objetivo').value.trim() || null,
+  };
+  const { error } = await sbClient.from('fichas_clientes').update(upd).eq('id', actual.id);
   if (error) { err.textContent = 'Error: ' + error.message; err.style.display = 'block'; return; }
-  ['pr-fecha','pr-pua','pr-puan','pr-poa','pr-poan','pr-pmax','pr-z0','pr-z1','pr-z2','pr-z3','pr-z4','pr-z5','pr-zmax','pr-rec1','pr-rec2','pr-lim1','pr-lim2','pr-notas'].forEach(id => document.getElementById(id).value = '');
-  $('pr-form').style.display = 'none';
-  $('pr-ok').style.display = 'block';
-  cargarPruebas();
+  Object.assign(actual, upd);
+  const i = clientes.findIndex(c => c.id === actual.id); if (i >= 0) clientes[i] = actual;
+  $('ed-ok').style.display = 'block';
+  setTimeout(() => { $('ed-ok').style.display = 'none'; }, 2500);
+  $('ed-form').style.display = 'none';
+  abrirDetalle(actual.id);
 }
 
 window.borrarPrueba = async (id) => {
