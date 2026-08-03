@@ -21,7 +21,11 @@ ATL.hoy = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Cost
 
 // Estado de pago: verde (al día), amarillo (ventana de pago / en revisión), rojo (vencido)
 ATL.estadoPago = (cliente, tienePendiente) => {
-  if (!cliente.proximo_pago) return { clase: 'gris', texto: 'Confirma tu correo para activar tu fecha de pago', pct: 0 };
+  if (!cliente.proximo_pago) {
+    return cliente.correo_confirmado
+      ? { clase: 'gris', texto: 'Tu coach aún no configura tu fecha de pago', pct: 0 }
+      : { clase: 'gris', texto: 'Confirma tu correo para activar tu cuenta', pct: 0 };
+  }
   if (tienePendiente) return { clase: 'amarillo', texto: 'Comprobante en revisión', pct: 66 };
   const dias = Math.floor((new Date(cliente.proximo_pago) - new Date(ATL.hoy())) / 86400000);
   if (dias < 0) return { clase: 'rojo', texto: `Pago vencido hace ${-dias} día${dias === -1 ? '' : 's'}`, pct: 100 };
