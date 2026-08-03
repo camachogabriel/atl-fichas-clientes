@@ -21,9 +21,9 @@
     <div class="error" id="error"></div>
     <button class="btn" id="entrar" style="margin-top:16px">Entrar</button>
     <button class="volver" id="olvide" style="margin:14px auto 0;display:block">¿Olvidaste tu contraseña?</button>
+    <button class="volver" id="crear" style="margin:6px auto 0;display:block">Crear usuario</button>
   </div>
   <div class="aviso ok" id="aviso" style="display:none"></div>
-  <p class="sub" style="text-align:center;margin-top:18px">¿Aún no tienes cuenta? Tu coach te enviará el link de registro.</p>
 </div>
 <script>
 document.getElementById('logo').src = ATL.LOGO;
@@ -50,6 +50,8 @@ $('entrar').onclick = async () => {
   destino(data.session);
 };
 $('password').addEventListener('keydown', e => { if (e.key === 'Enter') $('entrar').click(); });
+
+$('crear').onclick = () => { location.href = 'onboarding.html'; };
 
 $('olvide').onclick = async () => {
   error('');

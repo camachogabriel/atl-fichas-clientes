@@ -20,6 +20,10 @@
   <section id="sec-lista">
     <h1>Panel del coach</h1>
     <p class="sub">Clientes, pagos y evaluaciones</p>
+    <div class="card" id="registros-card" style="display:none">
+      <h2>🆕 Registros por aprobar</h2>
+      <div id="registros-pendientes"></div>
+    </div>
     <div class="card" id="pendientes-card" style="display:none">
       <h2>⏳ Pagos por revisar</h2>
       <div id="pagos-pendientes"></div>
@@ -132,6 +136,7 @@
       <label>Estado</label>
       <div class="seg" id="d-activo">
         <div class="chip" data-v="activo">Activo</div>
+        <div class="chip" data-v="pendiente">Pendiente</div>
         <div class="chip" data-v="inactivo">Inactivo</div>
       </div>
       <button class="btn oscuro" id="d-guardar" style="margin-top:14px">Guardar cambios</button>
@@ -252,6 +257,7 @@ const FUMADO = { fuma: 'Fuma', exfumador: 'Exfumador', no_fuma: 'No fuma' };
 const RODILLO = { no_tiene: 'No tiene', normal: 'Normal', inteligente: 'Inteligente' };
 const FUERZA = { gym_con_ayuda: 'Gym, quiere ayuda con programación 💪', gym_sin_ayuda: 'Gym por su cuenta', casa_funcionales: 'Funcionales en casa 💪', ninguno: 'No por ahora' };
 let clientes = [], actual = null;
+let esSuper = false;
 
 $('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
 $('volver').onclick = () => { $('sec-detalle').style.display = 'none'; $('sec-lista').style.display = 'block'; cargarLista(); };
@@ -271,6 +277,8 @@ async function init() {
   if (!session) { location.href = 'index.html'; return; }
   const { data: esCoach } = await sbClient.rpc('fichas_es_coach');
   if (!esCoach) { location.href = 'app.html'; return; }
+  const { data: sup } = await sbClient.rpc('fichas_es_super');
+  esSuper = !!sup;
   cargarLista();
   cargarConfig();
 }
@@ -294,6 +302,18 @@ async function cargarLista() {
   pendientesGlobal = pend || [];
   ultimaPrueba = {};
   for (const p of prs || []) if (!ultimaPrueba[p.cliente_id]) ultimaPrueba[p.cliente_id] = p;
+
+  // registros nuevos por aprobar (solo super)
+  if (esSuper) {
+    const registros = clientes.filter(c => c.estado === 'pendiente');
+    if (registros.length) {
+      $('registros-card').style.display = 'block';
+      $('registros-pendientes').innerHTML = registros.map(c =>
+        `<div class="item"><div><div class="tit">${esc(c.nombre)}</div><div class="det">${esc(c.email)} · ${new Date(c.created_at).toLocaleDateString('es-CR')}</div></div>` +
+        `<button class="pill verde" style="border:none;cursor:pointer" onclick="aprobarRegistro('${c.id}')">✅ Aprobar</button></div>`
+      ).join('');
+    } else $('registros-card').style.display = 'none';
+  }
 
   // pagos por revisar
   if (pendientesGlobal.length) {
@@ -354,7 +374,7 @@ function pintarLista() {
     const cl = claseEstadoPago(c);
     return `<div class="item" style="cursor:pointer;align-items:flex-start" onclick="abrirDetalle('${c.id}')">
       <div style="flex:1;min-width:0">
-        <div class="tit">${esc(c.nombre)}${c.estado === 'inactivo' ? ' <span class="pill gris">inactivo</span>' : ''}</div>
+        <div class="tit">${esc(c.nombre)}${c.estado === 'inactivo' ? ' <span class="pill gris">inactivo</span>' : c.estado === 'pendiente' ? ' <span class="pill amarillo">pendiente aprobación</span>' : ''}</div>
         <div class="det" style="margin-top:3px">${stats}</div>
         ${nota}
       </div>
@@ -362,6 +382,12 @@ function pintarLista() {
     </div>`;
   }).join('') || '<p class="sub">Sin resultados con estos filtros.</p>';
 }
+
+window.aprobarRegistro = async (id) => {
+  const { error } = await sbClient.from('fichas_clientes').update({ estado: 'activo' }).eq('id', id);
+  if (error) { alert('No se pudo aprobar: ' + error.message); return; }
+  cargarLista();
+};
 
 window.abrirDetalle = async (id) => {
   actual = clientes.find(c => c.id === id);

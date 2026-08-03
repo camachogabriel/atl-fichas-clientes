@@ -51,6 +51,15 @@
     </div>
   </section>
 
+  <!-- PENDIENTE DE APROBACIÓN -->
+  <section id="sec-pendiente" style="display:none">
+    <div class="card" style="text-align:center">
+      <h1>⏳ Cuenta en revisión</h1>
+      <p class="sub">Tu registro fue recibido. Tu coach debe activar tu cuenta antes de que puedas ver tu perfil y evaluaciones.</p>
+      <a class="btn" style="background:#25d366" target="_blank" id="pendiente-wa">💬 Escribir por WhatsApp si tienes algún problema</a>
+    </div>
+  </section>
+
   <!-- EVALUACIONES -->
   <section id="sec-evaluaciones" style="display:none">
     <div class="card">
@@ -118,6 +127,14 @@ async function init() {
     return;
   }
   cliente = cli;
+  if (cliente.estado === 'pendiente') {
+    document.querySelector('.tabs').style.display = 'none';
+    $('barra').style.display = 'none';
+    $('sec-pendiente').style.display = 'block';
+    const msj = encodeURIComponent(`Hola, soy ${cliente.nombre}. Mi cuenta en el sistema de ATL sigue pendiente de activación.`);
+    $('pendiente-wa').href = `${ATL.WHATSAPP}?text=${msj}`;
+    return;
+  }
   pintarOnboarding();
   pintarPerfil();
   pintarPrueba();
