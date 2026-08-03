@@ -79,7 +79,7 @@
   <button id="op-salir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Salir</button>
 </div>
 <div class="menu-flot der" id="menu-not">
-  <div id="not-lista"><div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div></div>
+  <div id="not-lista" style="max-height:70vh;overflow-y:auto"><div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div></div>
 </div>
 
 <div class="wrap" style="padding-top:16px">
@@ -291,6 +291,82 @@ $('op-cambiar-clave').onclick = async () => {
   alert(error ? 'No se pudo actualizar: ' + error.message : '✅ Contraseña actualizada.');
 };
 
+// ===== Notificaciones =====
+let notifCanal = null;
+const ICONO_NOTIF = {
+  chat: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>',
+  prueba: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6.7L4.8 18.6A1.5 1.5 0 0 0 6.1 21h11.8a1.5 1.5 0 0 0 1.3-2.4L14 9.7V3"/></svg>',
+  reto: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
+  evento: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>',
+  perfil: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+};
+const TAB_NOTIF = { chat: 'chat', prueba: 'home', reto: 'evaluaciones', evento: 'calendario', perfil: 'home' };
+
+function tiempoRelativo(iso) {
+  const seg = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seg < 60) return 'ahora';
+  if (seg < 3600) return Math.floor(seg / 60) + ' min';
+  if (seg < 86400) return Math.floor(seg / 3600) + ' h';
+  if (seg < 604800) return Math.floor(seg / 86400) + ' d';
+  return new Date(iso).toLocaleDateString('es-CR', { day: 'numeric', month: 'short' });
+}
+
+async function cargarNotificaciones() {
+  const { data } = await sbClient.from('fichas_notificaciones').select('*').eq('cliente_id', cliente.id).order('created_at', { ascending: false }).limit(30);
+  window.__notif = data || [];
+  pintarNotificaciones();
+  if (!notifCanal) {
+    notifCanal = sbClient.channel('cliente-notif-' + cliente.id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fichas_notificaciones', filter: `cliente_id=eq.${cliente.id}` }, (payload) => {
+        window.__notif = [payload.new, ...(window.__notif || [])];
+        pintarNotificaciones();
+      })
+      .subscribe();
+  }
+}
+
+function pintarNotificaciones() {
+  const lista = window.__notif || [];
+  const noLeidas = lista.filter(n => !n.leido_at).length;
+  $('badge-not').style.display = noLeidas > 0 ? 'block' : 'none';
+  $('badge-not').textContent = noLeidas > 9 ? '9+' : noLeidas;
+  if (!lista.length) { $('not-lista').innerHTML = '<div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div>'; return; }
+  $('not-lista').innerHTML = (noLeidas > 0 ? `<button id="not-marcar-todas" style="width:100%;text-align:right;background:none;border:none;color:var(--verde);font-size:12px;font-weight:700;padding:8px 16px 0;cursor:pointer">Marcar todas como leídas</button>` : '') +
+    lista.map(n => `<div class="item-not" style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;background:${n.leido_at ? 'transparent' : 'var(--verde-suave)'}" onclick="abrirNotificacion('${n.id}')">
+      <div style="width:26px;height:26px;border-radius:50%;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${ICONO_NOTIF[n.tipo] || ICONO_NOTIF.evento}</div>
+      <div style="flex:1;min-width:0">
+        <div class="h">${esc(n.titulo)}</div>
+        <div class="d">${esc((n.cuerpo || '').slice(0, 90))}</div>
+        <div class="d" style="margin-top:2px;color:var(--gris-claro)">${tiempoRelativo(n.created_at)}</div>
+      </div>
+    </div>`).join('');
+  const btnTodas = $('not-marcar-todas');
+  if (btnTodas) btnTodas.onclick = async (e) => { e.stopPropagation(); await marcarTodasLeidas(); };
+}
+
+window.abrirNotificacion = async (id) => {
+  const n = (window.__notif || []).find(x => x.id === id);
+  if (!n) return;
+  cerrarMenus();
+  if (!n.leido_at) {
+    n.leido_at = new Date().toISOString();
+    pintarNotificaciones();
+    await sbClient.from('fichas_notificaciones').update({ leido_at: n.leido_at }).eq('id', id);
+  }
+  const tab = TAB_NOTIF[n.tipo] || 'home';
+  const btn = document.querySelector(`.tabs5 button[data-sec="${tab}"]`);
+  if (btn) btn.click();
+};
+
+async function marcarTodasLeidas() {
+  const ahora = new Date().toISOString();
+  const idsSinLeer = (window.__notif || []).filter(n => !n.leido_at).map(n => n.id);
+  if (!idsSinLeer.length) return;
+  (window.__notif || []).forEach(n => { if (!n.leido_at) n.leido_at = ahora; });
+  pintarNotificaciones();
+  await sbClient.from('fichas_notificaciones').update({ leido_at: ahora }).in('id', idsSinLeer);
+}
+
 // ===== Botón + (acciones rápidas) =====
 $('btn-fab').onclick = () => { $('hoja-fab').style.display = 'flex'; };
 $('op-cancelar').onclick = () => { $('hoja-fab').style.display = 'none'; };
@@ -325,6 +401,7 @@ async function init() {
   pintarPrueba();
   cargarEvaluaciones();
   cargarPagos();
+  cargarNotificaciones();
 
   $('op-cambio-plan').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Quisiera solicitar un cambio de plan.')}`;
   $('op-ayuda-urgente').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Necesito ayuda urgente.')}`;

@@ -228,6 +228,9 @@
         <label>Objetivo</label>
         <textarea id="ed-objetivo"></textarea>
         <p class="sub" style="margin-top:8px;font-size:12px">El correo no se edita aquí porque está ligado a la cuenta de acceso del cliente.</p>
+        <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-top:12px">
+          <input type="checkbox" id="ed-notificar" style="width:auto"> Notificar al cliente sobre este cambio
+        </label>
         <button class="btn oscuro" id="ed-guardar" style="margin-top:10px">Guardar ficha</button>
         <div class="error" id="ed-err"></div>
         <div class="aviso ok" id="ed-ok" style="display:none">✅ Ficha actualizada.</div>
@@ -259,6 +262,9 @@
         <div class="chip" data-v="pendiente">Pendiente</div>
         <div class="chip" data-v="inactivo">Inactivo</div>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-top:4px">
+        <input type="checkbox" id="d-notificar" style="width:auto"> Notificar al cliente sobre este cambio
+      </label>
       <button class="btn oscuro" id="d-guardar" style="margin-top:14px">Guardar cambios</button>
       <div class="aviso ok" id="d-guardado" style="display:none">✅ Guardado.</div>
     </div>
@@ -1472,6 +1478,10 @@ async function guardarFicha() {
   if (error) { err.textContent = 'Error: ' + error.message; err.style.display = 'block'; return; }
   Object.assign(actual, upd);
   const i = clientes.findIndex(c => c.id === actual.id); if (i >= 0) clientes[i] = actual;
+  if ($('ed-notificar').checked) {
+    sbClient.rpc('fichas_notificar_perfil', { p_cliente_id: actual.id, p_mensaje: 'Tu coach actualizó los datos de tu ficha.' });
+    $('ed-notificar').checked = false;
+  }
   $('ed-ok').style.display = 'block';
   setTimeout(() => { $('ed-ok').style.display = 'none'; }, 2500);
   $('ed-form').style.display = 'none';
@@ -1703,6 +1713,10 @@ $('d-guardar').onclick = async () => {
   const { error } = await sbClient.from('fichas_clientes').update(upd).eq('id', actual.id);
   if (error) { alert('Error: ' + error.message); return; }
   Object.assign(actual, upd);
+  if ($('d-notificar').checked) {
+    sbClient.rpc('fichas_notificar_perfil', { p_cliente_id: actual.id, p_mensaje: 'Tu coach actualizó la información de tu cuenta.' });
+    $('d-notificar').checked = false;
+  }
   $('d-guardado').style.display = 'block'; setTimeout(() => $('d-guardado').style.display = 'none', 2500);
 };
 
