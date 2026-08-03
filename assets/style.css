@@ -1,16 +1,20 @@
 /* ATL Fichas - estilos compartidos (mobile-first) */
 :root {
-  --dark: #0d1117;
+  /* Paleta oficial del logo ATL (AthleteTrainLab) */
+  --dark: #000000;
   --ink: #1a1a2e;
   --gris: #5a6472;
   --gris-claro: #8b95a3;
   --borde: #e6e8eb;
   --fondo: #f4f5f7;
-  --verde: #4fa96e;
-  --verde-suave: #f0f9f4;
-  --rojo: #c33a5b;
-  --amarillo: #e7c13c;
-  --amarillo-suave: #fdf8ec;
+  --verde: #21b57c;
+  --verde-suave: #e6f7f0;
+  --rojo: #ee2f63;
+  --rojo-suave: #fce8ee;
+  --amarillo: #fecb15;
+  --amarillo-suave: #fff6da;
+  --azul: #292e7e;
+  --azul-suave: #eaebf6;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
@@ -43,11 +47,11 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--verde); bor
 .aviso { border-radius: 10px; padding: 12px 14px; font-size: 14px; margin: 10px 0; }
 .aviso.ok { background: var(--verde-suave); border: 1px solid #d5ead9; color: #2c6e46; }
 .aviso.warn { background: var(--amarillo-suave); border: 1px solid #f0e2b6; color: #8a6d1a; }
-.aviso.err { background: #fdf0f3; border: 1px solid #f2cdd7; color: var(--rojo); }
+.aviso.err { background: var(--rojo-suave); border: 1px solid #f2cdd7; color: var(--rojo); }
 /* Barra de estado de pago */
 .barra-estado { border-radius: 12px; padding: 14px 16px; font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; }
 .barra-estado.verde { background: var(--verde); }
-.barra-estado.amarillo { background: #d9a916; }
+.barra-estado.amarillo { background: var(--amarillo); color: #3d2f00; }
 .barra-estado.rojo { background: var(--rojo); }
 .barra-estado.gris { background: var(--gris-claro); }
 /* Tabs inferiores (app cliente) */
@@ -61,7 +65,7 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--verde); bor
 .dia-fila .nombre { width: 86px; font-size: 14px; font-weight: 600; flex-shrink: 0; }
 .dia-fila input { flex: 1; padding: 10px 12px; }
 .dia-fila .desc-btn { flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; border: 1.5px solid var(--borde); background: #fff; font-size: 16px; font-weight: 800; color: var(--gris-claro); cursor: pointer; }
-.dia-fila.descanso .desc-btn { border-color: var(--rojo); color: var(--rojo); background: #fdf0f3; }
+.dia-fila.descanso .desc-btn { border-color: var(--rojo); color: var(--rojo); background: var(--rojo-suave); }
 .dia-fila.descanso input { opacity: .35; pointer-events: none; }
 /* Foto */
 .foto-zona { text-align: center; }
@@ -75,7 +79,7 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--verde); bor
 .pill { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
 .pill.verde { background: var(--verde-suave); color: #2c6e46; }
 .pill.amarillo { background: var(--amarillo-suave); color: #8a6d1a; }
-.pill.rojo { background: #fdf0f3; color: var(--rojo); }
+.pill.rojo { background: var(--rojo-suave); color: var(--rojo); }
 .pill.gris { background: var(--fondo); color: var(--gris); }
 .cargando { text-align: center; color: var(--gris-claro); padding: 30px 0; font-size: 14px; }
 .perfil-foto { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; border: 3px solid var(--verde); }

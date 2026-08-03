@@ -12,7 +12,8 @@
   .topbar2 { background: var(--dark); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
   .topbar2 .marca { color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .3px; }
   .topbar2 .salir { color: #9aa4b2; font-size: 13px; background: none; border: 1px solid #2d333b; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
-  .btn-hamb { position: relative; width: 38px; height: 38px; border-radius: 10px; background: #161b22; border: 1px solid #2d333b; color: #fff; font-size: 18px; cursor: pointer; }
+  .btn-hamb { position: relative; width: 38px; height: 38px; border-radius: 10px; background: #161b22; border: 1px solid #2d333b; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .menu-flot button svg { vertical-align: -3px; margin-right: 9px; }
   .btn-hamb .dot { position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 50%; background: var(--rojo); border: 2px solid var(--dark); display: none; }
   .menu-flot { position: fixed; top: 58px; z-index: 50; background: #fff; border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); min-width: 220px; overflow: hidden; display: none; }
   .menu-flot.izq { left: 14px; }
@@ -26,16 +27,16 @@
 </head>
 <body>
 <div class="topbar2">
-  <button class="btn-hamb" id="btn-menu">☰<span class="dot" id="menu-dot"></span></button>
-  <div class="marca">Panel Coach · AthleteTrainLab</div>
+  <button class="btn-hamb" id="btn-menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg><span class="dot" id="menu-dot"></span></button>
+  <div class="marca"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" style="vertical-align:-4px;margin-right:7px"><path d="M4 20 L10 4 L14 4 L20 20 L16.2 20 L14.6 15.5 L9.4 15.5 L7.8 20 Z" fill="#EE2F63"/><circle cx="12" cy="10.5" r="1.6" fill="#FECB15"/></svg>Panel Coach · AthleteTrainLab</div>
   <button class="salir" id="salir">Salir</button>
 </div>
 <div class="menu-flot izq" id="menu-nav">
-  <button data-nav="dashboard" class="on">📊 Dashboard</button>
-  <button data-nav="clientes">👥 Clientes</button>
-  <button data-nav="calendario">📅 Calendario</button>
-  <button data-nav="retos">🎯 Retos</button>
-  <button data-nav="config">⚙️ Configuración</button>
+  <button data-nav="dashboard" class="on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</button>
+  <button data-nav="clientes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
+  <button data-nav="calendario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>Calendario</button>
+  <button data-nav="retos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Retos</button>
+  <button data-nav="config"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Configuración</button>
 </div>
 <div class="wrap">
 
@@ -452,7 +453,8 @@ function fmtFechaHora(ts) {
 // ===== Calendario =====
 let eventosCache = [], calEditId = null;
 const TIPO_ICONO_EVENTO = { prueba: '🧪', reevaluacion: '🔁', entrenamiento_grupal: '🚴', importante: '⭐', otro: '📌' };
-const SEMAFORO = { alta: '🔴', media: '🟡', baja: '🟢' };
+const COLOR_SEM = { alta: 'var(--rojo)', media: 'var(--amarillo)', baja: 'var(--verde)' };
+const dotSem = (c) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:2px"></span>`;
 
 function poblarSelectClientes() {
   const sel = $('cal-cliente');
@@ -472,11 +474,11 @@ async function cargarCalendario() {
   $('cal-lista').innerHTML = lista.map(e => {
     const esGrupal = !e.cliente_id;
     const cliente = esGrupal ? 'Grupal (todos)' : (clientes.find(c => c.id === e.cliente_id)?.nombre || '—');
-    const colorScope = esGrupal ? '#3b82c4' : '#8b5cf6';
+    const colorScope = esGrupal ? 'var(--azul)' : 'var(--gris)';
     return `<div class="item" style="align-items:flex-start;border-left:4px solid ${colorScope};padding-left:10px">
       <div style="flex:1;min-width:0">
-        <div class="tit">${SEMAFORO[e.importancia] || '🟡'} ${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
-        <div class="det">${fmtFechaHora(e.fecha_inicio)}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · <span style="color:${colorScope};font-weight:700">${esGrupal ? '🌐 Grupal' : '👤 ' + esc(cliente)}</span></div>
+        <div class="tit">${dotSem(COLOR_SEM[e.importancia] || COLOR_SEM.media)}${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
+        <div class="det">${fmtFechaHora(e.fecha_inicio)}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · <span style="color:${colorScope};font-weight:700">${esGrupal ? 'Grupal' : esc(cliente)}</span></div>
       </div>
       <span style="display:flex;gap:6px">
         <button class="pill gris" style="border:none;cursor:pointer" onclick="editarEvento('${e.id}')">✏️</button>
@@ -494,10 +496,10 @@ function pintarDashboardEventos() {
   $('dash-eventos').innerHTML = proximos.map(e => {
     const esGrupal = !e.cliente_id;
     const cliente = esGrupal ? 'Grupal (todos)' : (clientes.find(c => c.id === e.cliente_id)?.nombre || '—');
-    const colorScope = esGrupal ? '#3b82c4' : '#8b5cf6';
+    const colorScope = esGrupal ? 'var(--azul)' : 'var(--gris)';
     return `<div class="item" style="border-left:4px solid ${colorScope};padding-left:10px">
-      <div><div class="tit">${SEMAFORO[e.importancia] || '🟡'} ${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
-      <div class="det">${fmtFechaHora(e.fecha_inicio)} · <span style="color:${colorScope};font-weight:700">${esGrupal ? '🌐 Grupal' : '👤 ' + esc(cliente)}</span></div></div>
+      <div><div class="tit">${dotSem(COLOR_SEM[e.importancia] || COLOR_SEM.media)}${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
+      <div class="det">${fmtFechaHora(e.fecha_inicio)} · <span style="color:${colorScope};font-weight:700">${esGrupal ? 'Grupal' : esc(cliente)}</span></div></div>
     </div>`;
   }).join('') || '<p class="sub">No hay eventos próximos.</p>';
 }
@@ -514,7 +516,7 @@ async function cargarResumen() {
   $('resumen-stats').innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap">
     ${statChip(activos, 'Clientes activos', 'var(--verde)')}
     ${statChip(vencidos, 'Pagos vencidos', 'var(--rojo)')}
-    ${statChip(porVencer, 'Pagos por vencer', '#d9a916')}
+    ${statChip(porVencer, 'Pagos por vencer', 'var(--amarillo)')}
     ${statChip(retosVencidos || 0, 'Retos vencidos', 'var(--rojo)')}
   </div>`;
 }
@@ -954,16 +956,16 @@ $('reto-asignar-btn').onclick = async () => {
 const ZONAS_DEF = [
   ['z0', 'Z0 · Ritmo basal', '#8b95a3'],
   ['z1', 'Z1 · Regenerativa', '#5a6472'],
-  ['z2', 'Z2 · Resistencia aeróbica', '#3b82c4'],
-  ['z3', 'Z3 · Intensidad aeróbica', '#4fa96e'],
-  ['z4', 'Z4 · Umbral anaeróbico', '#d9a916'],
+  ['z2', 'Z2 · Resistencia aeróbica', '#292e7e'],
+  ['z3', 'Z3 · Intensidad aeróbica', '#21b57c'],
+  ['z4', 'Z4 · Umbral anaeróbico', '#fecb15'],
   ['z5', 'Z5 · Intensidad máxima', '#e07856'],
-  ['max', 'MAX', '#c33a5b'],
+  ['max', 'MAX', '#ee2f63'],
 ];
 function pruebaHTML(p, conBorrar, esActual) {
   const zonas = p.zonas ? ZONAS_DEF.filter(([k]) => p.zonas[k]).map(([k, nom, color]) =>
     `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13px">
-      <span style="background:${color};color:#fff;border-radius:6px;padding:2px 8px;font-weight:700;min-width:74px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
+      <span style="background:${color};color:${color === '#fecb15' ? '#3d2f00' : '#fff'};border-radius:6px;padding:2px 8px;font-weight:700;min-width:74px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
   const fila = (k, v) => v !== null && v !== undefined && v !== '' ? `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
   return `<div style="background:#fafbfc;border:1px solid var(--borde);border-radius:10px;padding:12px 14px;margin:8px 0">
     <div style="display:flex;justify-content:space-between;align-items:center">

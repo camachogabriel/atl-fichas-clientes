@@ -11,10 +11,12 @@
   /* ===== Shell tipo app: barra superior + navegación inferior de 5 ===== */
   body { padding-bottom: 84px; }
   .topbar2 { background: var(--dark); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
-  .avatar-mini { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #2d333b; background: #2d333b; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; flex-shrink: 0; }
-  .marca { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: .3px; }
+  .topbar2 .der { display: flex; align-items: center; gap: 10px; }
+  .avatar-mini { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #2d333b; background: var(--azul); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; flex-shrink: 0; }
+  .marca { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: .3px; display: flex; align-items: center; gap: 8px; }
+  .marca svg { flex-shrink: 0; }
   .bell-wrap { position: relative; cursor: pointer; }
-  .bell { width: 38px; height: 38px; border-radius: 50%; background: #161b22; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #2d333b; }
+  .bell { width: 38px; height: 38px; border-radius: 50%; background: #161b22; display: flex; align-items: center; justify-content: center; border: 1px solid #2d333b; color: #fff; }
   .badge { position: absolute; top: -2px; right: -2px; background: var(--rojo); color: #fff; font-size: 10px; font-weight: 800; border-radius: 999px; min-width: 16px; height: 16px; line-height: 16px; text-align: center; padding: 0 3px; }
   .menu-flot { position: fixed; top: 58px; z-index: 50; background: #fff; border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); min-width: 200px; overflow: hidden; display: none; }
   .menu-flot.izq { left: 14px; }
@@ -28,7 +30,8 @@
 
   .tabs5 { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: flex; align-items: flex-end; z-index: 30; padding-bottom: env(safe-area-inset-bottom); }
   .tabs5 button { flex: 1; background: none; border: none; padding: 9px 2px 10px; font-size: 11px; color: var(--gris-claro); cursor: pointer; }
-  .tabs5 button .ico { display: block; font-size: 19px; margin-bottom: 2px; }
+  .tabs5 button .ico { display: flex; justify-content: center; margin-bottom: 3px; }
+  .tabs5 button .ico svg { display: block; }
   .tabs5 button.on { color: var(--verde); font-weight: 700; }
   .fab-slot { flex: 1; display: flex; justify-content: center; }
   .fab { width: 52px; height: 52px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 26px; font-weight: 800; border: 4px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.18); margin-top: -22px; cursor: pointer; line-height: 1; }
@@ -60,18 +63,20 @@
 <body>
 
 <div class="topbar2">
-  <div class="avatar-mini" id="btn-avatar">…</div>
-  <div class="marca">AthleteTrainLab</div>
-  <div class="bell-wrap" id="btn-bell">
-    <div class="bell">🔔</div>
-    <div class="badge" id="badge-not" style="display:none">0</div>
+  <div class="marca"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20 L10 4 L14 4 L20 20 L16.2 20 L14.6 15.5 L9.4 15.5 L7.8 20 Z" fill="#EE2F63"/><circle cx="12" cy="10.5" r="1.6" fill="#FECB15"/></svg>AthleteTrainLab</div>
+  <div class="der">
+    <div class="bell-wrap" id="btn-bell">
+      <div class="bell"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+      <div class="badge" id="badge-not" style="display:none">0</div>
+    </div>
+    <div class="avatar-mini" id="btn-avatar">…</div>
   </div>
 </div>
 
-<div class="menu-flot izq" id="menu-perfil">
-  <button id="op-editar-perfil">✏️ Editar perfil</button>
-  <button id="op-cambiar-clave">🔒 Cambiar contraseña</button>
-  <button id="op-salir">🚪 Salir</button>
+<div class="menu-flot der" id="menu-perfil">
+  <button id="op-editar-perfil"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Editar perfil</button>
+  <button id="op-cambiar-clave"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Cambiar contraseña</button>
+  <button id="op-salir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Salir</button>
 </div>
 <div class="menu-flot der" id="menu-not">
   <div id="not-lista"><div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div></div>
@@ -229,11 +234,11 @@
 </div>
 
 <div class="tabs5">
-  <button data-sec="home" class="on"><span class="ico">🏠</span>Home</button>
-  <button data-sec="calendario"><span class="ico">📅</span>Calendario</button>
+  <button data-sec="home" class="on"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span>Home</button>
+  <button data-sec="calendario"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>Calendario</button>
   <div class="fab-slot"><button class="fab" id="btn-fab">+</button></div>
-  <button data-sec="chat"><span class="ico">💬</span>Chat</button>
-  <button data-sec="evaluaciones"><span class="ico">🏁</span>Evaluaciones</button>
+  <button data-sec="chat"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg></span>Chat</button>
+  <button data-sec="evaluaciones"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4"/><path d="M4 5h11l-1.5 3.5L15 12H4"/></svg></span>Evaluaciones</button>
 </div>
 
 <div class="hoja" id="hoja-fab">
@@ -241,8 +246,8 @@
     <div class="cerrar"></div>
     <h2>¿Qué necesitas?</h2>
     <p class="sub">Elige una opción y te ayudamos lo antes posible.</p>
-    <a class="btn" style="background:#25d366;margin-bottom:10px" id="op-cambio-plan" target="_blank">🔁 Solicitar cambio de plan</a>
-    <a class="btn peligro" style="margin-bottom:10px" id="op-ayuda-urgente" target="_blank">🚨 Ayuda urgente</a>
+    <a class="btn" style="background:#25d366;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px" id="op-cambio-plan" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Solicitar cambio de plan</a>
+    <a class="btn peligro" style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px" id="op-ayuda-urgente" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Ayuda urgente</a>
     <button class="btn linea" id="op-cancelar">Cancelar</button>
   </div>
 </div>
@@ -534,11 +539,11 @@ async function pintarDatos() {
 const ZONAS_DEF = [
   ['z0', 'Z0 · Ritmo basal', '#8b95a3'],
   ['z1', 'Z1 · Regenerativa', '#5a6472'],
-  ['z2', 'Z2 · Resistencia aeróbica', '#3b82c4'],
-  ['z3', 'Z3 · Intensidad aeróbica', '#4fa96e'],
-  ['z4', 'Z4 · Umbral anaeróbico', '#d9a916'],
+  ['z2', 'Z2 · Resistencia aeróbica', '#292e7e'],
+  ['z3', 'Z3 · Intensidad aeróbica', '#21b57c'],
+  ['z4', 'Z4 · Umbral anaeróbico', '#fecb15'],
   ['z5', 'Z5 · Intensidad máxima', '#e07856'],
-  ['max', 'MAX', '#c33a5b'],
+  ['max', 'MAX', '#ee2f63'],
 ];
 async function pintarPrueba() {
   const { data: pruebas } = await sbClient.from('fichas_pruebas').select('*').eq('cliente_id', cliente.id).order('fecha', { ascending: false }).limit(1);
@@ -548,7 +553,7 @@ async function pintarPrueba() {
   const fila = (k, v) => v ? `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
   const zonas = p.zonas ? ZONAS_DEF.filter(([k]) => p.zonas[k]).map(([k, nom, color]) =>
     `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13.5px">
-      <span style="background:${color};color:#fff;border-radius:6px;padding:3px 8px;font-weight:700;min-width:76px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
+      <span style="background:${color};color:${color === '#fecb15' ? '#3d2f00' : '#fff'};border-radius:6px;padding:3px 8px;font-weight:700;min-width:76px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
   $('p-prueba').innerHTML =
     fila('Fecha de la prueba', ATL.fmtFecha(p.fecha)) +
     fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
@@ -649,12 +654,13 @@ async function cargarCalendario() {
   window.__eventosCal = data || [];
   if (!data || !data.length) { $('cal-lista').innerHTML = '<p class="sub" style="margin:0">No tienes eventos próximos todavía.</p>'; return; }
   const ICONOS = { prueba: '🧪', reevaluacion: '🔄', entrenamiento_grupal: '👥', importante: '⭐', otro: '📌' };
-  const SEMAFORO = { alta: '🔴', media: '🟡', baja: '🟢' };
+  const COLOR_SEM = { alta: 'var(--rojo)', media: 'var(--amarillo)', baja: 'var(--verde)' };
+  const dot = (c) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:2px"></span>`;
   $('cal-lista').innerHTML = data.map(e => {
     const f = new Date(e.fecha_inicio).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
     const esGrupal = !e.cliente_id;
-    const colorScope = esGrupal ? '#3b82c4' : '#8b5cf6';
-    return `<div class="item" style="border-left:4px solid ${colorScope};padding-left:10px"><div><div class="tit">${SEMAFORO[e.importancia] || '🟡'} ${ICONOS[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${f}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · <span style="color:${colorScope};font-weight:700">${esGrupal ? '🌐 Grupal' : '👤 Personal'}</span></div></div></div>`;
+    const colorScope = esGrupal ? 'var(--azul)' : 'var(--gris)';
+    return `<div class="item" style="border-left:4px solid ${colorScope};padding-left:10px"><div><div class="tit">${dot(COLOR_SEM[e.importancia] || COLOR_SEM.media)}${ICONOS[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${f}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · <span style="color:${colorScope};font-weight:700">${esGrupal ? 'Grupal' : 'Personal'}</span></div></div></div>`;
   }).join('');
 }
 function pintarMes(eventos) {
@@ -663,7 +669,7 @@ function pintarMes(eventos) {
   const primerDia = new Date(anio, mes, 1).getDay();
   const diasEnMes = new Date(anio, mes + 1, 0).getDate();
   const RANGO_IMP = { alta: 3, media: 2, baja: 1 };
-  const COLOR_IMP = { alta: '#c33a5b', media: '#d9a916', baja: '#4fa96e' };
+  const COLOR_IMP = { alta: '#ee2f63', media: '#fecb15', baja: '#21b57c' };
   const porDia = {};
   eventos.forEach(e => {
     const d = new Date(e.fecha_inicio);
