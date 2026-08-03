@@ -8,26 +8,68 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="assets/config.js"></script>
+<style>
+  .topbar2 { background: var(--dark); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+  .topbar2 .marca { color: #fff; font-size: 15px; font-weight: 700; letter-spacing: .3px; }
+  .topbar2 .salir { color: #9aa4b2; font-size: 13px; background: none; border: 1px solid #2d333b; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+  .btn-hamb { position: relative; width: 38px; height: 38px; border-radius: 10px; background: #161b22; border: 1px solid #2d333b; color: #fff; font-size: 18px; cursor: pointer; }
+  .btn-hamb .dot { position: absolute; top: -3px; right: -3px; width: 11px; height: 11px; border-radius: 50%; background: var(--rojo); border: 2px solid var(--dark); display: none; }
+  .menu-flot { position: fixed; top: 58px; z-index: 50; background: #fff; border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); min-width: 220px; overflow: hidden; display: none; }
+  .menu-flot.izq { left: 14px; }
+  .menu-flot button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 13px 16px; font-size: 14px; color: var(--ink); cursor: pointer; border-bottom: 1px solid var(--fondo); }
+  .menu-flot button:last-child { border-bottom: none; }
+  .menu-flot button.on { color: var(--verde); font-weight: 700; background: var(--verde-suave); }
+  .stat-chip { flex: 1; min-width: 110px; background: #fafbfc; border: 1px solid var(--borde); border-radius: 10px; padding: 12px; text-align: center; }
+  .stat-chip .n { font-size: 22px; font-weight: 800; }
+  .stat-chip .e { font-size: 11.5px; color: var(--gris-claro); margin-top: 2px; }
+</style>
 </head>
 <body>
-<div class="top">
-  <img src="" id="logo" alt="AthleteTrainLab">
+<div class="topbar2">
+  <button class="btn-hamb" id="btn-menu">☰<span class="dot" id="menu-dot"></span></button>
+  <div class="marca">Panel Coach · AthleteTrainLab</div>
   <button class="salir" id="salir">Salir</button>
+</div>
+<div class="menu-flot izq" id="menu-nav">
+  <button data-nav="dashboard" class="on">📊 Dashboard</button>
+  <button data-nav="clientes">👥 Clientes</button>
+  <button data-nav="calendario">📅 Calendario</button>
+  <button data-nav="retos">🎯 Retos</button>
+  <button data-nav="config">⚙️ Configuración</button>
 </div>
 <div class="wrap">
 
-  <!-- LISTA -->
-  <section id="sec-lista">
-    <h1>Panel del coach</h1>
-    <p class="sub">Clientes, pagos y evaluaciones</p>
+  <!-- DASHBOARD -->
+  <section id="sec-dashboard">
+    <h1>Centro de control</h1>
+    <p class="sub">Resumen de tu operación en ATL</p>
+    <div class="card" id="resumen-card">
+      <h2>📊 Resumen</h2>
+      <div id="resumen-stats" class="cargando">Cargando...</div>
+    </div>
     <div class="card" id="registros-card" style="display:none">
       <h2>🆕 Registros por aprobar</h2>
       <div id="registros-pendientes"></div>
+    </div>
+    <div class="card" id="mensajes-card" style="display:none">
+      <h2>💬 Mensajes sin leer</h2>
+      <div id="mensajes-pendientes"></div>
     </div>
     <div class="card" id="pendientes-card" style="display:none">
       <h2>⏳ Pagos por revisar</h2>
       <div id="pagos-pendientes"></div>
     </div>
+    <div class="card">
+      <h2>📅 Próximos eventos</h2>
+      <div id="dash-eventos" class="cargando">Cargando...</div>
+      <button class="btn linea" id="dash-ir-calendario" style="margin-top:10px">Ver calendario completo →</button>
+    </div>
+  </section>
+
+  <!-- CLIENTES -->
+  <section id="sec-clientes" style="display:none">
+    <h1>Clientes</h1>
+    <p class="sub">Fichas, pagos y evaluaciones</p>
     <div class="card">
       <h2>👥 Clientes</h2>
       <input type="text" id="buscar" placeholder="Buscar por nombre o correo..." style="margin-bottom:8px">
@@ -50,13 +92,14 @@
       </div>
       <div id="lista" class="cargando">Cargando...</div>
     </div>
-    <div class="card" id="mensajes-card" style="display:none">
-      <h2>💬 Mensajes sin leer</h2>
-      <div id="mensajes-pendientes"></div>
-    </div>
+  </section>
+
+  <!-- CALENDARIO -->
+  <section id="sec-calendario" style="display:none">
+    <h1>Calendario</h1>
+    <p class="sub">Eventos grupales o de un cliente específico: pruebas, reevaluaciones, entrenamientos, fechas importantes.</p>
     <div class="card">
-      <h2>📅 Calendario</h2>
-      <p class="sub" style="margin-bottom:8px">Eventos grupales o de un cliente específico: pruebas, reevaluaciones, entrenamientos, fechas importantes.</p>
+      <h2>📅 Todos los eventos</h2>
       <div id="cal-lista" class="cargando">Cargando...</div>
       <button class="btn linea" id="cal-toggle" style="margin-top:10px">➕ Nuevo evento</button>
       <div id="cal-form" style="display:none">
@@ -91,9 +134,15 @@
         <div class="aviso ok" id="cal-ok" style="display:none">✅ Evento guardado.</div>
       </div>
     </div>
+  </section>
+
+  <!-- RETOS -->
+  <section id="sec-retos" style="display:none">
+    <h1>Retos</h1>
+    <p class="sub">Plantillas recurrentes que puedes asignar a tus clientes.</p>
     <div class="card">
       <h2>🎯 Plantillas de retos</h2>
-      <p class="sub" style="margin-bottom:8px">Retos recurrentes que puedes asignar a tus clientes (ej. subir video semanal, registrar peso).</p>
+      <p class="sub" style="margin-bottom:8px">Ej. subir video semanal, registrar peso.</p>
       <div id="retos-lista" class="cargando">Cargando...</div>
       <button class="btn linea" id="reto-toggle" style="margin-top:10px">➕ Nueva plantilla</button>
       <div id="reto-form" style="display:none">
@@ -113,19 +162,25 @@
         <div class="aviso ok" id="reto-ok" style="display:none">✅ Plantilla guardada.</div>
       </div>
     </div>
-    <div class="card">
-      <h2>⚙️ Links y recursos (correos)</h2>
-      <p class="sub" style="margin-bottom:8px">Se usan en los correos del onboarding. Los marcados "correo final" van en el correo de evaluación completada.</p>
-      <div id="config-lista"></div>
-      <button class="btn linea" id="config-guardar" style="margin-top:10px">Guardar links</button>
-      <div class="aviso ok" id="config-ok" style="display:none">✅ Guardado.</div>
-    </div>
+  </section>
+
+  <!-- CONFIGURACIÓN -->
+  <section id="sec-config" style="display:none">
+    <h1>Configuración</h1>
+    <p class="sub">Links de registro y recursos de los correos</p>
     <div class="card">
       <h2>🔗 Links de registro</h2>
       <p class="sub" style="margin-bottom:8px">Envíalos por WhatsApp según el tipo de cliente:</p>
       <button class="btn linea" id="copiar-link" style="margin-bottom:10px">📋 Cliente nuevo (con onboarding)</button>
       <button class="btn linea" id="copiar-link-actual">📋 Cliente actual de ATL (entra activo)</button>
       <div class="aviso ok" id="copiado" style="display:none">✅ Copiado.</div>
+    </div>
+    <div class="card">
+      <h2>⚙️ Links y recursos (correos)</h2>
+      <p class="sub" style="margin-bottom:8px">Se usan en los correos del onboarding. Los marcados "correo final" van en el correo de evaluación completada.</p>
+      <div id="config-lista"></div>
+      <button class="btn linea" id="config-guardar" style="margin-top:10px">Guardar links</button>
+      <div class="aviso ok" id="config-ok" style="display:none">✅ Guardado.</div>
     </div>
   </section>
 
@@ -332,7 +387,6 @@
 </div>
 
 <script>
-document.getElementById('logo').src = ATL.LOGO;
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
 const nombreDisc = (id) => (ATL.DISCIPLINAS.find(d => d.id === id) || { nombre: id }).nombre;
@@ -345,9 +399,33 @@ let miUserId = null;
 let chatChannel = null;
 
 $('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
+
+// ===== Navegación por menú =====
+const SECCIONES_NAV = ['dashboard', 'clientes', 'calendario', 'retos', 'config'];
+let seccionActiva = 'dashboard';
+function irASeccion(nombre) {
+  $('sec-detalle').style.display = 'none';
+  SECCIONES_NAV.forEach(s => $('sec-' + s).style.display = s === nombre ? 'block' : 'none');
+  document.querySelectorAll('#menu-nav button[data-nav]').forEach(b => b.classList.toggle('on', b.dataset.nav === nombre));
+  seccionActiva = nombre;
+  cerrarMenuNav();
+  window.scrollTo(0, 0);
+}
+function cerrarMenuNav() { $('menu-nav').style.display = 'none'; }
+$('btn-menu').onclick = (e) => { e.stopPropagation(); $('menu-nav').style.display = $('menu-nav').style.display === 'block' ? 'none' : 'block'; };
+$('menu-nav').addEventListener('click', (e) => e.stopPropagation());
+document.body.addEventListener('click', cerrarMenuNav);
+document.querySelectorAll('#menu-nav button[data-nav]').forEach(b => b.onclick = () => irASeccion(b.dataset.nav));
+$('dash-ir-calendario').onclick = () => irASeccion('calendario');
+
+function actualizarBadgeMenu() {
+  const total = (window.__registrosPend || 0) + (window.__pagosPend || 0) + (window.__mensajesPend || 0);
+  $('menu-dot').style.display = total > 0 ? 'block' : 'none';
+}
+
 $('volver').onclick = () => {
   if (chatChannel) { sbClient.removeChannel(chatChannel); chatChannel = null; }
-  $('sec-detalle').style.display = 'none'; $('sec-lista').style.display = 'block';
+  irASeccion(seccionActiva);
   cargarLista(); cargarMensajesPendientes();
 };
 
@@ -406,6 +484,39 @@ async function cargarCalendario() {
       </span>
     </div>`;
   }).join('') || '<p class="sub">Sin eventos programados.</p>';
+  pintarDashboardEventos();
+}
+
+function pintarDashboardEventos() {
+  const ahora = new Date();
+  const proximos = eventosCache.filter(e => new Date(e.fecha_fin || e.fecha_inicio) >= ahora).slice(0, 5);
+  $('dash-eventos').className = '';
+  $('dash-eventos').innerHTML = proximos.map(e => {
+    const esGrupal = !e.cliente_id;
+    const cliente = esGrupal ? 'Grupal (todos)' : (clientes.find(c => c.id === e.cliente_id)?.nombre || '—');
+    const colorScope = esGrupal ? '#3b82c4' : '#8b5cf6';
+    return `<div class="item" style="border-left:4px solid ${colorScope};padding-left:10px">
+      <div><div class="tit">${SEMAFORO[e.importancia] || '🟡'} ${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
+      <div class="det">${fmtFechaHora(e.fecha_inicio)} · <span style="color:${colorScope};font-weight:700">${esGrupal ? '🌐 Grupal' : '👤 ' + esc(cliente)}</span></div></div>
+    </div>`;
+  }).join('') || '<p class="sub">No hay eventos próximos.</p>';
+}
+
+function statChip(valor, etiqueta, color) {
+  return `<div class="stat-chip"><div class="n" style="color:${color}">${valor}</div><div class="e">${etiqueta}</div></div>`;
+}
+async function cargarResumen() {
+  const activos = clientes.filter(c => c.estado === 'activo').length;
+  const vencidos = clientes.filter(c => claseEstadoPago(c) === 'rojo').length;
+  const porVencer = clientes.filter(c => claseEstadoPago(c) === 'amarillo').length;
+  const { count: retosVencidos } = await sbClient.from('fichas_retos_asignados').select('id', { count: 'exact', head: true }).eq('estado', 'vencido');
+  $('resumen-stats').className = '';
+  $('resumen-stats').innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap">
+    ${statChip(activos, 'Clientes activos', 'var(--verde)')}
+    ${statChip(vencidos, 'Pagos vencidos', 'var(--rojo)')}
+    ${statChip(porVencer, 'Pagos por vencer', '#d9a916')}
+    ${statChip(retosVencidos || 0, 'Retos vencidos', 'var(--rojo)')}
+  </div>`;
 }
 
 $('cal-toggle').onclick = () => {
@@ -591,8 +702,10 @@ async function cargarLista() {
   for (const p of prs || []) if (!ultimaPrueba[p.cliente_id]) ultimaPrueba[p.cliente_id] = p;
 
   // registros nuevos por aprobar (solo super)
+  window.__registrosPend = 0;
   if (esSuper) {
     const registros = clientes.filter(c => c.estado === 'pendiente');
+    window.__registrosPend = registros.length;
     if (registros.length) {
       $('registros-card').style.display = 'block';
       $('registros-pendientes').innerHTML = registros.map(c =>
@@ -603,6 +716,7 @@ async function cargarLista() {
   }
 
   // pagos por revisar
+  window.__pagosPend = pendientesGlobal.length;
   if (pendientesGlobal.length) {
     $('pendientes-card').style.display = 'block';
     $('pagos-pendientes').innerHTML = pendientesGlobal.map(p => {
@@ -611,6 +725,8 @@ async function cargarLista() {
     }).join('');
   } else $('pendientes-card').style.display = 'none';
 
+  actualizarBadgeMenu();
+  cargarResumen();
   pintarLista();
   $('buscar').oninput = pintarLista;
   $('orden').onchange = pintarLista;
@@ -619,13 +735,15 @@ async function cargarLista() {
 
 async function cargarMensajesPendientes() {
   const { data: sinLeer } = await sbClient.from('fichas_mensajes').select('cliente_id, cuerpo, created_at').eq('autor_rol', 'cliente').is('leido_at', null).order('created_at', { ascending: false });
-  if (!sinLeer || !sinLeer.length) { $('mensajes-card').style.display = 'none'; return; }
+  if (!sinLeer || !sinLeer.length) { $('mensajes-card').style.display = 'none'; window.__mensajesPend = 0; actualizarBadgeMenu(); return; }
   const porCliente = {};
   for (const m of sinLeer) {
     if (!porCliente[m.cliente_id]) porCliente[m.cliente_id] = { count: 0, ultimo: m };
     porCliente[m.cliente_id].count++;
   }
   $('mensajes-card').style.display = 'block';
+  window.__mensajesPend = Object.keys(porCliente).length;
+  actualizarBadgeMenu();
   $('mensajes-pendientes').innerHTML = Object.entries(porCliente).map(([clienteId, info]) => {
     const c = clientes.find(x => x.id === clienteId) || { nombre: '—' };
     return `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${clienteId}')"><div>
@@ -697,7 +815,8 @@ window.aprobarRegistro = async (id) => {
 window.abrirDetalle = async (id) => {
   actual = clientes.find(c => c.id === id);
   if (!actual) return;
-  $('sec-lista').style.display = 'none'; $('sec-detalle').style.display = 'block';
+  SECCIONES_NAV.forEach(s => $('sec-' + s).style.display = 'none');
+  $('sec-detalle').style.display = 'block';
   window.scrollTo(0, 0);
 
   $('d-nombre').textContent = actual.nombre;
