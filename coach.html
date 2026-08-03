@@ -33,6 +33,7 @@
 </div>
 <div class="menu-flot izq" id="menu-nav">
   <button data-nav="dashboard" class="on"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</button>
+  <button data-nav="chats"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>Chats<span id="chats-nav-badge" class="pill rojo" style="margin-left:6px;display:none;font-size:10px;padding:2px 7px"></span></button>
   <button data-nav="clientes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
   <button data-nav="calendario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>Calendario</button>
   <button data-nav="retos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Retos</button>
@@ -327,7 +328,10 @@
     </div>
 
     <div class="card">
-      <h2>💬 Chat</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>💬 Chat</h2>
+        <button class="volver" id="d-chat-abrir-bandeja" style="margin:0;font-size:13px">Abrir en Chats →</button>
+      </div>
       <div id="d-chat-mensajes" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px"></div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <input type="text" id="d-chat-input" placeholder="Escribe un mensaje..." style="flex:1;margin:0">
@@ -385,6 +389,39 @@
       <div class="aviso ok" id="eva-ok" style="display:none">✅ Evaluación subida.</div>
     </div>
   </section>
+
+  <!-- CHATS: bandeja -->
+  <section id="sec-chats" style="display:none">
+    <h1>Chats</h1>
+    <p class="sub">Todas tus conversaciones en un solo lugar</p>
+    <input type="text" id="chats-buscar" placeholder="Buscar por nombre...">
+    <div class="toggle-vista" style="margin:12px 0 4px">
+      <button id="chats-tab-activos" class="on">Activos</button>
+      <button id="chats-tab-archivados">Archivados</button>
+    </div>
+    <div id="chats-lista" class="cargando">Cargando...</div>
+  </section>
+
+  <!-- CHATS: hilo abierto -->
+  <section id="sec-chat-hilo" style="display:none">
+    <button class="volver" id="chat-hilo-volver">← Volver a Chats</button>
+    <div class="card" style="display:flex;align-items:center;gap:12px">
+      <div id="ch-avatar" style="width:44px;height:44px;border-radius:50%;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;overflow:hidden">?</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700" id="ch-nombre">—</div>
+        <button class="volver" id="ch-ver-perfil" style="font-size:12px;margin:2px 0 0">Ver ficha completa →</button>
+      </div>
+      <button class="pill gris" id="ch-archivar" style="border:none;cursor:pointer;white-space:nowrap">Archivar</button>
+    </div>
+    <div id="ch-cargar-anteriores" style="text-align:center;margin:4px 0 10px;display:none">
+      <button class="btn linea" id="ch-btn-anteriores" style="width:auto;padding:8px 16px;display:inline-block">Cargar mensajes anteriores</button>
+    </div>
+    <div id="ch-mensajes" style="display:flex;flex-direction:column;gap:8px;padding:4px 2px 12px"></div>
+    <div style="display:flex;gap:8px;margin-top:6px;position:sticky;bottom:10px;background:var(--fondo);padding-top:6px">
+      <input type="text" id="ch-input" placeholder="Escribe un mensaje..." style="flex:1;margin:0">
+      <button class="btn" id="ch-enviar" style="width:auto;padding:0 18px;margin:0">Enviar</button>
+    </div>
+  </section>
 </div>
 
 <script>
@@ -402,15 +439,17 @@ let chatChannel = null;
 $('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
 
 // ===== Navegación por menú =====
-const SECCIONES_NAV = ['dashboard', 'clientes', 'calendario', 'retos', 'config'];
+const SECCIONES_NAV = ['dashboard', 'chats', 'clientes', 'calendario', 'retos', 'config'];
 let seccionActiva = 'dashboard';
 function irASeccion(nombre) {
   $('sec-detalle').style.display = 'none';
+  $('sec-chat-hilo').style.display = 'none';
   SECCIONES_NAV.forEach(s => $('sec-' + s).style.display = s === nombre ? 'block' : 'none');
   document.querySelectorAll('#menu-nav button[data-nav]').forEach(b => b.classList.toggle('on', b.dataset.nav === nombre));
   seccionActiva = nombre;
   cerrarMenuNav();
   window.scrollTo(0, 0);
+  if (nombre === 'chats') pintarInbox();
 }
 function cerrarMenuNav() { $('menu-nav').style.display = 'none'; }
 $('btn-menu').onclick = (e) => { e.stopPropagation(); $('menu-nav').style.display = $('menu-nav').style.display === 'block' ? 'none' : 'block'; };
@@ -681,6 +720,7 @@ async function init() {
   cargarCalendario();
   cargarRetosPlantillas();
   cargarMensajesPendientes();
+  cargarInbox();
 }
 
 function estadoPill(c, pendientes) {
@@ -748,12 +788,186 @@ async function cargarMensajesPendientes() {
   actualizarBadgeMenu();
   $('mensajes-pendientes').innerHTML = Object.entries(porCliente).map(([clienteId, info]) => {
     const c = clientes.find(x => x.id === clienteId) || { nombre: '—' };
-    return `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${clienteId}')"><div>
+    return `<div class="item" style="cursor:pointer" onclick="abrirChat('${clienteId}')"><div>
       <div class="tit">${esc(c.nombre)}</div>
       <div class="det">${esc((info.ultimo.cuerpo || '').slice(0, 60))}${(info.ultimo.cuerpo || '').length > 60 ? '…' : ''}</div>
     </div><span class="pill amarillo">${info.count} sin leer</span></div>`;
   }).join('');
 }
+
+// ===== Bandeja de Chats =====
+let inboxCache = [];
+let inboxFiltro = 'activos';
+let inboxChannel = null;
+let hiloClienteId = null;
+let hiloClienteNombre = null;
+let hiloDesde = null;
+
+async function cargarInbox() {
+  const { data, error } = await sbClient.rpc('fichas_inbox');
+  if (error) { $('chats-lista').textContent = 'No se pudo cargar la bandeja.'; return; }
+  inboxCache = data || [];
+  actualizarBadgeChats();
+  pintarInbox();
+  if (!inboxChannel) {
+    inboxChannel = sbClient.channel('coach-inbox')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fichas_mensajes' }, (payload) => manejarMensajeEntrante(payload.new))
+      .subscribe();
+  }
+}
+
+function actualizarBadgeChats() {
+  const noLeidos = inboxCache.filter(c => !c.archivado).reduce((s, c) => s + Number(c.no_leidos || 0), 0);
+  const b = $('chats-nav-badge');
+  if (noLeidos > 0) { b.textContent = noLeidos; b.style.display = 'inline-block'; } else { b.style.display = 'none'; }
+}
+
+function pintarInbox() {
+  const q = ($('chats-buscar').value || '').trim().toLowerCase();
+  const lista = inboxCache
+    .filter(c => !!c.archivado === (inboxFiltro === 'archivados'))
+    .filter(c => !q || (c.nombre || '').toLowerCase().includes(q));
+  $('chats-lista').className = '';
+  if (!lista.length) { $('chats-lista').innerHTML = `<p class="sub">${inboxFiltro === 'archivados' ? 'No hay chats archivados.' : 'No hay conversaciones todavía.'}</p>`; return; }
+  $('chats-lista').innerHTML = lista.map(c => {
+    const inicial = (c.nombre || '?').trim()[0]?.toUpperCase() || '?';
+    const previo = c.ultimo_mensaje || '';
+    const preview = esc(previo.slice(0, 54)) + (previo.length > 54 ? '…' : '');
+    const prefijo = c.ultimo_autor_rol === 'coach' ? 'Tú: ' : '';
+    const hora = c.ultimo_at ? new Date(c.ultimo_at).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+    return `<div class="item" style="cursor:pointer" onclick="abrirChat('${c.cliente_id}')">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0;font-size:14px">${inicial}</div>
+        <div style="min-width:0;flex:1">
+          <div class="tit">${esc(c.nombre)}</div>
+          <div class="det">${prefijo}${preview || 'Sin mensajes'}</div>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;color:var(--gris-claro)">${hora}</div>
+        ${c.no_leidos > 0 ? `<span class="pill rojo" style="margin-top:4px;display:inline-block">${c.no_leidos}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+$('chats-buscar').addEventListener('input', pintarInbox);
+$('chats-tab-activos').onclick = () => { inboxFiltro = 'activos'; $('chats-tab-activos').classList.add('on'); $('chats-tab-archivados').classList.remove('on'); pintarInbox(); };
+$('chats-tab-archivados').onclick = () => { inboxFiltro = 'archivados'; $('chats-tab-archivados').classList.add('on'); $('chats-tab-activos').classList.remove('on'); pintarInbox(); };
+
+async function manejarMensajeEntrante(m) {
+  let entrada = inboxCache.find(c => c.cliente_id === m.cliente_id);
+  const hiloAbierto = $('sec-chat-hilo').style.display !== 'none' && hiloClienteId === m.cliente_id;
+  if (!entrada) {
+    const cli = clientes.find(c => c.id === m.cliente_id);
+    entrada = { cliente_id: m.cliente_id, nombre: cli ? cli.nombre : '—', foto_path: cli ? cli.foto_path : null, no_leidos: 0, archivado: false };
+    inboxCache.unshift(entrada);
+  }
+  entrada.ultimo_mensaje = m.cuerpo;
+  entrada.ultimo_autor_rol = m.autor_rol;
+  entrada.ultimo_at = m.created_at;
+  if (m.autor_rol === 'cliente') entrada.archivado = false;
+  if (m.autor_rol === 'cliente' && !hiloAbierto) entrada.no_leidos = Number(entrada.no_leidos || 0) + 1;
+  else if (hiloAbierto) entrada.no_leidos = 0;
+  inboxCache = [entrada, ...inboxCache.filter(c => c.cliente_id !== entrada.cliente_id)];
+  actualizarBadgeChats();
+  if (seccionActiva === 'chats' && $('sec-chats').style.display !== 'none') pintarInbox();
+  if (hiloAbierto) {
+    if (m.autor_rol === 'cliente') await sbClient.from('fichas_mensajes').update({ leido_at: new Date().toISOString() }).eq('id', m.id);
+    agregarBurbuja(m);
+  }
+}
+
+function burbujaHTML(m) {
+  const mio = m.autor_rol === 'coach';
+  return `<div style="align-self:${mio ? 'flex-end' : 'flex-start'};max-width:80%;background:${mio ? 'var(--verde)' : '#f0f1f3'};color:${mio ? '#fff' : '#1a1a2e'};padding:8px 12px;border-radius:12px;font-size:14px">
+    ${esc(m.cuerpo)}
+    <div style="font-size:10.5px;opacity:.75;margin-top:2px">${new Date(m.created_at).toLocaleString('es-CR', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</div>
+  </div>`;
+}
+function agregarBurbuja(m) {
+  const cont = $('ch-mensajes');
+  cont.insertAdjacentHTML('beforeend', burbujaHTML(m));
+  cont.scrollTop = cont.scrollHeight;
+}
+
+window.abrirChat = async (clienteId) => {
+  hiloClienteId = clienteId;
+  const entrada = inboxCache.find(c => c.cliente_id === clienteId);
+  const cli = clientes.find(c => c.id === clienteId);
+  hiloClienteNombre = (entrada && entrada.nombre) || (cli && cli.nombre) || '—';
+  const fotoPath = (cli && cli.foto_path) || null;
+  $('ch-nombre').textContent = hiloClienteNombre;
+  const av = $('ch-avatar');
+  av.style.backgroundImage = '';
+  av.textContent = (hiloClienteNombre || '?').trim()[0]?.toUpperCase() || '?';
+  if (fotoPath) {
+    sbClient.storage.from('fichas-fotos').createSignedUrl(fotoPath, 3600).then(({ data }) => {
+      if (data) { av.style.backgroundImage = `url(${data.signedUrl})`; av.style.backgroundSize = 'cover'; av.style.backgroundPosition = 'center'; av.textContent = ''; }
+    });
+  }
+  $('ch-archivar').textContent = entrada && entrada.archivado ? 'Desarchivar' : 'Archivar';
+  SECCIONES_NAV.forEach(s => $('sec-' + s).style.display = 'none');
+  $('sec-detalle').style.display = 'none';
+  $('sec-chat-hilo').style.display = 'block';
+  window.scrollTo(0, 0);
+  await cargarHilo();
+  if (entrada) { entrada.no_leidos = 0; actualizarBadgeChats(); }
+};
+
+async function cargarHilo() {
+  $('ch-mensajes').innerHTML = '<p class="sub">Cargando...</p>';
+  $('ch-cargar-anteriores').style.display = 'none';
+  const desde = new Date(Date.now() - 30 * 86400000).toISOString();
+  hiloDesde = desde;
+  const { data: mensajes } = await sbClient.from('fichas_mensajes').select('*').eq('cliente_id', hiloClienteId).gte('created_at', desde).order('created_at', { ascending: true });
+  $('ch-mensajes').innerHTML = (mensajes && mensajes.length) ? mensajes.map(burbujaHTML).join('') : '<p class="sub">Sin mensajes en el último mes. Puedes cargar conversaciones anteriores abajo.</p>';
+  $('ch-cargar-anteriores').style.display = 'block';
+  const cont = $('ch-mensajes');
+  cont.scrollTop = cont.scrollHeight;
+  await sbClient.from('fichas_mensajes').update({ leido_at: new Date().toISOString() }).eq('cliente_id', hiloClienteId).eq('autor_rol', 'cliente').is('leido_at', null);
+}
+
+$('ch-btn-anteriores').onclick = async () => {
+  const btn = $('ch-btn-anteriores'); btn.disabled = true; btn.textContent = 'Cargando...';
+  const hasta = hiloDesde;
+  const desde = new Date(new Date(hasta).getTime() - 30 * 86400000).toISOString();
+  const { data: mensajes } = await sbClient.from('fichas_mensajes').select('*').eq('cliente_id', hiloClienteId).gte('created_at', desde).lt('created_at', hasta).order('created_at', { ascending: true });
+  if (mensajes && mensajes.length) {
+    const cont = $('ch-mensajes');
+    const alturaPrevia = cont.scrollHeight;
+    cont.insertAdjacentHTML('afterbegin', mensajes.map(burbujaHTML).join(''));
+    cont.scrollTop = cont.scrollHeight - alturaPrevia;
+    hiloDesde = desde;
+    btn.disabled = false; btn.textContent = 'Cargar mensajes anteriores';
+  } else {
+    btn.textContent = 'No hay más mensajes anteriores';
+    setTimeout(() => { $('ch-cargar-anteriores').style.display = 'none'; }, 2000);
+  }
+};
+
+$('ch-enviar').onclick = enviarMensajeHilo;
+$('ch-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') enviarMensajeHilo(); });
+async function enviarMensajeHilo() {
+  const inp = $('ch-input');
+  const texto = inp.value.trim();
+  if (!texto || !hiloClienteId) return;
+  inp.value = '';
+  const { error } = await sbClient.from('fichas_mensajes').insert({ cliente_id: hiloClienteId, autor_id: miUserId, autor_rol: 'coach', cuerpo: texto });
+  if (error) alert('Error enviando mensaje: ' + error.message);
+}
+
+$('ch-archivar').onclick = async () => {
+  const entrada = inboxCache.find(c => c.cliente_id === hiloClienteId);
+  const nuevoEstado = !(entrada && entrada.archivado);
+  const { error } = await sbClient.from('fichas_clientes').update({ chat_archivado: nuevoEstado }).eq('id', hiloClienteId);
+  if (error) { alert('No se pudo actualizar: ' + error.message); return; }
+  if (entrada) entrada.archivado = nuevoEstado;
+  $('ch-archivar').textContent = nuevoEstado ? 'Desarchivar' : 'Archivar';
+  pintarInbox();
+};
+
+$('ch-ver-perfil').onclick = () => { if (hiloClienteId) abrirDetalle(hiloClienteId); };
+$('chat-hilo-volver').onclick = () => { $('sec-chat-hilo').style.display = 'none'; irASeccion('chats'); };
 
 function claseEstadoPago(c) {
   return ATL.estadoPago(c, pendientesGlobal.some(p => p.cliente_id === c.id)).clase;
@@ -818,6 +1032,7 @@ window.abrirDetalle = async (id) => {
   actual = clientes.find(c => c.id === id);
   if (!actual) return;
   SECCIONES_NAV.forEach(s => $('sec-' + s).style.display = 'none');
+  $('sec-chat-hilo').style.display = 'none';
   $('sec-detalle').style.display = 'block';
   window.scrollTo(0, 0);
 
@@ -862,6 +1077,7 @@ window.abrirDetalle = async (id) => {
   pintarOnboardingDetalle();
   cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones(); cargarPruebas();
   cargarChatDetalle(); cargarRetosDetalle();
+  $('d-chat-abrir-bandeja').onclick = () => abrirChat(actual.id);
   $('ed-form').style.display = 'none';
   $('ed-toggle').onclick = abrirEdicionFicha;
   $('ed-guardar').onclick = guardarFicha;
