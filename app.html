@@ -252,6 +252,28 @@
   </div>
 </div>
 
+<div class="hoja" id="hoja-evento">
+  <div class="panel">
+    <div class="cerrar" id="ev-cerrar"></div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <div id="ev-icono" style="width:42px;height:42px;border-radius:12px;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <h2 id="ev-titulo" style="margin-bottom:2px">—</h2>
+        <div id="ev-tipo" class="sub" style="margin-bottom:0">—</div>
+      </div>
+    </div>
+    <div id="ev-detalles" style="margin:14px 0"></div>
+    <div class="aviso ok" id="ev-confirmada-aviso" style="display:none;margin-bottom:10px">✓ Ya confirmaste esta cita.</div>
+    <div id="ev-acciones-cita" style="display:none">
+      <button class="btn" id="ev-aceptar" style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Confirmar cita</button>
+      <button class="btn linea" id="ev-solicitar-cambio" style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Solicitar cambio</button>
+      <button class="btn peligro" id="ev-cancelar-cita" style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Cancelar cita</button>
+    </div>
+    <button class="btn oscuro" id="ev-agregar-calendario" style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M12 14v4"/><path d="m10 16 2 2 2-2"/></svg>Agregar a mi calendario</button>
+    <button class="btn linea" id="ev-cerrar-btn">Cerrar</button>
+  </div>
+</div>
+
 <script>
 const $ = (id) => document.getElementById(id);
 let cliente = null;
@@ -737,7 +759,7 @@ async function cargarCalendario() {
     const f = new Date(e.fecha_inicio).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
     const esGrupal = !e.cliente_id;
     const colorScope = esGrupal ? 'var(--azul)' : 'var(--gris)';
-    return `<div class="item" style="border-left:4px solid ${colorScope};padding-left:10px"><div><div class="tit">${dot(COLOR_SEM[e.importancia] || COLOR_SEM.media)}${ICONOS[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${f}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · <span style="color:${colorScope};font-weight:700">${esGrupal ? 'Grupal' : 'Personal'}</span></div></div></div>`;
+    return `<div class="item" style="border-left:4px solid ${colorScope};padding-left:10px;cursor:pointer" onclick="abrirEvento('${e.id}')"><div><div class="tit">${dot(COLOR_SEM[e.importancia] || COLOR_SEM.media)}${ICONOS[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${f}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · <span style="color:${colorScope};font-weight:700">${esGrupal ? 'Grupal' : 'Personal'}</span></div></div></div>`;
   }).join('');
 }
 function pintarMes(eventos) {
@@ -752,18 +774,142 @@ function pintarMes(eventos) {
     const d = new Date(e.fecha_inicio);
     if (d.getFullYear() === anio && d.getMonth() === mes) {
       const dia = d.getDate();
+      if (!porDia[dia]) porDia[dia] = { ids: [], rango: 0, color: COLOR_IMP.media };
+      porDia[dia].ids.push(e.id);
       const rango = RANGO_IMP[e.importancia] || 2;
-      if (!porDia[dia] || rango > porDia[dia].rango) porDia[dia] = { rango, color: COLOR_IMP[e.importancia] || COLOR_IMP.media };
+      if (rango > porDia[dia].rango) { porDia[dia].rango = rango; porDia[dia].color = COLOR_IMP[e.importancia] || COLOR_IMP.media; }
     }
   });
+  const nombreMes = hoy.toLocaleDateString('es-CR', { month: 'long' });
   let html = ['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(d => `<div class="dia-cab">${d}</div>`).join('');
   for (let i = 0; i < primerDia; i++) html += '<div></div>';
   for (let d = 1; d <= diasEnMes; d++) {
     const esHoy = d === hoy.getDate();
-    const marca = porDia[d] ? `<div class="pto" style="background:${porDia[d].color}"></div>` : '';
-    html += `<div class="dia-celda${esHoy ? ' hoy' : ''}">${d}${marca}</div>`;
+    const info = porDia[d];
+    const marca = info ? `<div class="pto" style="background:${info.color}"></div>` : '';
+    const click = info ? ` onclick='abrirDiaEventos(${JSON.stringify(d + ' de ' + nombreMes)}, ${JSON.stringify(info.ids)})' style="cursor:pointer"` : '';
+    html += `<div class="dia-celda${esHoy ? ' hoy' : ''}"${click}>${d}${marca}</div>`;
   }
   $('cal-mes').innerHTML = `<div class="mes-grid">${html}</div>`;
+}
+
+// ===== Detalle de evento (hoja) =====
+const ICONO_TIPO_EVENTO = {
+  prueba: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6"/><path d="M10 3v6.7L4.8 18.6A1.5 1.5 0 0 0 6.1 21h11.8a1.5 1.5 0 0 0 1.3-2.4L14 9.7V3"/></svg>',
+  reevaluacion: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>',
+  entrenamiento_grupal: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  importante: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9 22 10 17 15 18 22 12 18.5 6 22 7 15 2 10 9 9 12 2Z"/></svg>',
+  otro: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
+};
+const NOMBRE_TIPO_EVENTO = { prueba: 'Prueba fisiológica', reevaluacion: 'Reevaluación', entrenamiento_grupal: 'Entrenamiento grupal', importante: 'Importante', otro: 'Evento' };
+
+let eventoAbierto = null;
+
+window.abrirEvento = (id) => {
+  const e = (window.__eventosCal || []).find(x => x.id === id);
+  if (!e) return;
+  eventoAbierto = e;
+  const esGrupal = !e.cliente_id;
+  $('ev-icono').innerHTML = ICONO_TIPO_EVENTO[e.tipo] || ICONO_TIPO_EVENTO.otro;
+  $('ev-icono').style.background = esGrupal ? 'var(--azul)' : 'var(--gris)';
+  $('ev-titulo').textContent = e.titulo;
+  $('ev-tipo').textContent = (NOMBRE_TIPO_EVENTO[e.tipo] || 'Evento') + (esGrupal ? ' · Grupal' : ' · Personal');
+  const f = new Date(e.fecha_inicio).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+  const COLOR_SEM = { alta: 'var(--rojo)', media: 'var(--amarillo)', baja: 'var(--verde)' };
+  const NOMBRE_SEM = { alta: 'Alta', media: 'Media', baja: 'Baja' };
+  $('ev-detalles').innerHTML = `
+    <div class="dato"><div class="k">Fecha y hora</div><div class="v">${f}</div></div>
+    ${e.ubicacion ? `<div class="dato"><div class="k">Ubicación / nota</div><div class="v">${esc(e.ubicacion)}</div></div>` : ''}
+    ${e.descripcion ? `<div class="dato"><div class="k">Descripción</div><div class="v">${esc(e.descripcion)}</div></div>` : ''}
+    <div class="dato"><div class="k">Importancia</div><div class="v"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${COLOR_SEM[e.importancia] || COLOR_SEM.media};margin-right:6px;vertical-align:1px"></span>${NOMBRE_SEM[e.importancia] || 'Media'}</div></div>`;
+  const esCita = !!e.auto_cita_prueba;
+  const esFuturo = new Date(e.fecha_inicio) > new Date();
+  $('ev-acciones-cita').style.display = (esCita && esFuturo) ? 'block' : 'none';
+  $('ev-confirmada-aviso').style.display = (esCita && cliente.fecha_prueba_confirmada) ? 'block' : 'none';
+  $('ev-agregar-calendario').style.display = 'flex';
+  $('hoja-evento').style.display = 'flex';
+};
+
+window.abrirDiaEventos = (etiquetaFecha, ids) => {
+  const eventos = ids.map(id => (window.__eventosCal || []).find(e => e.id === id)).filter(Boolean);
+  if (eventos.length === 1) return window.abrirEvento(eventos[0].id);
+  $('ev-icono').innerHTML = ICONO_TIPO_EVENTO.otro;
+  $('ev-icono').style.background = 'var(--azul)';
+  $('ev-titulo').textContent = etiquetaFecha;
+  $('ev-tipo').textContent = eventos.length + ' eventos este día';
+  $('ev-detalles').innerHTML = eventos.map(e => {
+    const esGrupal = !e.cliente_id;
+    const hora = new Date(e.fecha_inicio).toLocaleTimeString('es-CR', { timeZone: 'America/Costa_Rica', hour: 'numeric', minute: '2-digit' });
+    return `<div class="item" style="cursor:pointer" onclick="abrirEvento('${e.id}')"><div><div class="tit">${ICONOS_TXT[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${hora} · ${esGrupal ? 'Grupal' : 'Personal'}</div></div></div>`;
+  }).join('');
+  $('ev-acciones-cita').style.display = 'none';
+  $('ev-confirmada-aviso').style.display = 'none';
+  $('ev-agregar-calendario').style.display = 'none';
+  $('hoja-evento').style.display = 'flex';
+};
+const ICONOS_TXT = { prueba: '🧪', reevaluacion: '🔄', entrenamiento_grupal: '👥', importante: '⭐', otro: '📌' };
+
+function cerrarHojaEvento() { $('hoja-evento').style.display = 'none'; eventoAbierto = null; }
+$('ev-cerrar').onclick = cerrarHojaEvento;
+$('ev-cerrar-btn').onclick = cerrarHojaEvento;
+$('hoja-evento').onclick = (e) => { if (e.target.id === 'hoja-evento') cerrarHojaEvento(); };
+
+$('ev-aceptar').onclick = async () => {
+  if (!confirm('¿Confirmas que asistirás a esta cita?')) return;
+  const { error } = await sbClient.rpc('fichas_confirmar_cita');
+  if (error) return alert('No se pudo confirmar: ' + error.message);
+  cliente.fecha_prueba_confirmada = true;
+  $('ev-confirmada-aviso').style.display = 'block';
+  alert('✅ Confirmaste tu cita. Tu coach fue notificado.');
+};
+
+$('ev-solicitar-cambio').onclick = async () => {
+  const msj = prompt('Cuéntale a tu coach qué cambio necesitas (fecha/hora que te funciona mejor):');
+  if (msj === null) return;
+  const { error } = await sbClient.rpc('fichas_solicitar_cambio_cita', { p_mensaje: msj.trim() || null });
+  if (error) return alert('No se pudo enviar: ' + error.message);
+  alert('🔄 Le avisamos a tu coach que quieres cambiar la cita.');
+  cerrarHojaEvento();
+};
+
+$('ev-cancelar-cita').onclick = async () => {
+  if (!confirm('¿Seguro que deseas cancelar esta cita? Tu coach será notificado.')) return;
+  const motivo = prompt('¿Motivo de la cancelación? (opcional)') || null;
+  const { error } = await sbClient.rpc('fichas_cancelar_cita', { p_motivo: motivo });
+  if (error) return alert('No se pudo cancelar: ' + error.message);
+  cerrarHojaEvento();
+  cargarCalendario();
+  if ($('vista-mes').classList.contains('on')) pintarMes(window.__eventosCal || []);
+};
+
+$('ev-agregar-calendario').onclick = () => { if (eventoAbierto) descargarICS(eventoAbierto); };
+
+function descargarICS(e) {
+  const dtStart = new Date(e.fecha_inicio);
+  const dtEnd = e.fecha_fin ? new Date(e.fecha_fin) : new Date(dtStart.getTime() + 60 * 60000);
+  const fmt = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const escIcs = (s) => String(s || '').replace(/([,;])/g, '\\$1').replace(/\n/g, '\\n');
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//AthleteTrainLab//ATL//ES',
+    'BEGIN:VEVENT',
+    'UID:' + e.id + '@athletetrainlab',
+    'DTSTAMP:' + fmt(new Date()),
+    'DTSTART:' + fmt(dtStart),
+    'DTEND:' + fmt(dtEnd),
+    'SUMMARY:' + escIcs(e.titulo),
+    e.ubicacion ? 'LOCATION:' + escIcs(e.ubicacion) : '',
+    e.descripcion ? 'DESCRIPTION:' + escIcs(e.descripcion) : '',
+    'END:VEVENT', 'END:VCALENDAR',
+  ].filter(Boolean).join('\r\n');
+  const blob = new Blob([ics], { type: 'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (e.titulo || 'evento').replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.ics';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 // ===== Chat =====
