@@ -69,6 +69,7 @@
 </div>
 
 <div class="menu-flot izq" id="menu-perfil">
+  <button id="op-editar-perfil">✏️ Editar perfil</button>
   <button id="op-cambiar-clave">🔒 Cambiar contraseña</button>
   <button id="op-salir">🚪 Salir</button>
 </div>
@@ -84,6 +85,48 @@
       <h1>⏳ Cuenta en revisión</h1>
       <p class="sub">Tu registro fue recibido. Tu coach debe activar tu cuenta antes de que puedas ver tu perfil y evaluaciones.</p>
       <a class="btn" style="background:#25d366" target="_blank" id="pendiente-wa">💬 Escribir por WhatsApp si tienes algún problema</a>
+    </div>
+  </section>
+
+  <!-- ===== EDITAR PERFIL ===== -->
+  <section id="sec-editar-perfil" style="display:none">
+    <button class="volver" id="ep-volver">← Volver</button>
+    <div class="card" style="text-align:center">
+      <img class="perfil-foto" id="ep-foto" src="" alt="" style="display:none">
+      <label class="foto-btn" for="ep-foto-archivo" id="ep-foto-label" style="margin-top:10px">📷 Cambiar foto de perfil</label>
+      <input type="file" id="ep-foto-archivo" accept="image/*" style="display:none">
+    </div>
+    <div class="card">
+      <h2>Mi perfil</h2>
+      <label>Nombre completo</label>
+      <input type="text" id="ep-nombre">
+      <label>Teléfono</label>
+      <input type="tel" id="ep-telefono">
+      <label>Dirección</label>
+      <input type="text" id="ep-direccion">
+      <label>Fecha de nacimiento</label>
+      <input type="date" id="ep-nacimiento">
+      <label>Disciplinas</label>
+      <div class="chips" id="ep-disciplinas"></div>
+      <label>¿Condición médica?</label>
+      <select id="ep-condicion"><option value="no">No</option><option value="si">Sí</option></select>
+      <label>Detalle condición médica</label>
+      <input type="text" id="ep-condicion-det">
+      <label>Hipertensión</label>
+      <select id="ep-hipertension"><option value="">Sin responder</option><option value="no">No</option><option value="si">Sí</option></select>
+      <label>Diabetes</label>
+      <select id="ep-diabetes"><option value="">Sin responder</option><option value="no">No</option><option value="si">Sí</option></select>
+      <label>Fumado</label>
+      <select id="ep-fumado"><option value="">—</option><option value="no_fuma">No fumo</option><option value="exfumador">Exfumador</option><option value="fuma">Fumo</option></select>
+      <label>Rodillo</label>
+      <select id="ep-rodillo"><option value="">—</option><option value="no_tiene">No tengo</option><option value="normal">Normal</option><option value="inteligente">Inteligente</option></select>
+      <label>Trabajo de fuerza</label>
+      <select id="ep-fuerza"><option value="">—</option><option value="gym_con_ayuda">Gimnasio, con ayuda</option><option value="gym_sin_ayuda">Gimnasio, por mi cuenta</option><option value="casa_funcionales">Funcionales en casa</option><option value="ninguno">No por ahora</option></select>
+      <label>Objetivo</label>
+      <textarea id="ep-objetivo"></textarea>
+      <button class="btn oscuro" id="ep-guardar" style="margin-top:14px">Guardar cambios</button>
+      <div class="error" id="ep-err"></div>
+      <div class="aviso ok" id="ep-ok" style="display:none">✅ Perfil actualizado.</div>
     </div>
   </section>
 
@@ -308,6 +351,104 @@ async function cargarCoaches() {
   $('coach-lista').innerHTML = lista.map(c => `<div class="item"><div><div class="tit">${esc(c.nombre || c.email)}</div><div class="det">${esc(c.email)}</div></div></div>`).join('');
 }
 
+// ===== Editar perfil (desde el menú del avatar) =====
+let epDisc = new Set();
+$('op-editar-perfil').onclick = () => {
+  cerrarMenus();
+  document.querySelector('.tabs5').style.display = 'none';
+  $('chat-caja').style.display = 'none';
+  ['sec-home', 'sec-calendario', 'sec-chat', 'sec-evaluaciones', 'sec-pendiente'].forEach(id => $(id).style.display = 'none');
+  $('sec-editar-perfil').style.display = 'block';
+  window.scrollTo(0, 0);
+
+  $('ep-nombre').value = cliente.nombre || '';
+  $('ep-telefono').value = cliente.telefono || '';
+  $('ep-direccion').value = cliente.direccion || '';
+  $('ep-nacimiento').value = cliente.fecha_nacimiento || '';
+  $('ep-condicion').value = cliente.condicion_medica ? 'si' : 'no';
+  $('ep-condicion-det').value = cliente.condicion_medica_detalle || '';
+  $('ep-hipertension').value = cliente.hipertension === null ? '' : cliente.hipertension ? 'si' : 'no';
+  $('ep-diabetes').value = cliente.diabetes === null ? '' : cliente.diabetes ? 'si' : 'no';
+  $('ep-fumado').value = cliente.fumado || '';
+  $('ep-rodillo').value = cliente.rodillo || '';
+  $('ep-fuerza').value = cliente.fuerza || '';
+  $('ep-objetivo').value = cliente.objetivo || '';
+  $('ep-err').style.display = 'none';
+  $('ep-ok').style.display = 'none';
+
+  epDisc = new Set(cliente.disciplinas || []);
+  $('ep-disciplinas').innerHTML = '';
+  ATL.DISCIPLINAS.forEach(d => {
+    const c = document.createElement('div');
+    c.className = 'chip' + (epDisc.has(d.id) ? ' on' : '');
+    c.textContent = d.icono + ' ' + d.nombre;
+    c.onclick = () => { epDisc.has(d.id) ? epDisc.delete(d.id) : epDisc.add(d.id); c.classList.toggle('on'); };
+    $('ep-disciplinas').appendChild(c);
+  });
+
+  if (cliente.foto_path) {
+    sbClient.storage.from('fichas-fotos').createSignedUrl(cliente.foto_path, 3600).then(({ data }) => {
+      if (data) { $('ep-foto').src = data.signedUrl; $('ep-foto').style.display = 'inline-block'; }
+    });
+  } else { $('ep-foto').style.display = 'none'; }
+};
+
+$('ep-volver').onclick = () => {
+  $('sec-editar-perfil').style.display = 'none';
+  if (cliente.estado === 'pendiente') { $('sec-pendiente').style.display = 'block'; window.scrollTo(0, 0); return; }
+  document.querySelector('.tabs5').style.display = 'flex';
+  document.querySelectorAll('.tabs5 button[data-sec]').forEach(x => x.classList.remove('on'));
+  document.querySelector('.tabs5 button[data-sec="home"]').classList.add('on');
+  $('sec-home').style.display = 'block';
+  window.scrollTo(0, 0);
+};
+
+$('ep-foto-archivo').addEventListener('change', async () => {
+  const f = $('ep-foto-archivo').files[0];
+  if (!f) return;
+  const { data: { session } } = await sbClient.auth.getSession();
+  const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = `${session.user.id}/foto.${ext}`;
+  const { error: eUp } = await sbClient.storage.from('fichas-fotos').upload(path, f, { contentType: f.type || 'image/jpeg', upsert: true });
+  if (eUp) { alert('No se pudo subir la foto: ' + eUp.message); return; }
+  const { error: eUpd } = await sbClient.from('fichas_clientes').update({ foto_path: path }).eq('id', cliente.id);
+  if (eUpd) { alert('No se pudo guardar la foto: ' + eUpd.message); return; }
+  cliente.foto_path = path;
+  const { data } = await sbClient.storage.from('fichas-fotos').createSignedUrl(path, 3600);
+  if (data) { $('ep-foto').src = data.signedUrl; $('ep-foto').style.display = 'inline-block'; }
+  pintarHome();
+});
+
+$('ep-guardar').onclick = async () => {
+  const err = $('ep-err'); err.style.display = 'none'; $('ep-ok').style.display = 'none';
+  const nombre = $('ep-nombre').value.trim();
+  if (nombre.length < 3) { err.textContent = 'Escribe tu nombre completo.'; err.style.display = 'block'; return; }
+  const triple = (id) => { const v = $(id).value; return v === '' ? null : v === 'si'; };
+  const upd = {
+    nombre,
+    telefono: $('ep-telefono').value.trim() || null,
+    direccion: $('ep-direccion').value.trim() || null,
+    fecha_nacimiento: $('ep-nacimiento').value || null,
+    disciplinas: [...epDisc],
+    condicion_medica: $('ep-condicion').value === 'si',
+    condicion_medica_detalle: $('ep-condicion-det').value.trim() || null,
+    hipertension: triple('ep-hipertension'),
+    diabetes: triple('ep-diabetes'),
+    fumado: $('ep-fumado').value || null,
+    rodillo: $('ep-rodillo').value || null,
+    fuerza: $('ep-fuerza').value || null,
+    objetivo: $('ep-objetivo').value.trim() || null,
+  };
+  const btn = $('ep-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
+  const { error } = await sbClient.from('fichas_clientes').update(upd).eq('id', cliente.id);
+  if (error) { err.textContent = 'No se pudo guardar: ' + error.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Guardar cambios'; return; }
+  Object.assign(cliente, upd);
+  pintarHome();
+  pintarDatos();
+  $('ep-ok').style.display = 'block';
+  btn.disabled = false; btn.textContent = 'Guardar cambios';
+};
+
 // ===== Onboarding / reevaluación =====
 const PASOS_ONB = [
   { id: 'espera_prueba', nombre: 'Ficha enviada' },
@@ -508,9 +649,12 @@ async function cargarCalendario() {
   window.__eventosCal = data || [];
   if (!data || !data.length) { $('cal-lista').innerHTML = '<p class="sub" style="margin:0">No tienes eventos próximos todavía.</p>'; return; }
   const ICONOS = { prueba: '🧪', reevaluacion: '🔄', entrenamiento_grupal: '👥', importante: '⭐', otro: '📌' };
+  const SEMAFORO = { alta: '🔴', media: '🟡', baja: '🟢' };
   $('cal-lista').innerHTML = data.map(e => {
     const f = new Date(e.fecha_inicio).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
-    return `<div class="item"><div><div class="tit">${ICONOS[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${f}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''}</div></div></div>`;
+    const esGrupal = !e.cliente_id;
+    const colorScope = esGrupal ? '#3b82c4' : '#8b5cf6';
+    return `<div class="item" style="border-left:4px solid ${colorScope};padding-left:10px"><div><div class="tit">${SEMAFORO[e.importancia] || '🟡'} ${ICONOS[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${f}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · <span style="color:${colorScope};font-weight:700">${esGrupal ? '🌐 Grupal' : '👤 Personal'}</span></div></div></div>`;
   }).join('');
 }
 function pintarMes(eventos) {
@@ -518,13 +662,23 @@ function pintarMes(eventos) {
   const anio = hoy.getFullYear(), mes = hoy.getMonth();
   const primerDia = new Date(anio, mes, 1).getDay();
   const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const RANGO_IMP = { alta: 3, media: 2, baja: 1 };
+  const COLOR_IMP = { alta: '#c33a5b', media: '#d9a916', baja: '#4fa96e' };
   const porDia = {};
-  eventos.forEach(e => { const d = new Date(e.fecha_inicio); if (d.getFullYear() === anio && d.getMonth() === mes) porDia[d.getDate()] = true; });
+  eventos.forEach(e => {
+    const d = new Date(e.fecha_inicio);
+    if (d.getFullYear() === anio && d.getMonth() === mes) {
+      const dia = d.getDate();
+      const rango = RANGO_IMP[e.importancia] || 2;
+      if (!porDia[dia] || rango > porDia[dia].rango) porDia[dia] = { rango, color: COLOR_IMP[e.importancia] || COLOR_IMP.media };
+    }
+  });
   let html = ['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(d => `<div class="dia-cab">${d}</div>`).join('');
   for (let i = 0; i < primerDia; i++) html += '<div></div>';
   for (let d = 1; d <= diasEnMes; d++) {
     const esHoy = d === hoy.getDate();
-    html += `<div class="dia-celda${esHoy ? ' hoy' : ''}">${d}${porDia[d] ? '<div class="pto"></div>' : ''}</div>`;
+    const marca = porDia[d] ? `<div class="pto" style="background:${porDia[d].color}"></div>` : '';
+    html += `<div class="dia-celda${esHoy ? ' hoy' : ''}">${d}${marca}</div>`;
   }
   $('cal-mes').innerHTML = `<div class="mes-grid">${html}</div>`;
 }

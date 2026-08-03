@@ -72,6 +72,12 @@
         </select>
         <label>Para</label>
         <select id="cal-cliente"><option value="">Todos (grupal)</option></select>
+        <label>Nivel de importancia</label>
+        <select id="cal-importancia">
+          <option value="alta">🔴 Alta</option>
+          <option value="media" selected>🟡 Media</option>
+          <option value="baja">🟢 Baja</option>
+        </select>
         <div style="display:flex;gap:10px">
           <div style="flex:1"><label>Fecha y hora de inicio</label><input type="datetime-local" id="cal-inicio"></div>
           <div style="flex:1"><label>Fecha y hora de fin (opcional)</label><input type="datetime-local" id="cal-fin"></div>
@@ -368,6 +374,7 @@ function fmtFechaHora(ts) {
 // ===== Calendario =====
 let eventosCache = [], calEditId = null;
 const TIPO_ICONO_EVENTO = { prueba: '🧪', reevaluacion: '🔁', entrenamiento_grupal: '🚴', importante: '⭐', otro: '📌' };
+const SEMAFORO = { alta: '🔴', media: '🟡', baja: '🟢' };
 
 function poblarSelectClientes() {
   const sel = $('cal-cliente');
@@ -385,11 +392,13 @@ async function cargarCalendario() {
   const futuros = eventosCache.filter(e => new Date(e.fecha_fin || e.fecha_inicio) >= ahora);
   const lista = futuros.length ? futuros : eventosCache.slice(-10);
   $('cal-lista').innerHTML = lista.map(e => {
-    const cliente = e.cliente_id ? (clientes.find(c => c.id === e.cliente_id)?.nombre || '—') : 'Grupal (todos)';
-    return `<div class="item" style="align-items:flex-start">
+    const esGrupal = !e.cliente_id;
+    const cliente = esGrupal ? 'Grupal (todos)' : (clientes.find(c => c.id === e.cliente_id)?.nombre || '—');
+    const colorScope = esGrupal ? '#3b82c4' : '#8b5cf6';
+    return `<div class="item" style="align-items:flex-start;border-left:4px solid ${colorScope};padding-left:10px">
       <div style="flex:1;min-width:0">
-        <div class="tit">${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
-        <div class="det">${fmtFechaHora(e.fecha_inicio)}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · ${esc(cliente)}</div>
+        <div class="tit">${SEMAFORO[e.importancia] || '🟡'} ${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
+        <div class="det">${fmtFechaHora(e.fecha_inicio)}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · <span style="color:${colorScope};font-weight:700">${esGrupal ? '🌐 Grupal' : '👤 ' + esc(cliente)}</span></div>
       </div>
       <span style="display:flex;gap:6px">
         <button class="pill gris" style="border:none;cursor:pointer" onclick="editarEvento('${e.id}')">✏️</button>
@@ -415,6 +424,7 @@ async function guardarEvento() {
     titulo,
     tipo: $('cal-tipo').value,
     cliente_id: $('cal-cliente').value || null,
+    importancia: $('cal-importancia').value,
     fecha_inicio: aISO(inicio),
     fecha_fin: $('cal-fin').value ? aISO($('cal-fin').value) : null,
     ubicacion: $('cal-ubicacion').value.trim() || null,
@@ -446,6 +456,7 @@ window.editarEvento = (id) => {
   $('cal-titulo').value = e.titulo;
   $('cal-tipo').value = e.tipo;
   $('cal-cliente').value = e.cliente_id || '';
+  $('cal-importancia').value = e.importancia || 'media';
   $('cal-inicio').value = aLocal(e.fecha_inicio);
   $('cal-fin').value = e.fecha_fin ? aLocal(e.fecha_fin) : '';
   $('cal-ubicacion').value = e.ubicacion || '';
@@ -459,6 +470,7 @@ function cancelarEdicionEvento() {
   ['cal-titulo', 'cal-ubicacion', 'cal-descripcion', 'cal-inicio', 'cal-fin'].forEach(id => $(id).value = '');
   $('cal-tipo').value = 'entrenamiento_grupal';
   $('cal-cliente').value = '';
+  $('cal-importancia').value = 'media';
 }
 window.borrarEvento = async (id) => {
   if (!confirm('¿Borrar este evento?')) return;
