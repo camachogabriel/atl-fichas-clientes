@@ -7,49 +7,76 @@
 <link rel="stylesheet" href="assets/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="assets/config.js"></script>
+<style>
+  /* ===== Shell tipo app: barra superior + navegación inferior de 5 ===== */
+  body { padding-bottom: 84px; }
+  .topbar2 { background: var(--dark); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+  .avatar-mini { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #2d333b; background: #2d333b; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; flex-shrink: 0; }
+  .marca { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: .3px; }
+  .bell-wrap { position: relative; cursor: pointer; }
+  .bell { width: 38px; height: 38px; border-radius: 50%; background: #161b22; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #2d333b; }
+  .badge { position: absolute; top: -2px; right: -2px; background: var(--rojo); color: #fff; font-size: 10px; font-weight: 800; border-radius: 999px; min-width: 16px; height: 16px; line-height: 16px; text-align: center; padding: 0 3px; }
+  .menu-flot { position: fixed; top: 58px; z-index: 50; background: #fff; border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); min-width: 200px; overflow: hidden; display: none; }
+  .menu-flot.izq { left: 14px; }
+  .menu-flot.der { right: 14px; }
+  .menu-flot button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 13px 16px; font-size: 14px; color: var(--ink); cursor: pointer; border-bottom: 1px solid var(--fondo); }
+  .menu-flot button:last-child { border-bottom: none; }
+  .menu-flot .item-not { padding: 12px 16px; font-size: 13.5px; border-bottom: 1px solid var(--fondo); }
+  .menu-flot .item-not:last-child { border-bottom: none; }
+  .menu-flot .item-not .h { font-weight: 700; color: var(--ink); }
+  .menu-flot .item-not .d { color: var(--gris-claro); font-size: 12px; margin-top: 2px; }
+
+  .tabs5 { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: flex; align-items: flex-end; z-index: 30; padding-bottom: env(safe-area-inset-bottom); }
+  .tabs5 button { flex: 1; background: none; border: none; padding: 9px 2px 10px; font-size: 11px; color: var(--gris-claro); cursor: pointer; }
+  .tabs5 button .ico { display: block; font-size: 19px; margin-bottom: 2px; }
+  .tabs5 button.on { color: var(--verde); font-weight: 700; }
+  .fab-slot { flex: 1; display: flex; justify-content: center; }
+  .fab { width: 52px; height: 52px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 26px; font-weight: 800; border: 4px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.18); margin-top: -22px; cursor: pointer; line-height: 1; }
+
+  .hoja { position: fixed; inset: 0; background: rgba(13,17,23,.45); z-index: 60; display: none; align-items: flex-end; }
+  .hoja .panel { background: #fff; width: 100%; border-radius: 18px 18px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); }
+  .hoja .panel h2 { margin-bottom: 4px; }
+  .hoja .panel .sub { margin-bottom: 16px; }
+  .hoja .cerrar { display: block; width: 40px; height: 4px; background: var(--borde); border-radius: 999px; margin: 0 auto 14px; }
+
+  .toggle-vista { display: flex; gap: 6px; margin-bottom: 12px; }
+  .toggle-vista button { flex: 1; padding: 9px; border-radius: 9px; border: 1.5px solid var(--borde); background: #fff; font-size: 13px; font-weight: 700; color: var(--gris); cursor: pointer; }
+  .toggle-vista button.on { border-color: var(--verde); background: var(--verde-suave); color: #2c6e46; }
+  .mes-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .mes-grid .dia-cab { text-align: center; font-size: 10.5px; color: var(--gris-claro); font-weight: 700; padding-bottom: 4px; }
+  .mes-grid .dia-celda { aspect-ratio: 1; border-radius: 8px; background: var(--fondo); font-size: 11.5px; padding: 4px; position: relative; color: var(--gris); }
+  .mes-grid .dia-celda.hoy { background: var(--verde-suave); font-weight: 800; color: #2c6e46; }
+  .mes-grid .dia-celda .pto { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--verde); }
+
+  .msj { max-width: 78%; padding: 9px 13px; border-radius: 14px; font-size: 14px; margin: 5px 0; line-height: 1.35; }
+  .msj.yo { background: var(--verde); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
+  .msj.otro { background: #fff; border: 1px solid var(--borde); margin-right: auto; border-bottom-left-radius: 4px; }
+  .msj .hora { font-size: 10px; opacity: .7; margin-top: 3px; }
+  .chat-caja { position: fixed; bottom: 62px; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); padding: 10px 12px; display: flex; gap: 8px; z-index: 25; }
+  .chat-caja textarea { flex: 1; border: 1px solid var(--borde); border-radius: 20px; padding: 10px 14px; font-size: 14px; resize: none; max-height: 90px; }
+  .chat-caja button { background: var(--verde); color: #fff; border: none; border-radius: 50%; width: 42px; height: 42px; font-size: 17px; flex-shrink: 0; cursor: pointer; }
+</style>
 </head>
 <body>
-<div class="top">
-  <img src="" id="logo" alt="AthleteTrainLab">
-  <button class="salir" id="salir">Salir</button>
-</div>
-<div class="wrap">
-  <div class="barra-estado gris" id="barra">Cargando...</div>
 
-  <!-- PERFIL -->
-  <section id="sec-perfil">
-    <div class="card" id="onboarding-card" style="display:none">
-      <h2>🚀 Tu proceso de inicio</h2>
-      <div class="pasos" id="pasos"></div>
-      <div class="aviso warn" id="onb-info" style="display:none;margin-bottom:0"></div>
-      <div id="onb-recursos" style="display:none"></div>
-    </div>
-    <div class="card" style="text-align:center">
-      <img class="perfil-foto" id="p-foto" src="" alt="" style="display:none">
-      <h1 id="p-nombre" style="margin-top:8px">—</h1>
-      <p class="sub" id="p-disciplinas" style="margin-bottom:0">—</p>
-    </div>
-    <div class="card">
-      <h2>Mis datos</h2>
-      <div id="p-datos"></div>
-    </div>
-    <div class="card" id="p-prueba-card" style="display:none">
-      <h2>🧪 Mi prueba fisiológica</h2>
-      <div id="p-prueba"></div>
-    </div>
-    <div class="card">
-      <h2>📅 Mi disponibilidad</h2>
-      <div id="p-dispo"></div>
-    </div>
-    <div class="card">
-      <h2>🔒 Cambiar contraseña</h2>
-      <label>Nueva contraseña (mínimo 8 caracteres)</label>
-      <input type="password" id="nueva-clave" autocomplete="new-password">
-      <button class="btn linea" id="cambiar-clave" style="margin-top:12px">Cambiar contraseña</button>
-      <div class="aviso ok" id="clave-ok" style="display:none">✅ Contraseña actualizada.</div>
-      <div class="error" id="clave-err"></div>
-    </div>
-  </section>
+<div class="topbar2">
+  <div class="avatar-mini" id="btn-avatar">…</div>
+  <div class="marca">AthleteTrainLab</div>
+  <div class="bell-wrap" id="btn-bell">
+    <div class="bell">🔔</div>
+    <div class="badge" id="badge-not" style="display:none">0</div>
+  </div>
+</div>
+
+<div class="menu-flot izq" id="menu-perfil">
+  <button id="op-cambiar-clave">🔒 Cambiar contraseña</button>
+  <button id="op-salir">🚪 Salir</button>
+</div>
+<div class="menu-flot der" id="menu-not">
+  <div id="not-lista"><div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div></div>
+</div>
+
+<div class="wrap" style="padding-top:16px">
 
   <!-- PENDIENTE DE APROBACIÓN -->
   <section id="sec-pendiente" style="display:none">
@@ -60,17 +87,28 @@
     </div>
   </section>
 
-  <!-- EVALUACIONES -->
-  <section id="sec-evaluaciones" style="display:none">
-    <div class="card">
-      <h2>📂 Mis evaluaciones</h2>
-      <p class="sub">Aquí verás las evaluaciones que tu coach suba para ti.</p>
-      <div id="eva-lista" class="cargando">Cargando...</div>
-    </div>
-  </section>
+  <!-- ===== HOME ===== -->
+  <section id="sec-home">
+    <div class="barra-estado gris" id="barra">Cargando...</div>
 
-  <!-- PAGOS -->
-  <section id="sec-pagos" style="display:none">
+    <div class="card" style="text-align:center">
+      <img class="perfil-foto" id="p-foto" src="" alt="" style="display:none">
+      <h1 id="p-nombre" style="margin-top:8px">—</h1>
+      <p class="sub" id="p-disciplinas" style="margin-bottom:0">—</p>
+    </div>
+
+    <div class="card" id="coach-card" style="display:none">
+      <h2>🧑‍🏫 Mi(s) entrenador(es)</h2>
+      <div id="coach-lista"></div>
+    </div>
+
+    <div class="card" id="onboarding-card" style="display:none">
+      <h2>🚀 Tu proceso de inicio</h2>
+      <div class="pasos" id="pasos"></div>
+      <div class="aviso warn" id="onb-info" style="display:none;margin-bottom:0"></div>
+      <div id="onb-recursos" style="display:none"></div>
+    </div>
+
     <div class="card">
       <h2>💳 Registrar pago</h2>
       <p class="sub" id="pago-info">Sube tu comprobante y el monto pagado.</p>
@@ -87,33 +125,128 @@
       <h2>Historial de pagos</h2>
       <div id="pago-lista" class="cargando">Cargando...</div>
     </div>
+
+    <div class="card">
+      <h2>Mis datos</h2>
+      <div id="p-datos"></div>
+    </div>
+
+    <div class="card">
+      <h2>📅 Mi disponibilidad</h2>
+      <div id="p-dispo"></div>
+    </div>
+
+    <div class="card" id="p-prueba-card" style="display:none">
+      <h2>🧪 Mi prueba fisiológica</h2>
+      <div id="p-prueba"></div>
+    </div>
+
+    <div class="card">
+      <h2>📂 Documentos y reportes</h2>
+      <p class="sub">Aquí verás las evaluaciones y reportes que tu coach suba para ti.</p>
+      <div id="eva-lista" class="cargando">Cargando...</div>
+    </div>
   </section>
+
+  <!-- ===== CALENDARIO ===== -->
+  <section id="sec-calendario" style="display:none">
+    <div class="card">
+      <h2>📅 Calendario</h2>
+      <div class="toggle-vista">
+        <button class="on" id="vista-lista">Lista</button>
+        <button id="vista-mes">Mes</button>
+      </div>
+      <div id="cal-lista" class="cargando">Cargando...</div>
+      <div id="cal-mes" style="display:none"></div>
+    </div>
+  </section>
+
+  <!-- ===== CHAT ===== -->
+  <section id="sec-chat" style="display:none">
+    <div class="card" style="min-height:50vh">
+      <h2>💬 Chat con tu entrenador</h2>
+      <div id="chat-lista" class="cargando">Cargando...</div>
+    </div>
+  </section>
+
+  <!-- ===== EVALUACIONES / RETOS ===== -->
+  <section id="sec-evaluaciones" style="display:none">
+    <div class="card">
+      <h2>🏁 Evaluaciones y retos</h2>
+      <p class="sub">Cuestionarios y retos que tu coach te va asignando con el tiempo.</p>
+      <div id="retos-lista" class="cargando">Cargando...</div>
+    </div>
+  </section>
+
 </div>
 
-<div class="tabs">
-  <button data-sec="perfil" class="on"><span class="ico">👤</span>Perfil</button>
-  <button data-sec="evaluaciones"><span class="ico">📂</span>Evaluaciones</button>
-  <button data-sec="pagos"><span class="ico">💳</span>Pagos</button>
+<div class="chat-caja" id="chat-caja" style="display:none">
+  <textarea id="chat-input" rows="1" placeholder="Escribe un mensaje..."></textarea>
+  <button id="chat-enviar">➤</button>
+</div>
+
+<div class="tabs5">
+  <button data-sec="home" class="on"><span class="ico">🏠</span>Home</button>
+  <button data-sec="calendario"><span class="ico">📅</span>Calendario</button>
+  <div class="fab-slot"><button class="fab" id="btn-fab">+</button></div>
+  <button data-sec="chat"><span class="ico">💬</span>Chat</button>
+  <button data-sec="evaluaciones"><span class="ico">🏁</span>Evaluaciones</button>
+</div>
+
+<div class="hoja" id="hoja-fab">
+  <div class="panel">
+    <div class="cerrar"></div>
+    <h2>¿Qué necesitas?</h2>
+    <p class="sub">Elige una opción y te ayudamos lo antes posible.</p>
+    <a class="btn" style="background:#25d366;margin-bottom:10px" id="op-cambio-plan" target="_blank">🔁 Solicitar cambio de plan</a>
+    <a class="btn peligro" style="margin-bottom:10px" id="op-ayuda-urgente" target="_blank">🚨 Ayuda urgente</a>
+    <button class="btn linea" id="op-cancelar">Cancelar</button>
+  </div>
 </div>
 
 <script>
-document.getElementById('logo').src = ATL.LOGO;
 const $ = (id) => document.getElementById(id);
 let cliente = null;
+let canalChat = null;
 
 const FUMADO = { fuma: 'Fumo', exfumador: 'Exfumador', no_fuma: 'No fumo' };
 const RODILLO = { no_tiene: 'No tengo', normal: 'Normal', inteligente: 'Inteligente' };
 const FUERZA = { gym_con_ayuda: 'Gimnasio, con ayuda en la programación', gym_sin_ayuda: 'Gimnasio, por mi cuenta', casa_funcionales: 'Funcionales en casa', ninguno: 'No por ahora' };
 const nombreDisc = (id) => (ATL.DISCIPLINAS.find(d => d.id === id) || { nombre: id }).nombre;
+const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
+function dato(k, v) { return v ? `<div class="dato"><div class="k">${k}</div><div class="v">${v}</div></div>` : ''; }
 
-document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('on'));
+// ===== Navegación inferior =====
+document.querySelectorAll('.tabs5 button[data-sec]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs5 button[data-sec]').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['perfil', 'evaluaciones', 'pagos'].forEach(s => $('sec-' + s).style.display = s === b.dataset.sec ? 'block' : 'none');
+  const s = b.dataset.sec;
+  ['home', 'calendario', 'chat', 'evaluaciones'].forEach(sec => $('sec-' + sec).style.display = sec === s ? 'block' : 'none');
+  $('chat-caja').style.display = s === 'chat' ? 'flex' : 'none';
   window.scrollTo(0, 0);
+  if (s === 'calendario' && !window.__calCargado) { cargarCalendario(); window.__calCargado = true; }
+  if (s === 'chat' && !window.__chatCargado) { cargarChat(); window.__chatCargado = true; }
+  if (s === 'evaluaciones' && !window.__retosCargados) { cargarRetos(); window.__retosCargados = true; }
 });
 
-$('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
+// ===== Menú de perfil / notificaciones =====
+function cerrarMenus() { $('menu-perfil').style.display = 'none'; $('menu-not').style.display = 'none'; }
+$('btn-avatar').onclick = (e) => { e.stopPropagation(); const m = $('menu-perfil'); const abrir = m.style.display !== 'block'; cerrarMenus(); m.style.display = abrir ? 'block' : 'none'; };
+$('btn-bell').onclick = (e) => { e.stopPropagation(); const m = $('menu-not'); const abrir = m.style.display !== 'block'; cerrarMenus(); m.style.display = abrir ? 'block' : 'none'; };
+document.body.addEventListener('click', cerrarMenus);
+$('op-salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
+$('op-cambiar-clave').onclick = async () => {
+  const nueva = prompt('Nueva contraseña (mínimo 8 caracteres):');
+  if (!nueva) return;
+  if (nueva.length < 8) return alert('Mínimo 8 caracteres.');
+  const { error } = await sbClient.auth.updateUser({ password: nueva });
+  alert(error ? 'No se pudo actualizar: ' + error.message : '✅ Contraseña actualizada.');
+};
+
+// ===== Botón + (acciones rápidas) =====
+$('btn-fab').onclick = () => { $('hoja-fab').style.display = 'flex'; };
+$('op-cancelar').onclick = () => { $('hoja-fab').style.display = 'none'; };
+$('hoja-fab').onclick = (e) => { if (e.target.id === 'hoja-fab') $('hoja-fab').style.display = 'none'; };
 
 async function init() {
   const { data: { session } } = await sbClient.auth.getSession();
@@ -127,53 +260,55 @@ async function init() {
     return;
   }
   cliente = cli;
+
   if (cliente.estado === 'pendiente') {
-    document.querySelector('.tabs').style.display = 'none';
-    $('barra').style.display = 'none';
+    document.querySelector('.tabs5').style.display = 'none';
+    ['sec-home', 'sec-calendario', 'sec-chat', 'sec-evaluaciones'].forEach(id => $(id).style.display = 'none');
     $('sec-pendiente').style.display = 'block';
     const msj = encodeURIComponent(`Hola, soy ${cliente.nombre}. Mi cuenta en el sistema de ATL sigue pendiente de activación.`);
     $('pendiente-wa').href = `${ATL.WHATSAPP}?text=${msj}`;
     return;
   }
+
+  pintarHome();
+  cargarCoaches();
   pintarOnboarding();
-  pintarPerfil();
+  pintarDatos();
   pintarPrueba();
   cargarEvaluaciones();
   cargarPagos();
+
+  $('op-cambio-plan').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Quisiera solicitar un cambio de plan.')}`;
+  $('op-ayuda-urgente').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Necesito ayuda urgente.')}`;
 }
 
-// ===== Última prueba fisiológica =====
-const ZONAS_DEF = [
-  ['z0', 'Z0 · Ritmo basal', '#8b95a3'],
-  ['z1', 'Z1 · Regenerativa', '#5a6472'],
-  ['z2', 'Z2 · Resistencia aeróbica', '#3b82c4'],
-  ['z3', 'Z3 · Intensidad aeróbica', '#4fa96e'],
-  ['z4', 'Z4 · Umbral anaeróbico', '#d9a916'],
-  ['z5', 'Z5 · Intensidad máxima', '#e07856'],
-  ['max', 'MAX', '#c33a5b'],
-];
-async function pintarPrueba() {
-  const { data: pruebas } = await sbClient.from('fichas_pruebas').select('*').eq('cliente_id', cliente.id).order('fecha', { ascending: false }).limit(1);
-  if (!pruebas || !pruebas.length) return;
-  const p = pruebas[0];
-  $('p-prueba-card').style.display = 'block';
-  const fila = (k, v) => v ? `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
-  const zonas = p.zonas ? ZONAS_DEF.filter(([k]) => p.zonas[k]).map(([k, nom, color]) =>
-    `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13.5px">
-      <span style="background:${color};color:#fff;border-radius:6px;padding:3px 8px;font-weight:700;min-width:76px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
-  $('p-prueba').innerHTML =
-    fila('Fecha de la prueba', ATL.fmtFecha(p.fecha)) +
-    fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
-    fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
-    fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null) +
-    fila('FTP', p.ftp ? p.ftp + ' W' + (p.peso ? ' · ' + (p.ftp / p.peso).toFixed(2) + ' W/kg' : '') : null) +
-    fila('Peso en la prueba', p.peso ? p.peso + ' kg' : null) +
-    fila('Recuperación cardiaca', [p.rec_1min != null ? '1 min: ' + p.rec_1min + '%' : null, p.rec_2min != null ? '2 min: ' + p.rec_2min + '%' : null].filter(Boolean).join(' · ')) +
-    fila('Limitación principal', p.limitacion_principal) +
-    fila('Limitación secundaria', p.limitacion_secundaria) +
-    (zonas ? `<div class="dato"><div class="k">Mis zonas de entrenamiento</div><div style="margin-top:6px">${zonas}</div></div>` : '');
+function pintarHome() {
+  $('p-nombre').textContent = cliente.nombre;
+  $('p-disciplinas').textContent = (cliente.disciplinas || []).map(nombreDisc).join(' · ') || '—';
+  const inicial = (cliente.nombre || '?').trim()[0]?.toUpperCase() || '?';
+  $('btn-avatar').textContent = inicial;
+  if (cliente.foto_path) {
+    sbClient.storage.from('fichas-fotos').createSignedUrl(cliente.foto_path, 3600).then(({ data }) => {
+      if (data) {
+        $('p-foto').src = data.signedUrl; $('p-foto').style.display = 'inline-block';
+        $('btn-avatar').style.backgroundImage = `url(${data.signedUrl})`;
+        $('btn-avatar').style.backgroundSize = 'cover';
+        $('btn-avatar').style.backgroundPosition = 'center';
+        $('btn-avatar').textContent = '';
+      }
+    });
+  }
 }
 
+async function cargarCoaches() {
+  const { data } = await sbClient.from('fichas_cliente_entrenador').select('fichas_coaches(nombre, email)').eq('cliente_id', cliente.id);
+  const lista = (data || []).map(r => r.fichas_coaches).filter(Boolean);
+  if (!lista.length) return;
+  $('coach-card').style.display = 'block';
+  $('coach-lista').innerHTML = lista.map(c => `<div class="item"><div><div class="tit">${esc(c.nombre || c.email)}</div><div class="det">${esc(c.email)}</div></div></div>`).join('');
+}
+
+// ===== Onboarding / reevaluación =====
 const PASOS_ONB = [
   { id: 'espera_prueba', nombre: 'Ficha enviada' },
   { id: 'pendiente_evaluacion', nombre: 'Prueba agendada' },
@@ -184,7 +319,7 @@ async function pintarOnboarding() {
   // Clientes activos: no se muestra el onboarding; solo su próxima reevaluación y la opción de agendar
   if (cliente.onboarding_estado === 'completado') {
     $('onboarding-card').style.display = 'block';
-    document.querySelector('#onboarding-card h2').textContent = '📅 Evaluaciones';
+    document.querySelector('#onboarding-card h2').textContent = '📅 Reevaluación';
     let html = '';
     if (cliente.fecha_prueba && new Date(cliente.fecha_prueba) > new Date()) {
       const f = new Date(cliente.fecha_prueba).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
@@ -230,16 +365,8 @@ async function pintarOnboarding() {
   }
 }
 
-function dato(k, v) { return v ? `<div class="dato"><div class="k">${k}</div><div class="v">${v}</div></div>` : ''; }
-const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
-
-async function pintarPerfil() {
-  $('p-nombre').textContent = cliente.nombre;
-  $('p-disciplinas').textContent = (cliente.disciplinas || []).map(nombreDisc).join(' · ') || '—';
-  if (cliente.foto_path) {
-    const { data } = await sbClient.storage.from('fichas-fotos').createSignedUrl(cliente.foto_path, 3600);
-    if (data) { $('p-foto').src = data.signedUrl; $('p-foto').style.display = 'inline-block'; }
-  }
+// ===== Mis datos + disponibilidad =====
+async function pintarDatos() {
   $('p-datos').innerHTML =
     dato('Correo', esc(cliente.email)) +
     dato('Teléfono', esc(cliente.telefono)) +
@@ -262,19 +389,42 @@ async function pintarPerfil() {
   ).join('') || '<p class="sub">Sin registros.</p>';
 }
 
-async function actualizarBarra() {
-  const { data: pend } = await sbClient.from('fichas_pagos').select('id').eq('cliente_id', cliente.id).eq('estado', 'pendiente').limit(1);
-  const e = ATL.estadoPago(cliente, pend && pend.length > 0);
-  $('barra').className = 'barra-estado ' + e.clase;
-  $('barra').textContent = e.texto;
-  $('pago-info').textContent = cliente.tarifa_mensual
-    ? `Tu mensualidad es de ${ATL.fmtMonto(cliente.tarifa_mensual, cliente.moneda)}. Sube tu comprobante y el monto pagado.`
-    : 'Sube tu comprobante y el monto pagado.';
+// ===== Prueba fisiológica =====
+const ZONAS_DEF = [
+  ['z0', 'Z0 · Ritmo basal', '#8b95a3'],
+  ['z1', 'Z1 · Regenerativa', '#5a6472'],
+  ['z2', 'Z2 · Resistencia aeróbica', '#3b82c4'],
+  ['z3', 'Z3 · Intensidad aeróbica', '#4fa96e'],
+  ['z4', 'Z4 · Umbral anaeróbico', '#d9a916'],
+  ['z5', 'Z5 · Intensidad máxima', '#e07856'],
+  ['max', 'MAX', '#c33a5b'],
+];
+async function pintarPrueba() {
+  const { data: pruebas } = await sbClient.from('fichas_pruebas').select('*').eq('cliente_id', cliente.id).order('fecha', { ascending: false }).limit(1);
+  if (!pruebas || !pruebas.length) return;
+  const p = pruebas[0];
+  $('p-prueba-card').style.display = 'block';
+  const fila = (k, v) => v ? `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
+  const zonas = p.zonas ? ZONAS_DEF.filter(([k]) => p.zonas[k]).map(([k, nom, color]) =>
+    `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13.5px">
+      <span style="background:${color};color:#fff;border-radius:6px;padding:3px 8px;font-weight:700;min-width:76px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
+  $('p-prueba').innerHTML =
+    fila('Fecha de la prueba', ATL.fmtFecha(p.fecha)) +
+    fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
+    fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
+    fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null) +
+    fila('FTP', p.ftp ? p.ftp + ' W' + (p.peso ? ' · ' + (p.ftp / p.peso).toFixed(2) + ' W/kg' : '') : null) +
+    fila('Peso en la prueba', p.peso ? p.peso + ' kg' : null) +
+    fila('Recuperación cardiaca', [p.rec_1min != null ? '1 min: ' + p.rec_1min + '%' : null, p.rec_2min != null ? '2 min: ' + p.rec_2min + '%' : null].filter(Boolean).join(' · ')) +
+    fila('Limitación principal', p.limitacion_principal) +
+    fila('Limitación secundaria', p.limitacion_secundaria) +
+    (zonas ? `<div class="dato"><div class="k">Mis zonas de entrenamiento</div><div style="margin-top:6px">${zonas}</div></div>` : '');
 }
 
+// ===== Documentos y reportes (PDFs subidos por el coach) =====
 async function cargarEvaluaciones() {
   const { data: evas } = await sbClient.from('fichas_evaluaciones').select('*').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
-  if (!evas || !evas.length) { $('eva-lista').innerHTML = '<p class="sub">Aún no tienes evaluaciones. Tu coach las subirá aquí.</p>'; $('eva-lista').className = ''; return; }
+  if (!evas || !evas.length) { $('eva-lista').innerHTML = '<p class="sub">Aún no tienes documentos. Tu coach los subirá aquí.</p>'; $('eva-lista').className = ''; return; }
   $('eva-lista').className = '';
   $('eva-lista').innerHTML = evas.map(e =>
     `<div class="item"><div><div class="tit">${esc(e.titulo)}</div><div class="det">${new Date(e.created_at).toLocaleDateString('es-CR')}${e.notas ? ' · ' + esc(e.notas) : ''}</div></div>` +
@@ -285,6 +435,17 @@ window.abrirEva = async (path) => {
   const { data } = await sbClient.storage.from('fichas-evaluaciones').createSignedUrl(path, 600);
   if (data) window.open(data.signedUrl, '_blank');
 };
+
+// ===== Pagos =====
+async function actualizarBarra() {
+  const { data: pend } = await sbClient.from('fichas_pagos').select('id').eq('cliente_id', cliente.id).eq('estado', 'pendiente').limit(1);
+  const e = ATL.estadoPago(cliente, pend && pend.length > 0);
+  $('barra').className = 'barra-estado ' + e.clase;
+  $('barra').textContent = e.texto;
+  $('pago-info').textContent = cliente.tarifa_mensual
+    ? `Tu mensualidad es de ${ATL.fmtMonto(cliente.tarifa_mensual, cliente.moneda)}. Sube tu comprobante y el monto pagado.`
+    : 'Sube tu comprobante y el monto pagado.';
+}
 
 let comprobante = null;
 $('pago-archivo').addEventListener('change', () => {
@@ -334,14 +495,88 @@ async function cargarPagos() {
   }).join('');
 }
 
-$('cambiar-clave').onclick = async () => {
-  const err = $('clave-err'); err.style.display = 'none'; $('clave-ok').style.display = 'none';
-  const clave = $('nueva-clave').value;
-  if (clave.length < 8) { err.textContent = 'Mínimo 8 caracteres.'; err.style.display = 'block'; return; }
-  const { error } = await sbClient.auth.updateUser({ password: clave });
-  if (error) { err.textContent = 'No se pudo cambiar: ' + error.message; err.style.display = 'block'; return; }
-  $('nueva-clave').value = ''; $('clave-ok').style.display = 'block';
+// ===== Calendario =====
+$('vista-lista').onclick = () => { $('vista-lista').classList.add('on'); $('vista-mes').classList.remove('on'); $('cal-lista').style.display = 'block'; $('cal-mes').style.display = 'none'; };
+$('vista-mes').onclick = () => { $('vista-mes').classList.add('on'); $('vista-lista').classList.remove('on'); $('cal-mes').style.display = 'block'; $('cal-lista').style.display = 'none'; pintarMes(window.__eventosCal || []); };
+
+async function cargarCalendario() {
+  const { data, error } = await sbClient.from('fichas_eventos')
+    .select('*')
+    .or(`cliente_id.eq.${cliente.id},cliente_id.is.null`)
+    .order('fecha_inicio', { ascending: true });
+  if (error) { $('cal-lista').textContent = 'No se pudo cargar el calendario.'; return; }
+  window.__eventosCal = data || [];
+  if (!data || !data.length) { $('cal-lista').innerHTML = '<p class="sub" style="margin:0">No tienes eventos próximos todavía.</p>'; return; }
+  const ICONOS = { prueba: '🧪', reevaluacion: '🔄', entrenamiento_grupal: '👥', importante: '⭐', otro: '📌' };
+  $('cal-lista').innerHTML = data.map(e => {
+    const f = new Date(e.fecha_inicio).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    return `<div class="item"><div><div class="tit">${ICONOS[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${f}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''}</div></div></div>`;
+  }).join('');
+}
+function pintarMes(eventos) {
+  const hoy = new Date();
+  const anio = hoy.getFullYear(), mes = hoy.getMonth();
+  const primerDia = new Date(anio, mes, 1).getDay();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const porDia = {};
+  eventos.forEach(e => { const d = new Date(e.fecha_inicio); if (d.getFullYear() === anio && d.getMonth() === mes) porDia[d.getDate()] = true; });
+  let html = ['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(d => `<div class="dia-cab">${d}</div>`).join('');
+  for (let i = 0; i < primerDia; i++) html += '<div></div>';
+  for (let d = 1; d <= diasEnMes; d++) {
+    const esHoy = d === hoy.getDate();
+    html += `<div class="dia-celda${esHoy ? ' hoy' : ''}">${d}${porDia[d] ? '<div class="pto"></div>' : ''}</div>`;
+  }
+  $('cal-mes').innerHTML = `<div class="mes-grid">${html}</div>`;
+}
+
+// ===== Chat =====
+async function cargarChat() {
+  const { data, error } = await sbClient.from('fichas_mensajes').select('*').eq('cliente_id', cliente.id).order('created_at', { ascending: true });
+  if (error) { $('chat-lista').textContent = 'No se pudo cargar el chat.'; return; }
+  pintarMensajes(data || []);
+  if (!canalChat) {
+    canalChat = sbClient.channel('chat-' + cliente.id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fichas_mensajes', filter: `cliente_id=eq.${cliente.id}` }, (payload) => {
+        window.__msjs = [...(window.__msjs || []), payload.new];
+        pintarMensajes(window.__msjs);
+      }).subscribe();
+  }
+}
+function pintarMensajes(lista) {
+  window.__msjs = lista;
+  if (!lista.length) { $('chat-lista').innerHTML = '<p class="sub" style="margin:0">Aún no tienes mensajes. Escríbele a tu entrenador abajo.</p>'; return; }
+  $('chat-lista').innerHTML = lista.map(m => {
+    const hora = new Date(m.created_at).toLocaleTimeString('es-CR', { hour: 'numeric', minute: '2-digit' });
+    return `<div class="msj ${m.autor_rol === 'cliente' ? 'yo' : 'otro'}">${esc(m.cuerpo)}<div class="hora">${hora}</div></div>`;
+  }).join('');
+  window.scrollTo(0, document.body.scrollHeight);
+}
+$('chat-enviar').onclick = async () => {
+  const cuerpo = $('chat-input').value.trim();
+  if (!cuerpo) return;
+  $('chat-input').value = '';
+  const { data: { session } } = await sbClient.auth.getSession();
+  const { error } = await sbClient.from('fichas_mensajes').insert({ cliente_id: cliente.id, autor_id: session.user.id, autor_rol: 'cliente', cuerpo });
+  if (error) alert('No se pudo enviar: ' + error.message);
 };
+
+// ===== Evaluaciones / retos =====
+async function cargarRetos() {
+  const { data, error } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(titulo, descripcion, tipo)').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
+  if (error) { $('retos-lista').textContent = 'No se pudo cargar.'; return; }
+  if (!data || !data.length) { $('retos-lista').innerHTML = '<p class="sub" style="margin:0">Tu coach todavía no te ha asignado retos o cuestionarios.</p>'; return; }
+  const PILL = { pendiente: 'amarillo', completado: 'verde', vencido: 'rojo' };
+  $('retos-lista').innerHTML = data.map(r => {
+    const reto = r.fichas_retos || {};
+    const limite = r.fecha_limite ? ATL.fmtFecha(r.fecha_limite) : '—';
+    return `<div class="item"><div><div class="tit">${esc(reto.titulo)}</div><div class="det">${esc(reto.descripcion || '')}${r.fecha_limite ? ' · Límite: ' + limite : ''}</div></div><span class="pill ${PILL[r.estado] || 'gris'}">${r.estado}</span></div>`;
+  }).join('');
+}
+
+document.getElementById('btn-avatar').addEventListener('click', e => e.stopPropagation());
+document.getElementById('btn-bell').addEventListener('click', e => e.stopPropagation());
+document.querySelector('.menu-flot.izq').addEventListener('click', e => e.stopPropagation());
+document.querySelector('.menu-flot.der').addEventListener('click', e => e.stopPropagation());
 
 init();
 </script>
