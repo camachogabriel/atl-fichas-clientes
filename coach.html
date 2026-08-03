@@ -50,6 +50,63 @@
       </div>
       <div id="lista" class="cargando">Cargando...</div>
     </div>
+    <div class="card" id="mensajes-card" style="display:none">
+      <h2>💬 Mensajes sin leer</h2>
+      <div id="mensajes-pendientes"></div>
+    </div>
+    <div class="card">
+      <h2>📅 Calendario</h2>
+      <p class="sub" style="margin-bottom:8px">Eventos grupales o de un cliente específico: pruebas, reevaluaciones, entrenamientos, fechas importantes.</p>
+      <div id="cal-lista" class="cargando">Cargando...</div>
+      <button class="btn linea" id="cal-toggle" style="margin-top:10px">➕ Nuevo evento</button>
+      <div id="cal-form" style="display:none">
+        <label>Título</label>
+        <input type="text" id="cal-titulo" placeholder="Ej: Entrenamiento grupal de ruta">
+        <label>Tipo</label>
+        <select id="cal-tipo">
+          <option value="entrenamiento_grupal">Entrenamiento grupal</option>
+          <option value="prueba">Prueba</option>
+          <option value="reevaluacion">Reevaluación</option>
+          <option value="importante">Importante</option>
+          <option value="otro">Otro</option>
+        </select>
+        <label>Para</label>
+        <select id="cal-cliente"><option value="">Todos (grupal)</option></select>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1"><label>Fecha y hora de inicio</label><input type="datetime-local" id="cal-inicio"></div>
+          <div style="flex:1"><label>Fecha y hora de fin (opcional)</label><input type="datetime-local" id="cal-fin"></div>
+        </div>
+        <label>Ubicación (opcional)</label>
+        <input type="text" id="cal-ubicacion" placeholder="Ej: Pista La Sabana">
+        <label>Descripción (opcional)</label>
+        <textarea id="cal-descripcion"></textarea>
+        <button class="btn oscuro" id="cal-guardar" style="margin-top:10px">Guardar evento</button>
+        <div class="error" id="cal-err"></div>
+        <div class="aviso ok" id="cal-ok" style="display:none">✅ Evento guardado.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🎯 Plantillas de retos</h2>
+      <p class="sub" style="margin-bottom:8px">Retos recurrentes que puedes asignar a tus clientes (ej. subir video semanal, registrar peso).</p>
+      <div id="retos-lista" class="cargando">Cargando...</div>
+      <button class="btn linea" id="reto-toggle" style="margin-top:10px">➕ Nueva plantilla</button>
+      <div id="reto-form" style="display:none">
+        <label>Título</label>
+        <input type="text" id="reto-titulo" placeholder="Ej: Video semanal de técnica">
+        <label>Tipo</label>
+        <select id="reto-tipo">
+          <option value="video">Video</option>
+          <option value="foto">Foto</option>
+          <option value="numero">Número (ej. peso)</option>
+          <option value="formulario">Formulario</option>
+        </select>
+        <label>Descripción (instrucciones para el cliente)</label>
+        <textarea id="reto-descripcion"></textarea>
+        <button class="btn oscuro" id="reto-guardar" style="margin-top:10px">Guardar plantilla</button>
+        <div class="error" id="reto-err"></div>
+        <div class="aviso ok" id="reto-ok" style="display:none">✅ Plantilla guardada.</div>
+      </div>
+    </div>
     <div class="card">
       <h2>⚙️ Links y recursos (correos)</h2>
       <p class="sub" style="margin-bottom:8px">Se usan en los correos del onboarding. Los marcados "correo final" van en el correo de evaluación completada.</p>
@@ -208,6 +265,26 @@
     </div>
 
     <div class="card">
+      <h2>💬 Chat</h2>
+      <div id="d-chat-mensajes" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input type="text" id="d-chat-input" placeholder="Escribe un mensaje..." style="flex:1;margin:0">
+        <button class="btn" id="d-chat-enviar" style="width:auto;padding:0 18px;margin:0">Enviar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🎯 Retos asignados</h2>
+      <div id="d-retos"></div>
+      <label>Asignar plantilla</label>
+      <select id="reto-asignar-sel"></select>
+      <label>Fecha límite (opcional)</label>
+      <input type="date" id="reto-asignar-fecha">
+      <button class="btn linea" id="reto-asignar-btn" style="margin-top:10px">➕ Asignar reto</button>
+      <div class="error" id="reto-asignar-err"></div>
+    </div>
+
+    <div class="card">
       <h2>💳 Pagos</h2>
       <div id="d-pagos"></div>
       <h2 style="margin-top:16px">➕ Registrar pago manual</h2>
@@ -258,9 +335,15 @@ const RODILLO = { no_tiene: 'No tiene', normal: 'Normal', inteligente: 'Intelige
 const FUERZA = { gym_con_ayuda: 'Gym, quiere ayuda con programación 💪', gym_sin_ayuda: 'Gym por su cuenta', casa_funcionales: 'Funcionales en casa 💪', ninguno: 'No por ahora' };
 let clientes = [], actual = null;
 let esSuper = false;
+let miUserId = null;
+let chatChannel = null;
 
 $('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
-$('volver').onclick = () => { $('sec-detalle').style.display = 'none'; $('sec-lista').style.display = 'block'; cargarLista(); };
+$('volver').onclick = () => {
+  if (chatChannel) { sbClient.removeChannel(chatChannel); chatChannel = null; }
+  $('sec-detalle').style.display = 'none'; $('sec-lista').style.display = 'block';
+  cargarLista(); cargarMensajesPendientes();
+};
 
 function copiarLinkRegistro(sufijo) {
   return async () => {
@@ -272,15 +355,207 @@ function copiarLinkRegistro(sufijo) {
 $('copiar-link').onclick = copiarLinkRegistro('');
 $('copiar-link-actual').onclick = copiarLinkRegistro('?tipo=actual');
 
+// datetime-local en hora de Costa Rica (UTC-6, sin DST) — se reutiliza más abajo también para citas de prueba
+function aISO(dtLocal) { return new Date(dtLocal + ':00-06:00').toISOString(); }
+function aLocal(iso) {
+  const d = new Date(new Date(iso).getTime() - 6 * 3600000);
+  return d.toISOString().slice(0, 16);
+}
+function fmtFechaHora(ts) {
+  return new Date(ts).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+}
+
+// ===== Calendario =====
+let eventosCache = [], calEditId = null;
+const TIPO_ICONO_EVENTO = { prueba: '🧪', reevaluacion: '🔁', entrenamiento_grupal: '🚴', importante: '⭐', otro: '📌' };
+
+function poblarSelectClientes() {
+  const sel = $('cal-cliente');
+  const valorActual = sel.value;
+  sel.innerHTML = '<option value="">Todos (grupal)</option>' + clientes.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join('');
+  sel.value = valorActual;
+}
+
+async function cargarCalendario() {
+  const { data: eventos } = await sbClient.from('fichas_eventos').select('*').order('fecha_inicio', { ascending: true });
+  eventosCache = eventos || [];
+  poblarSelectClientes();
+  $('cal-lista').className = '';
+  const ahora = new Date();
+  const futuros = eventosCache.filter(e => new Date(e.fecha_fin || e.fecha_inicio) >= ahora);
+  const lista = futuros.length ? futuros : eventosCache.slice(-10);
+  $('cal-lista').innerHTML = lista.map(e => {
+    const cliente = e.cliente_id ? (clientes.find(c => c.id === e.cliente_id)?.nombre || '—') : 'Grupal (todos)';
+    return `<div class="item" style="align-items:flex-start">
+      <div style="flex:1;min-width:0">
+        <div class="tit">${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
+        <div class="det">${fmtFechaHora(e.fecha_inicio)}${e.ubicacion ? ' · ' + esc(e.ubicacion) : ''} · ${esc(cliente)}</div>
+      </div>
+      <span style="display:flex;gap:6px">
+        <button class="pill gris" style="border:none;cursor:pointer" onclick="editarEvento('${e.id}')">✏️</button>
+        <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarEvento('${e.id}')">🗑</button>
+      </span>
+    </div>`;
+  }).join('') || '<p class="sub">Sin eventos programados.</p>';
+}
+
+$('cal-toggle').onclick = () => {
+  const f = $('cal-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'none') cancelarEdicionEvento();
+};
+$('cal-guardar').onclick = guardarEvento;
+
+async function guardarEvento() {
+  const err = $('cal-err'); err.style.display = 'none'; $('cal-ok').style.display = 'none';
+  const titulo = $('cal-titulo').value.trim();
+  const inicio = $('cal-inicio').value;
+  if (!titulo) { err.textContent = 'Escribe un título.'; err.style.display = 'block'; return; }
+  if (!inicio) { err.textContent = 'Selecciona fecha y hora de inicio.'; err.style.display = 'block'; return; }
+  const fila = {
+    titulo,
+    tipo: $('cal-tipo').value,
+    cliente_id: $('cal-cliente').value || null,
+    fecha_inicio: aISO(inicio),
+    fecha_fin: $('cal-fin').value ? aISO($('cal-fin').value) : null,
+    ubicacion: $('cal-ubicacion').value.trim() || null,
+    descripcion: $('cal-descripcion').value.trim() || null,
+  };
+  const btn = $('cal-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    if (calEditId) {
+      const { error } = await sbClient.from('fichas_eventos').update(fila).eq('id', calEditId);
+      if (error) throw error;
+    } else {
+      fila.creado_por = miUserId;
+      const { error } = await sbClient.from('fichas_eventos').insert(fila);
+      if (error) throw error;
+    }
+    cancelarEdicionEvento();
+    $('cal-form').style.display = 'none';
+    $('cal-ok').style.display = 'block'; setTimeout(() => $('cal-ok').style.display = 'none', 2500);
+    cargarCalendario();
+  } catch (e) { err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = calEditId ? 'Guardar cambios' : 'Guardar evento';
+}
+
+window.editarEvento = (id) => {
+  const e = eventosCache.find(x => x.id === id);
+  if (!e) return;
+  calEditId = id;
+  $('cal-form').style.display = 'block';
+  $('cal-titulo').value = e.titulo;
+  $('cal-tipo').value = e.tipo;
+  $('cal-cliente').value = e.cliente_id || '';
+  $('cal-inicio').value = aLocal(e.fecha_inicio);
+  $('cal-fin').value = e.fecha_fin ? aLocal(e.fecha_fin) : '';
+  $('cal-ubicacion').value = e.ubicacion || '';
+  $('cal-descripcion').value = e.descripcion || '';
+  $('cal-guardar').textContent = 'Guardar cambios';
+  $('cal-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+function cancelarEdicionEvento() {
+  calEditId = null;
+  $('cal-guardar').textContent = 'Guardar evento';
+  ['cal-titulo', 'cal-ubicacion', 'cal-descripcion', 'cal-inicio', 'cal-fin'].forEach(id => $(id).value = '');
+  $('cal-tipo').value = 'entrenamiento_grupal';
+  $('cal-cliente').value = '';
+}
+window.borrarEvento = async (id) => {
+  if (!confirm('¿Borrar este evento?')) return;
+  await sbClient.from('fichas_eventos').delete().eq('id', id);
+  cargarCalendario();
+};
+
+// ===== Plantillas de retos =====
+let plantillasCache = [], retoEditId = null;
+const RETO_TIPO_ICONO = { video: '🎥', foto: '📷', numero: '🔢', formulario: '📝' };
+
+function poblarSelectPlantillas() {
+  const sel = $('reto-asignar-sel');
+  if (!sel) return;
+  sel.innerHTML = plantillasCache.length
+    ? plantillasCache.map(r => `<option value="${r.id}">${esc(r.titulo)}</option>`).join('')
+    : '<option value="">Sin plantillas — créalas en la lista de Clientes</option>';
+}
+
+async function cargarRetosPlantillas() {
+  const { data: retos } = await sbClient.from('fichas_retos').select('*').order('created_at', { ascending: false });
+  plantillasCache = retos || [];
+  $('retos-lista').className = '';
+  $('retos-lista').innerHTML = plantillasCache.map(r => `<div class="item">
+    <div><div class="tit">${RETO_TIPO_ICONO[r.tipo] || '🎯'} ${esc(r.titulo)}</div><div class="det">${esc(r.descripcion || '')}</div></div>
+    <span style="display:flex;gap:6px">
+      <button class="pill gris" style="border:none;cursor:pointer" onclick="editarPlantilla('${r.id}')">✏️</button>
+      <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarPlantilla('${r.id}')">🗑</button>
+    </span>
+  </div>`).join('') || '<p class="sub">Sin plantillas creadas.</p>';
+  poblarSelectPlantillas();
+}
+
+$('reto-toggle').onclick = () => {
+  const f = $('reto-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'none') cancelarEdicionPlantilla();
+};
+$('reto-guardar').onclick = guardarPlantilla;
+
+async function guardarPlantilla() {
+  const err = $('reto-err'); err.style.display = 'none'; $('reto-ok').style.display = 'none';
+  const titulo = $('reto-titulo').value.trim();
+  if (!titulo) { err.textContent = 'Escribe un título.'; err.style.display = 'block'; return; }
+  const fila = { titulo, tipo: $('reto-tipo').value, descripcion: $('reto-descripcion').value.trim() || null };
+  const btn = $('reto-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    if (retoEditId) {
+      const { error } = await sbClient.from('fichas_retos').update(fila).eq('id', retoEditId);
+      if (error) throw error;
+    } else {
+      fila.creado_por = miUserId;
+      const { error } = await sbClient.from('fichas_retos').insert(fila);
+      if (error) throw error;
+    }
+    cancelarEdicionPlantilla();
+    $('reto-form').style.display = 'none';
+    $('reto-ok').style.display = 'block'; setTimeout(() => $('reto-ok').style.display = 'none', 2500);
+    cargarRetosPlantillas();
+  } catch (e) { err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = retoEditId ? 'Guardar cambios' : 'Guardar plantilla';
+}
+
+window.editarPlantilla = (id) => {
+  const r = plantillasCache.find(x => x.id === id);
+  if (!r) return;
+  retoEditId = id;
+  $('reto-form').style.display = 'block';
+  $('reto-titulo').value = r.titulo;
+  $('reto-tipo').value = r.tipo;
+  $('reto-descripcion').value = r.descripcion || '';
+  $('reto-guardar').textContent = 'Guardar cambios';
+  $('reto-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+function cancelarEdicionPlantilla() {
+  retoEditId = null;
+  $('reto-guardar').textContent = 'Guardar plantilla';
+  $('reto-titulo').value = ''; $('reto-descripcion').value = ''; $('reto-tipo').value = 'video';
+}
+window.borrarPlantilla = async (id) => {
+  if (!confirm('¿Borrar esta plantilla? (no borra los retos ya asignados a clientes)')) return;
+  await sbClient.from('fichas_retos').delete().eq('id', id);
+  cargarRetosPlantillas();
+};
+
 async function init() {
   const { data: { session } } = await sbClient.auth.getSession();
   if (!session) { location.href = 'index.html'; return; }
   const { data: esCoach } = await sbClient.rpc('fichas_es_coach');
   if (!esCoach) { location.href = 'app.html'; return; }
+  miUserId = session.user.id;
   const { data: sup } = await sbClient.rpc('fichas_es_super');
   esSuper = !!sup;
-  cargarLista();
+  await cargarLista();
   cargarConfig();
+  cargarCalendario();
+  cargarRetosPlantillas();
+  cargarMensajesPendientes();
 }
 
 function estadoPill(c, pendientes) {
@@ -328,6 +603,24 @@ async function cargarLista() {
   $('buscar').oninput = pintarLista;
   $('orden').onchange = pintarLista;
   $('filtro-pago').onchange = pintarLista;
+}
+
+async function cargarMensajesPendientes() {
+  const { data: sinLeer } = await sbClient.from('fichas_mensajes').select('cliente_id, cuerpo, created_at').eq('autor_rol', 'cliente').is('leido_at', null).order('created_at', { ascending: false });
+  if (!sinLeer || !sinLeer.length) { $('mensajes-card').style.display = 'none'; return; }
+  const porCliente = {};
+  for (const m of sinLeer) {
+    if (!porCliente[m.cliente_id]) porCliente[m.cliente_id] = { count: 0, ultimo: m };
+    porCliente[m.cliente_id].count++;
+  }
+  $('mensajes-card').style.display = 'block';
+  $('mensajes-pendientes').innerHTML = Object.entries(porCliente).map(([clienteId, info]) => {
+    const c = clientes.find(x => x.id === clienteId) || { nombre: '—' };
+    return `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${clienteId}')"><div>
+      <div class="tit">${esc(c.nombre)}</div>
+      <div class="det">${esc((info.ultimo.cuerpo || '').slice(0, 60))}${(info.ultimo.cuerpo || '').length > 60 ? '…' : ''}</div>
+    </div><span class="pill amarillo">${info.count} sin leer</span></div>`;
+  }).join('');
 }
 
 function claseEstadoPago(c) {
@@ -435,9 +728,95 @@ window.abrirDetalle = async (id) => {
 
   pintarOnboardingDetalle();
   cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones(); cargarPruebas();
+  cargarChatDetalle(); cargarRetosDetalle();
   $('ed-form').style.display = 'none';
   $('ed-toggle').onclick = abrirEdicionFicha;
   $('ed-guardar').onclick = guardarFicha;
+};
+
+// ===== Chat con el cliente =====
+async function cargarChatDetalle() {
+  if (chatChannel) { sbClient.removeChannel(chatChannel); chatChannel = null; }
+  await marcarMensajesLeidos();
+  await pintarMensajes();
+  chatChannel = sbClient.channel('coach-chat-' + actual.id)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fichas_mensajes', filter: `cliente_id=eq.${actual.id}` }, async () => {
+      await marcarMensajesLeidos();
+      await pintarMensajes();
+    })
+    .subscribe();
+}
+async function marcarMensajesLeidos() {
+  await sbClient.from('fichas_mensajes').update({ leido_at: new Date().toISOString() }).eq('cliente_id', actual.id).eq('autor_rol', 'cliente').is('leido_at', null);
+}
+async function pintarMensajes() {
+  const { data: mensajes } = await sbClient.from('fichas_mensajes').select('*').eq('cliente_id', actual.id).order('created_at', { ascending: true });
+  const cont = $('d-chat-mensajes');
+  cont.innerHTML = (mensajes || []).map(m => {
+    const mio = m.autor_rol === 'coach';
+    return `<div style="align-self:${mio ? 'flex-end' : 'flex-start'};max-width:80%;background:${mio ? 'var(--verde)' : '#f0f1f3'};color:${mio ? '#fff' : '#1a1a2e'};padding:8px 12px;border-radius:12px;font-size:14px">
+      ${esc(m.cuerpo)}
+      <div style="font-size:10.5px;opacity:.75;margin-top:2px">${new Date(m.created_at).toLocaleString('es-CR', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</div>
+    </div>`;
+  }).join('') || '<p class="sub">Sin mensajes todavía.</p>';
+  cont.scrollTop = cont.scrollHeight;
+}
+$('d-chat-enviar').onclick = enviarMensajeCoach;
+$('d-chat-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') enviarMensajeCoach(); });
+async function enviarMensajeCoach() {
+  const inp = $('d-chat-input');
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.value = '';
+  const { error } = await sbClient.from('fichas_mensajes').insert({ cliente_id: actual.id, autor_id: miUserId, autor_rol: 'coach', cuerpo: texto });
+  if (error) { alert('Error enviando mensaje: ' + error.message); return; }
+  pintarMensajes();
+}
+
+// ===== Retos asignados =====
+async function cargarRetosDetalle() {
+  const { data: asignados } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(titulo, descripcion, tipo)').eq('cliente_id', actual.id).order('created_at', { ascending: false });
+  const ESTADO_PILL = { pendiente: ['amarillo', 'Pendiente'], completado: ['verde', 'Completado'], vencido: ['rojo', 'Vencido'] };
+  $('d-retos').innerHTML = (asignados || []).map(a => {
+    const r = a.fichas_retos || {};
+    const [cl, tx] = ESTADO_PILL[a.estado] || ['gris', a.estado];
+    const verArchivo = a.archivo_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verArchivoReto('${a.archivo_path}')">Ver archivo</button>` : '';
+    const respuesta = a.respuesta ? `<div class="det" style="margin-top:4px">📋 ${esc(JSON.stringify(a.respuesta))}</div>` : '';
+    return `<div class="item" style="align-items:flex-start">
+      <div style="flex:1;min-width:0">
+        <div class="tit">${RETO_TIPO_ICONO[r.tipo] || '🎯'} ${esc(r.titulo || '—')}</div>
+        <div class="det">${a.fecha_limite ? 'Vence: ' + ATL.fmtFecha(a.fecha_limite) : 'Sin fecha límite'}</div>
+        ${respuesta}
+      </div>
+      <span style="display:flex;gap:6px;align-items:center">
+        ${verArchivo}
+        <span class="pill ${cl}">${tx}</span>
+        <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarRetoAsignado('${a.id}')">🗑</button>
+      </span>
+    </div>`;
+  }).join('') || '<p class="sub">Sin retos asignados.</p>';
+}
+window.verArchivoReto = async (path) => {
+  const { data } = await sbClient.storage.from('fichas-retos').createSignedUrl(path, 600);
+  if (data) window.open(data.signedUrl, '_blank');
+};
+window.borrarRetoAsignado = async (id) => {
+  if (!confirm('¿Quitar este reto asignado?')) return;
+  await sbClient.from('fichas_retos_asignados').delete().eq('id', id);
+  cargarRetosDetalle();
+};
+$('reto-asignar-btn').onclick = async () => {
+  const err = $('reto-asignar-err'); err.style.display = 'none';
+  const retoId = $('reto-asignar-sel').value;
+  if (!retoId) { err.textContent = 'Crea primero una plantilla de reto (sección Clientes).'; err.style.display = 'block'; return; }
+  const { error } = await sbClient.from('fichas_retos_asignados').insert({
+    reto_id: retoId,
+    cliente_id: actual.id,
+    fecha_limite: $('reto-asignar-fecha').value || null,
+  });
+  if (error) { err.textContent = 'Error: ' + error.message; err.style.display = 'block'; return; }
+  $('reto-asignar-fecha').value = '';
+  cargarRetosDetalle();
 };
 
 // ===== Pruebas fisiológicas =====
@@ -847,16 +1226,6 @@ const PASOS_ONB = [
   { id: 'evaluacion_completada', nombre: 'Evaluación lista' },
   { id: 'completado', nombre: 'Completado' },
 ];
-function fmtFechaHora(ts) {
-  return new Date(ts).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
-}
-// datetime-local en hora de Costa Rica (UTC-6, sin DST)
-function aISO(dtLocal) { return new Date(dtLocal + ':00-06:00').toISOString(); }
-function aLocal(iso) {
-  const d = new Date(new Date(iso).getTime() - 6 * 3600000);
-  return d.toISOString().slice(0, 16);
-}
-
 function pintarOnboardingDetalle() {
   const est = actual.onboarding_estado || 'espera_prueba';
   if (est === 'completado') {
