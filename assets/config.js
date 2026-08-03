@@ -1,7 +1,7 @@
 // ATL Fichas Clientes - configuración compartida
 window.ATL = {
-  SUPABASE_URL: 'https://wmmfsblgrusvbaugcihp.supabase.co',
-  SUPABASE_ANON: 'sb_publishable_iC4xe9jDAnxnn5Dwj-XARw_3nvPFhGf',
+  SUPABASE_URL: 'https://cejgurbaweucfpuzvdpw.supabase.co',
+  SUPABASE_ANON: 'sb_publishable_qXqEI0bVkwXtH8eqByoPqQ_9dVp8KTI',
   LOGO: 'https://static.wixstatic.com/media/9d1be0_e4ee180b08184d159adbfa2a55f4ace3~mv2.png/v1/fill/w_405,h_254/ATLLogoColores.png',
   WHATSAPP: 'https://wa.me/50688445505',
   DISCIPLINAS: [
