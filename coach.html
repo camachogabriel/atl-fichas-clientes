@@ -267,7 +267,16 @@
         <input type="text" id="insignia-nombre" placeholder="Ej: Fondo 50K">
         <label>Descripción (opcional)</label>
         <textarea id="insignia-descripcion"></textarea>
-        <label>Ícono</label>
+        <label>Imagen personalizada</label>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <div id="insignia-imagen-preview-wrap" style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;display:none">
+            <img id="insignia-imagen-preview" src="" style="width:100%;height:100%;object-fit:cover">
+          </div>
+          <label class="foto-btn" for="insignia-imagen" id="insignia-imagen-label" style="margin:0">📎 Elegir imagen</label>
+          <input type="file" id="insignia-imagen" accept="image/*" style="display:none">
+        </div>
+        <button type="button" class="volver" id="insignia-imagen-quitar" style="display:none;margin-bottom:8px">Quitar imagen y usar ícono</button>
+        <label>Ícono (si no subes imagen)</label>
         <select id="insignia-icono">
           <option value="medal">🏅 Medalla</option>
           <option value="trophy">🏆 Trofeo</option>
@@ -277,7 +286,7 @@
           <option value="target">🎯 Diana</option>
           <option value="star">⭐ Estrella</option>
         </select>
-        <label>Color</label>
+        <label>Color de fondo (si no subes imagen)</label>
         <select id="insignia-color">
           <option value="#21b57c">Verde</option>
           <option value="#fecb15">Amarillo</option>
@@ -1036,6 +1045,17 @@ const INSIGNIA_ICONOS = {
   star: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9 22 10 17 15 18 22 12 18.5 6 22 7 15 2 10 9 9 12 2Z"/></svg>',
 };
 
+function insigniaImagenUrl(path) {
+  return sbClient.storage.from('fichas-insignias').getPublicUrl(path).data.publicUrl;
+}
+function insigniaAvatar(i, size) {
+  size = size || 34;
+  if (i.imagen_path) {
+    return `<div style="width:${size}px;height:${size}px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="${insigniaImagenUrl(i.imagen_path)}" style="width:100%;height:100%;object-fit:cover"></div>`;
+  }
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${i.color || '#21b57c'};color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">${INSIGNIA_ICONOS[i.icono] || INSIGNIA_ICONOS.medal}</div>`;
+}
+
 function poblarSelectInsignias() {
   const sel = $('reto-insignia');
   if (!sel) return;
@@ -1050,7 +1070,7 @@ async function cargarInsignias() {
   $('insignias-lista').className = '';
   $('insignias-lista').innerHTML = insigniasCache.map(i => `<div class="item">
     <div style="display:flex;align-items:center;gap:10px">
-      <div style="width:34px;height:34px;border-radius:50%;background:${i.color};color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">${INSIGNIA_ICONOS[i.icono] || INSIGNIA_ICONOS.medal}</div>
+      ${insigniaAvatar(i, 34)}
       <div><div class="tit">${esc(i.nombre)}</div><div class="det">${esc(i.descripcion || '')}</div></div>
     </div>
     <span style="display:flex;gap:6px">
@@ -1060,6 +1080,22 @@ async function cargarInsignias() {
   </div>`).join('') || '<p class="sub">Sin insignias creadas.</p>';
   poblarSelectInsignias();
 }
+
+let insigniaImagenSel = null, insigniaImagenPathActual = null;
+$('insignia-imagen').addEventListener('change', () => {
+  insigniaImagenSel = $('insignia-imagen').files[0] || null;
+  if (insigniaImagenSel) {
+    $('insignia-imagen-preview').src = URL.createObjectURL(insigniaImagenSel);
+    $('insignia-imagen-preview-wrap').style.display = 'block';
+    $('insignia-imagen-quitar').style.display = 'inline-block';
+  }
+});
+$('insignia-imagen-quitar').onclick = () => {
+  insigniaImagenSel = null; insigniaImagenPathActual = null;
+  $('insignia-imagen').value = '';
+  $('insignia-imagen-preview-wrap').style.display = 'none';
+  $('insignia-imagen-quitar').style.display = 'none';
+};
 
 $('insignia-toggle').onclick = () => {
   const f = $('insignia-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none';
@@ -1079,6 +1115,15 @@ async function guardarInsignia() {
   };
   const btn = $('insignia-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
   try {
+    if (insigniaImagenSel) {
+      const ext = (insigniaImagenSel.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: eUp } = await sbClient.storage.from('fichas-insignias').upload(path, insigniaImagenSel, { contentType: insigniaImagenSel.type || 'image/jpeg' });
+      if (eUp) throw eUp;
+      fila.imagen_path = path;
+    } else if (insigniaImagenPathActual === null) {
+      fila.imagen_path = null;
+    }
     if (insigniaEditId) {
       const { error } = await sbClient.from('fichas_insignias').update(fila).eq('id', insigniaEditId);
       if (error) throw error;
@@ -1104,13 +1149,28 @@ window.editarInsignia = (id) => {
   $('insignia-descripcion').value = i.descripcion || '';
   $('insignia-icono').value = i.icono;
   $('insignia-color').value = i.color;
+  insigniaImagenSel = null;
+  insigniaImagenPathActual = i.imagen_path || null;
+  $('insignia-imagen').value = '';
+  if (i.imagen_path) {
+    $('insignia-imagen-preview').src = insigniaImagenUrl(i.imagen_path);
+    $('insignia-imagen-preview-wrap').style.display = 'block';
+    $('insignia-imagen-quitar').style.display = 'inline-block';
+  } else {
+    $('insignia-imagen-preview-wrap').style.display = 'none';
+    $('insignia-imagen-quitar').style.display = 'none';
+  }
   $('insignia-guardar').textContent = 'Guardar cambios';
   $('insignia-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 function cancelarEdicionInsignia() {
   insigniaEditId = null;
+  insigniaImagenSel = null; insigniaImagenPathActual = null;
   $('insignia-guardar').textContent = 'Guardar insignia';
   $('insignia-nombre').value = ''; $('insignia-descripcion').value = ''; $('insignia-icono').value = 'medal'; $('insignia-color').value = '#21b57c';
+  $('insignia-imagen').value = '';
+  $('insignia-imagen-preview-wrap').style.display = 'none';
+  $('insignia-imagen-quitar').style.display = 'none';
 }
 window.borrarInsignia = async (id) => {
   if (!confirm('¿Borrar esta insignia? (los clientes que ya la ganaron la conservan en su historial)')) return;
@@ -1567,12 +1627,12 @@ async function cargarRetosDetalle() {
 }
 
 async function cargarInsigniasDetalle() {
-  const { data } = await sbClient.from('fichas_insignias_cliente').select('*, fichas_insignias(nombre, icono, color)').eq('cliente_id', actual.id).order('fecha_otorgada', { ascending: false });
+  const { data } = await sbClient.from('fichas_insignias_cliente').select('*, fichas_insignias(nombre, icono, color, imagen_path)').eq('cliente_id', actual.id).order('fecha_otorgada', { ascending: false });
   const ganadas = data || [];
   $('d-insignias').innerHTML = ganadas.length
     ? ganadas.map(g => {
         const i = g.fichas_insignias || {};
-        return `<span title="${esc(i.nombre || '')}" style="display:flex;align-items:center;gap:6px;background:${i.color || '#21b57c'};color:#fff;border-radius:999px;padding:5px 12px 5px 8px;font-size:12.5px;font-weight:700">${INSIGNIA_ICONOS[i.icono] || INSIGNIA_ICONOS.medal}${esc(i.nombre || '')}</span>`;
+        return `<span title="${esc(i.nombre || '')}" style="display:flex;align-items:center;gap:6px;background:#eef0f2;border-radius:999px;padding:3px 12px 3px 3px;font-size:12.5px;font-weight:700">${insigniaAvatar(i, 22)}${esc(i.nombre || '')}</span>`;
       }).join('')
     : '';
 }
