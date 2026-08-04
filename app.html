@@ -204,6 +204,10 @@
       <div class="aviso ok" id="ep-ok" style="display:none">✅ Perfil actualizado.</div>
     </div>
     <div class="card">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M8.5 13.5 7 21l5-2 5 2-1.5-7.5"/></svg>Mis insignias</h2>
+      <div id="insignias-cliente-lista" class="cargando">Cargando...</div>
+    </div>
+    <div class="card">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Historial de pagos</h2>
       <div id="pago-lista" class="cargando">Cargando...</div>
     </div>
@@ -217,6 +221,19 @@
       <img class="perfil-foto" id="p-foto" src="" alt="" style="display:none">
       <h1 id="p-nombre" style="margin-top:8px">—</h1>
       <p class="sub" id="p-disciplinas" style="margin-bottom:0">—</p>
+    </div>
+
+    <div class="card" id="p-fatiga-card" style="display:none">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="flex-shrink:0;text-align:center">
+          <div id="p-fatiga-num" style="font-family:ui-monospace,'SF Mono','Roboto Mono',Menlo,monospace;font-size:30px;font-weight:800;line-height:1">—</div>
+          <div style="font-size:10px;color:#8b95a3;text-transform:uppercase;letter-spacing:.4px">Índice / 10</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14.5px" id="p-fatiga-etiqueta">Fatiga</div>
+          <div class="sub" id="p-fatiga-fecha" style="margin-bottom:0;font-size:12px"></div>
+        </div>
+      </div>
     </div>
 
     <div id="p-prueba-card" style="display:none">
@@ -330,6 +347,39 @@
   </div>
 </div>
 
+<div class="hoja" id="hoja-reto">
+  <div class="panel">
+    <div class="cerrar" id="rt-cerrar"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div id="rt-icono" style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff"></div>
+      <div>
+        <h2 id="rt-titulo" style="margin-bottom:2px">—</h2>
+        <div id="rt-categoria" class="sub" style="margin-bottom:0">—</div>
+      </div>
+    </div>
+    <div id="rt-detalles" style="margin:14px 0"></div>
+    <div id="rt-pendiente" style="display:none">
+      <button class="btn" id="rt-aceptar">Aceptar</button>
+    </div>
+    <div id="rt-aceptado" style="display:none">
+      <div id="rt-campo-numero" style="display:none">
+        <label id="rt-campo-label">Valor</label>
+        <input type="number" id="rt-valor" inputmode="decimal">
+      </div>
+      <div id="rt-campo-archivo" style="display:none">
+        <label>Evidencia (foto o video)</label>
+        <label class="foto-btn" for="rt-archivo" id="rt-archivo-label">📎 Elegir archivo</label>
+        <input type="file" id="rt-archivo" accept="image/*,video/*" style="display:none">
+      </div>
+      <button class="btn" id="rt-cumplido" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Marcar cumplido</button>
+      <button class="btn linea" id="rt-fallido" style="margin-top:8px">No lo logré</button>
+    </div>
+    <div class="error" id="rt-err"></div>
+    <div class="aviso ok" id="rt-ok" style="display:none">✅ ¡Listo!</div>
+    <button class="btn linea" id="rt-cerrar-btn" style="margin-top:10px">Cerrar</button>
+  </div>
+</div>
+
 <div class="hoja" id="hoja-evento">
   <div class="panel">
     <div class="cerrar" id="ev-cerrar"></div>
@@ -347,8 +397,29 @@
       <button class="btn linea" id="ev-solicitar-cambio" style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Solicitar cambio</button>
       <button class="btn peligro" id="ev-cancelar-cita" style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Cancelar cita</button>
     </div>
+    <button class="btn" id="ev-reportar-fatiga" style="display:none;margin-bottom:8px;background:#5b6eea;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Reportar mi fatiga</button>
     <button class="btn oscuro" id="ev-agregar-calendario" style="margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M12 14v4"/><path d="m10 16 2 2 2-2"/></svg>Agregar a mi calendario</button>
     <button class="btn linea" id="ev-cerrar-btn">Cerrar</button>
+  </div>
+</div>
+
+<div class="hoja" id="hoja-fatiga">
+  <div class="panel">
+    <div class="cerrar" id="fat-cerrar"></div>
+    <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>¿Cómo te sentís?</h2>
+    <p class="sub" id="fat-info">Contanos cómo está tu cuerpo antes de este entreno. Escala de 1 (nada) a 10 (muchísimo).</p>
+    <label>Fatiga muscular <span id="fat-muscular-val" style="float:right;font-weight:800;color:var(--verde)">5</span></label>
+    <input type="range" id="fat-muscular" min="1" max="10" value="5" style="width:100%">
+    <label style="margin-top:18px">Fatiga general <span id="fat-general-val" style="float:right;font-weight:800;color:var(--verde)">5</span></label>
+    <input type="range" id="fat-general" min="1" max="10" value="5" style="width:100%">
+    <label style="margin-top:18px">DOMS (dolor muscular tardío) <span id="fat-doms-val" style="float:right;font-weight:800;color:var(--verde)">5</span></label>
+    <input type="range" id="fat-doms" min="1" max="10" value="5" style="width:100%">
+    <label style="margin-top:18px">Fatiga del sistema nervioso <span id="fat-snc-val" style="float:right;font-weight:800;color:var(--verde)">5</span></label>
+    <input type="range" id="fat-snc" min="1" max="10" value="5" style="width:100%">
+    <div class="error" id="fat-err"></div>
+    <button class="btn" id="fat-enviar" style="margin-top:18px">Enviar</button>
+    <div class="aviso ok" id="fat-ok" style="display:none">✅ ¡Gracias! Actualizamos tu índice de fatiga.</div>
+    <button class="btn linea" id="fat-cerrar-btn" style="margin-top:10px">Cerrar</button>
   </div>
 </div>
 
@@ -513,8 +584,10 @@ async function init() {
   pintarOnboarding();
   pintarDatos();
   pintarPrueba();
+  pintarFatigaHome();
   cargarEvaluaciones();
   cargarPagos();
+  cargarMisInsignias();
   cargarNotificaciones();
 
   $('op-cambio-plan').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Quisiera solicitar un cambio de plan.')}`;
@@ -852,6 +925,30 @@ async function cargarPagos() {
   }).join('');
 }
 
+// ===== Insignias ganadas =====
+const INSIGNIA_ICONOS = {
+  medal: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><path d="m9 15 1.5 1.5L15 12.5"/><path d="M9 9V3h6v6"/></svg>',
+  trophy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3a2 2 0 0 1-2 4h-1M7 5H4a2 2 0 0 0 2 4h1"/></svg>',
+  flag: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22V15"/></svg>',
+  zap: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>',
+  flame: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/></svg>',
+  target: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  star: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9 22 10 17 15 18 22 12 18.5 6 22 7 15 2 10 9 9 12 2Z"/></svg>',
+};
+async function cargarMisInsignias() {
+  const { data } = await sbClient.from('fichas_insignias_cliente').select('*, fichas_insignias(nombre, descripcion, icono, color)').eq('cliente_id', cliente.id).order('fecha_otorgada', { ascending: false });
+  const ganadas = data || [];
+  $('insignias-cliente-lista').className = '';
+  if (!ganadas.length) { $('insignias-cliente-lista').innerHTML = '<p class="sub" style="margin:0">Todavía no has ganado insignias. ¡Completa retos y skills para desbloquearlas!</p>'; return; }
+  $('insignias-cliente-lista').innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:10px">${ganadas.map(g => {
+    const i = g.fichas_insignias || {};
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:76px;text-align:center">
+      <div style="width:52px;height:52px;border-radius:50%;background:${i.color || '#21b57c'};color:#fff;display:flex;align-items:center;justify-content:center">${INSIGNIA_ICONOS[i.icono] || INSIGNIA_ICONOS.medal}</div>
+      <div style="font-size:11px;font-weight:700;line-height:1.2">${esc(i.nombre || '')}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
 // ===== Calendario =====
 $('vista-lista').onclick = () => { $('vista-lista').classList.add('on'); $('vista-mes').classList.remove('on'); $('cal-lista').style.display = 'block'; $('cal-mes').style.display = 'none'; };
 $('vista-mes').onclick = () => { $('vista-mes').classList.add('on'); $('vista-lista').classList.remove('on'); $('cal-mes').style.display = 'block'; $('cal-lista').style.display = 'none'; pintarMes(window.__eventosCal || []); };
@@ -949,9 +1046,13 @@ window.abrirEvento = (id) => {
   const esFuturo = new Date(e.fecha_inicio) > new Date();
   $('ev-acciones-cita').style.display = (esCita && esFuturo) ? 'block' : 'none';
   $('ev-confirmada-aviso').style.display = (esCita && cliente.fecha_prueba_confirmada) ? 'block' : 'none';
+  const horasHastaEvento = (new Date(e.fecha_inicio) - new Date()) / 3600000;
+  const pideFatiga = !!e.solicitar_check_fatiga && horasHastaEvento > -24 && horasHastaEvento < 48;
+  $('ev-reportar-fatiga').style.display = pideFatiga ? 'flex' : 'none';
   $('ev-agregar-calendario').style.display = 'flex';
   $('hoja-evento').style.display = 'flex';
 };
+$('ev-reportar-fatiga').onclick = () => { if (eventoAbierto) abrirFatiga(eventoAbierto.id); };
 
 window.abrirDiaEventos = (etiquetaFecha, ids) => {
   const eventos = ids.map(id => (window.__eventosCal || []).find(e => e.id === id)).filter(Boolean);
@@ -967,6 +1068,7 @@ window.abrirDiaEventos = (etiquetaFecha, ids) => {
   }).join('');
   $('ev-acciones-cita').style.display = 'none';
   $('ev-confirmada-aviso').style.display = 'none';
+  $('ev-reportar-fatiga').style.display = 'none';
   $('ev-agregar-calendario').style.display = 'none';
   $('hoja-evento').style.display = 'flex';
 };
@@ -976,6 +1078,54 @@ function cerrarHojaEvento() { $('hoja-evento').style.display = 'none'; eventoAbi
 $('ev-cerrar').onclick = cerrarHojaEvento;
 $('ev-cerrar-btn').onclick = cerrarHojaEvento;
 $('hoja-evento').onclick = (e) => { if (e.target.id === 'hoja-evento') cerrarHojaEvento(); };
+
+// ===== Check-in de fatiga =====
+let fatigaEventoId = null;
+['muscular', 'general', 'doms', 'snc'].forEach(k => {
+  $('fat-' + k).addEventListener('input', () => { $('fat-' + k + '-val').textContent = $('fat-' + k).value; });
+});
+window.abrirFatiga = (eventoId) => {
+  fatigaEventoId = eventoId;
+  ['muscular', 'general', 'doms', 'snc'].forEach(k => { $('fat-' + k).value = 5; $('fat-' + k + '-val').textContent = 5; });
+  $('fat-err').style.display = 'none'; $('fat-ok').style.display = 'none';
+  $('hoja-evento').style.display = 'none';
+  $('hoja-fatiga').style.display = 'flex';
+};
+function cerrarHojaFatiga() { $('hoja-fatiga').style.display = 'none'; }
+$('fat-cerrar').onclick = cerrarHojaFatiga;
+$('fat-cerrar-btn').onclick = cerrarHojaFatiga;
+$('hoja-fatiga').onclick = (e) => { if (e.target.id === 'hoja-fatiga') cerrarHojaFatiga(); };
+$('fat-enviar').onclick = async () => {
+  const err = $('fat-err'); err.style.display = 'none';
+  const btn = $('fat-enviar'); btn.disabled = true; btn.textContent = 'Enviando...';
+  const { data, error } = await sbClient.from('fichas_fatiga_registros').insert({
+    cliente_id: cliente.id,
+    evento_id: fatigaEventoId,
+    fatiga_muscular: Number($('fat-muscular').value),
+    fatiga_general: Number($('fat-general').value),
+    doms: Number($('fat-doms').value),
+    fatiga_snc: Number($('fat-snc').value),
+  }).select().single();
+  btn.disabled = false; btn.textContent = 'Enviar';
+  if (error) { err.textContent = 'Error: ' + error.message; err.style.display = 'block'; return; }
+  if (data) { cliente.fatiga_index = data.score; cliente.fatiga_actualizado_at = data.created_at; }
+  $('fat-ok').style.display = 'block';
+  setTimeout(() => { cerrarHojaFatiga(); pintarFatigaHome(); }, 1800);
+};
+
+function pintarFatigaHome() {
+  const el = $('p-fatiga-card');
+  if (!el) return;
+  if (cliente.fatiga_index == null) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  const score = Number(cliente.fatiga_index);
+  const color = score <= 4 ? 'var(--verde)' : score <= 7 ? 'var(--amarillo)' : 'var(--rojo)';
+  const etiqueta = score <= 4 ? 'Fatiga baja' : score <= 7 ? 'Fatiga moderada' : 'Fatiga alta';
+  $('p-fatiga-num').textContent = score.toFixed(1);
+  $('p-fatiga-num').style.color = color;
+  $('p-fatiga-etiqueta').textContent = etiqueta;
+  $('p-fatiga-fecha').textContent = cliente.fatiga_actualizado_at ? 'Actualizado ' + ATL.fmtFecha(cliente.fatiga_actualizado_at) : '';
+}
 
 $('ev-aceptar').onclick = async () => {
   if (!confirm('¿Confirmas que asistirás a esta cita?')) return;
@@ -1067,17 +1217,135 @@ $('chat-enviar').onclick = async () => {
 };
 
 // ===== Evaluaciones / retos =====
+const CAT_ICONO = {
+  reto: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  skill: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>',
+  actualizacion: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>',
+};
+const CAT_COLOR = { reto: 'var(--verde)', skill: 'var(--amarillo)', actualizacion: '#5b6eea' };
+const CAT_NOMBRE = { reto: 'Reto', skill: 'Skill', actualizacion: 'Actualización de datos' };
+const ESTADO_RETO_PILL = { pendiente: ['amarillo', 'Pendiente'], aceptado: ['gris', 'Aceptado'], cumplido: ['verde', 'Cumplido'], completado: ['verde', 'Cumplido'], fallido: ['rojo', 'No logrado'], vencido: ['rojo', 'Vencido'] };
+
+let retosCache = [], retoAbierto = null, retoArchivoSel = null;
 async function cargarRetos() {
-  const { data, error } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(titulo, descripcion, tipo)').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
+  const { data, error } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(*)').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
   if (error) { $('retos-lista').textContent = 'No se pudo cargar.'; return; }
-  if (!data || !data.length) { $('retos-lista').innerHTML = '<p class="sub" style="margin:0">Tu coach todavía no te ha asignado retos o cuestionarios.</p>'; return; }
-  const PILL = { pendiente: 'amarillo', completado: 'verde', vencido: 'rojo' };
-  $('retos-lista').innerHTML = data.map(r => {
+  retosCache = data || [];
+  if (!retosCache.length) { $('retos-lista').innerHTML = '<p class="sub" style="margin:0">Tu coach todavía no te ha asignado retos o cuestionarios.</p>'; return; }
+  $('retos-lista').innerHTML = retosCache.map(r => {
     const reto = r.fichas_retos || {};
-    const limite = r.fecha_limite ? ATL.fmtFecha(r.fecha_limite) : '—';
-    return `<div class="item"><div><div class="tit">${esc(reto.titulo)}</div><div class="det">${esc(reto.descripcion || '')}${r.fecha_limite ? ' · Límite: ' + limite : ''}</div></div><span class="pill ${PILL[r.estado] || 'gris'}">${r.estado}</span></div>`;
+    const cat = reto.categoria || 'reto';
+    const [cl, tx] = ESTADO_RETO_PILL[r.estado] || ['gris', r.estado];
+    const limite = r.fecha_limite ? ' · Límite: ' + ATL.fmtFecha(r.fecha_limite) : '';
+    return `<div class="item" style="cursor:pointer" onclick="abrirReto('${r.id}')">
+      <div><div class="tit">${esc(reto.titulo || '—')}</div><div class="det">${CAT_NOMBRE[cat] || 'Reto'}${limite}</div></div>
+      <span class="pill ${cl}">${tx}</span>
+    </div>`;
   }).join('');
 }
+
+window.abrirReto = (id) => {
+  const r = retosCache.find(x => x.id === id);
+  if (!r) return;
+  retoAbierto = r;
+  const reto = r.fichas_retos || {};
+  const cat = reto.categoria || 'reto';
+  $('rt-icono').innerHTML = CAT_ICONO[cat] || CAT_ICONO.reto;
+  $('rt-icono').style.background = CAT_COLOR[cat] || CAT_COLOR.reto;
+  $('rt-titulo').textContent = reto.titulo || '—';
+  $('rt-categoria').textContent = CAT_NOMBRE[cat] || 'Reto';
+  const [cl, tx] = ESTADO_RETO_PILL[r.estado] || ['gris', r.estado];
+  $('rt-detalles').innerHTML = `
+    ${reto.descripcion ? `<div class="dato"><div class="k">Descripción</div><div class="v">${esc(reto.descripcion)}</div></div>` : ''}
+    ${reto.instrucciones ? `<div class="dato"><div class="k">Instrucciones</div><div class="v">${esc(reto.instrucciones)}</div></div>` : ''}
+    ${r.fecha_limite ? `<div class="dato"><div class="k">Fecha límite</div><div class="v">${ATL.fmtFecha(r.fecha_limite)}</div></div>` : ''}
+    <div class="dato"><div class="k">Estado</div><div class="v"><span class="pill ${cl}">${tx}</span></div></div>
+    ${r.archivo_path ? `<div class="dato"><div class="k">Evidencia</div><div class="v"><button class="btn linea" style="width:auto;padding:8px 16px" onclick="verMiArchivoReto('${r.archivo_path}')">Ver archivo</button></div></div>` : ''}
+  `;
+  $('rt-pendiente').style.display = r.estado === 'pendiente' ? 'block' : 'none';
+  $('rt-aceptado').style.display = r.estado === 'aceptado' ? 'block' : 'none';
+  if (r.estado === 'aceptado') {
+    const esNumero = reto.tipo === 'numero';
+    const esArchivo = reto.tipo === 'foto' || reto.tipo === 'video';
+    $('rt-campo-numero').style.display = esNumero ? 'block' : 'none';
+    $('rt-campo-label').textContent = reto.unidad_campo ? `Valor (${reto.unidad_campo})` : 'Valor';
+    $('rt-valor').value = '';
+    $('rt-campo-archivo').style.display = esArchivo ? 'block' : 'none';
+    $('rt-archivo').value = ''; $('rt-archivo-label').textContent = '📎 Elegir archivo';
+    retoArchivoSel = null;
+  }
+  $('rt-err').style.display = 'none';
+  $('rt-ok').style.display = 'none';
+  $('hoja-reto').style.display = 'flex';
+};
+window.verMiArchivoReto = async (path) => {
+  const { data } = await sbClient.storage.from('fichas-retos').createSignedUrl(path, 600);
+  if (data) window.open(data.signedUrl, '_blank');
+};
+
+$('rt-archivo').addEventListener('change', () => {
+  retoArchivoSel = $('rt-archivo').files[0] || null;
+  $('rt-archivo-label').textContent = retoArchivoSel ? '📎 ' + retoArchivoSel.name : '📎 Elegir archivo';
+});
+
+function cerrarHojaReto() { $('hoja-reto').style.display = 'none'; retoAbierto = null; }
+$('rt-cerrar').onclick = cerrarHojaReto;
+$('rt-cerrar-btn').onclick = cerrarHojaReto;
+$('hoja-reto').onclick = (e) => { if (e.target.id === 'hoja-reto') cerrarHojaReto(); };
+
+$('rt-aceptar').onclick = async () => {
+  if (!retoAbierto) return;
+  const btn = $('rt-aceptar'); btn.disabled = true; btn.textContent = 'Aceptando...';
+  const { error } = await sbClient.from('fichas_retos_asignados').update({ estado: 'aceptado', aceptado_at: new Date().toISOString() }).eq('id', retoAbierto.id);
+  btn.disabled = false; btn.textContent = 'Aceptar';
+  if (error) { $('rt-err').textContent = 'Error: ' + error.message; $('rt-err').style.display = 'block'; return; }
+  cerrarHojaReto();
+  cargarRetos();
+};
+
+$('rt-fallido').onclick = async () => {
+  if (!retoAbierto) return;
+  if (!confirm('¿Marcar este reto como no logrado?')) return;
+  const { error } = await sbClient.from('fichas_retos_asignados').update({ estado: 'fallido', completado_at: new Date().toISOString() }).eq('id', retoAbierto.id);
+  if (error) { $('rt-err').textContent = 'Error: ' + error.message; $('rt-err').style.display = 'block'; return; }
+  cerrarHojaReto();
+  cargarRetos();
+};
+
+$('rt-cumplido').onclick = async () => {
+  if (!retoAbierto) return;
+  const reto = retoAbierto.fichas_retos || {};
+  const err = $('rt-err'); err.style.display = 'none';
+  let respuesta = null, archivo_path = null;
+  if (reto.tipo === 'numero') {
+    const v = Number($('rt-valor').value);
+    if (!$('rt-valor').value || isNaN(v)) { err.textContent = 'Escribe un valor.'; err.style.display = 'block'; return; }
+    respuesta = { valor: v };
+  }
+  const btn = $('rt-cumplido'); btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    if (reto.tipo === 'foto' || reto.tipo === 'video') {
+      if (!retoArchivoSel) throw new Error('Adjunta tu evidencia.');
+      const { data: { session } } = await sbClient.auth.getSession();
+      const ext = (retoArchivoSel.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      const path = `${session.user.id}/${Date.now()}.${ext}`;
+      const { error: eUp } = await sbClient.storage.from('fichas-retos').upload(path, retoArchivoSel, { contentType: retoArchivoSel.type || 'application/octet-stream' });
+      if (eUp) throw eUp;
+      archivo_path = path;
+    }
+    const { error } = await sbClient.from('fichas_retos_asignados').update({
+      estado: 'cumplido', completado_at: new Date().toISOString(),
+      respuesta, archivo_path,
+    }).eq('id', retoAbierto.id);
+    if (error) throw error;
+    $('rt-ok').textContent = reto.insignia_id ? '✅ ¡Cumplido! Ganaste una insignia nueva.' : '✅ ¡Cumplido!';
+    $('rt-ok').style.display = 'block';
+    setTimeout(() => { cerrarHojaReto(); cargarRetos(); if (typeof cargarMisInsignias === 'function') cargarMisInsignias(); }, 1800);
+  } catch (e) {
+    err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Marcar cumplido';
+};
 
 document.getElementById('btn-avatar').addEventListener('click', e => e.stopPropagation());
 document.getElementById('btn-bell').addEventListener('click', e => e.stopPropagation());

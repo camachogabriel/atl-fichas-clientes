@@ -171,6 +171,10 @@
         <input type="text" id="cal-ubicacion" placeholder="Ej: Pista La Sabana">
         <label>Descripción (opcional)</label>
         <textarea id="cal-descripcion"></textarea>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer">
+          <input type="checkbox" id="cal-fatiga" style="width:auto;margin:0">
+          Pedir check-in de fatiga el día antes (ej. fondos largos)
+        </label>
         <button class="btn oscuro" id="cal-guardar" style="margin-top:10px">Guardar evento</button>
         <div class="error" id="cal-err"></div>
         <div class="aviso ok" id="cal-ok" style="display:none">✅ Evento guardado.</div>
@@ -213,20 +217,76 @@
       <div id="retos-lista" class="cargando">Cargando...</div>
       <button class="btn linea" id="reto-toggle" style="margin-top:10px">➕ Nueva plantilla</button>
       <div id="reto-form" style="display:none">
+        <label>Categoría</label>
+        <select id="reto-categoria">
+          <option value="reto">🎯 Reto</option>
+          <option value="skill">🤸 Skill</option>
+          <option value="actualizacion">📊 Actualización de datos</option>
+        </select>
         <label>Título</label>
         <input type="text" id="reto-titulo" placeholder="Ej: Video semanal de técnica">
-        <label>Tipo</label>
+        <label>Formato de respuesta</label>
         <select id="reto-tipo">
           <option value="video">Video</option>
           <option value="foto">Foto</option>
           <option value="numero">Número (ej. peso)</option>
           <option value="formulario">Formulario</option>
+          <option value="ninguno">Sin evidencia</option>
         </select>
-        <label>Descripción (instrucciones para el cliente)</label>
+        <label>Descripción (para el cliente)</label>
         <textarea id="reto-descripcion"></textarea>
+        <label>Instrucciones detalladas (opcional)</label>
+        <textarea id="reto-instrucciones" placeholder="Pasos a seguir, técnica, qué debe mostrar la evidencia..."></textarea>
+        <div id="reto-campos-actualizacion" style="display:none">
+          <label>¿Qué dato actualiza?</label>
+          <input type="text" id="reto-campo" placeholder="Ej: peso, pulso_maximo_campo">
+          <label>Unidad</label>
+          <input type="text" id="reto-unidad" placeholder="Ej: kg, ppm">
+        </div>
+        <div id="reto-campos-premio" style="display:none">
+          <label>Insignia al completar (opcional)</label>
+          <select id="reto-insignia"><option value="">Sin insignia</option></select>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer">
+            <input type="checkbox" id="reto-correo" style="width:auto;margin:0">
+            Enviar correo de felicitación al completar
+          </label>
+        </div>
         <button class="btn oscuro" id="reto-guardar" style="margin-top:10px">Guardar plantilla</button>
         <div class="error" id="reto-err"></div>
         <div class="aviso ok" id="reto-ok" style="display:none">✅ Plantilla guardada.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M8.5 13.5 7 21l5-2 5 2-1.5-7.5"/></svg>Insignias</h2>
+      <p class="sub" style="margin-bottom:8px">El catálogo de logros que tus clientes pueden ganar.</p>
+      <div id="insignias-lista" class="cargando">Cargando...</div>
+      <button class="btn linea" id="insignia-toggle" style="margin-top:10px">➕ Nueva insignia</button>
+      <div id="insignia-form" style="display:none">
+        <label>Nombre</label>
+        <input type="text" id="insignia-nombre" placeholder="Ej: Fondo 50K">
+        <label>Descripción (opcional)</label>
+        <textarea id="insignia-descripcion"></textarea>
+        <label>Ícono</label>
+        <select id="insignia-icono">
+          <option value="medal">🏅 Medalla</option>
+          <option value="trophy">🏆 Trofeo</option>
+          <option value="flag">🏁 Bandera</option>
+          <option value="zap">⚡ Rayo</option>
+          <option value="flame">🔥 Fuego</option>
+          <option value="target">🎯 Diana</option>
+          <option value="star">⭐ Estrella</option>
+        </select>
+        <label>Color</label>
+        <select id="insignia-color">
+          <option value="#21b57c">Verde</option>
+          <option value="#fecb15">Amarillo</option>
+          <option value="#292e7e">Azul</option>
+          <option value="#ee2f63">Rojo</option>
+        </select>
+        <button class="btn oscuro" id="insignia-guardar" style="margin-top:10px">Guardar insignia</button>
+        <div class="error" id="insignia-err"></div>
+        <div class="aviso ok" id="insignia-ok" style="display:none">✅ Insignia guardada.</div>
       </div>
     </div>
   </section>
@@ -412,6 +472,7 @@
 
     <div class="card">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Retos asignados</h2>
+      <div id="d-insignias" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
       <div id="d-retos"></div>
       <label>Asignar plantilla</label>
       <select id="reto-asignar-sel"></select>
@@ -801,6 +862,7 @@ async function guardarEvento() {
     fecha_fin: $('cal-fin').value ? aISO($('cal-fin').value) : null,
     ubicacion: $('cal-ubicacion').value.trim() || null,
     descripcion: $('cal-descripcion').value.trim() || null,
+    solicitar_check_fatiga: $('cal-fatiga').checked,
   };
   const btn = $('cal-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
   try {
@@ -833,6 +895,7 @@ window.editarEvento = (id) => {
   $('cal-fin').value = e.fecha_fin ? aLocal(e.fecha_fin) : '';
   $('cal-ubicacion').value = e.ubicacion || '';
   $('cal-descripcion').value = e.descripcion || '';
+  $('cal-fatiga').checked = !!e.solicitar_check_fatiga;
   $('cal-guardar').textContent = 'Guardar cambios';
   $('cal-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
@@ -843,6 +906,7 @@ function cancelarEdicionEvento() {
   $('cal-tipo').value = 'entrenamiento_grupal';
   $('cal-cliente').value = '';
   $('cal-importancia').value = 'media';
+  $('cal-fatiga').checked = false;
 }
 window.borrarEvento = async (id) => {
   if (!confirm('¿Borrar este evento?')) return;
@@ -852,33 +916,46 @@ window.borrarEvento = async (id) => {
 
 // ===== Plantillas de retos =====
 let plantillasCache = [], retoEditId = null;
-const RETO_TIPO_ICONO = { video: '🎥', foto: '📷', numero: '🔢', formulario: '📝' };
+const RETO_TIPO_ICONO = { video: '🎥', foto: '📷', numero: '🔢', formulario: '📝', ninguno: '—' };
+const RETO_CATEGORIA_ICONO = { reto: '🎯', skill: '🤸', actualizacion: '📊' };
+const RETO_CATEGORIA_NOMBRE = { reto: 'Reto', skill: 'Skill', actualizacion: 'Actualización de datos' };
 
 function poblarSelectPlantillas() {
   const sel = $('reto-asignar-sel');
   if (!sel) return;
   sel.innerHTML = plantillasCache.length
-    ? plantillasCache.map(r => `<option value="${r.id}">${esc(r.titulo)}</option>`).join('')
+    ? plantillasCache.map(r => `<option value="${r.id}">${RETO_CATEGORIA_ICONO[r.categoria] || '🎯'} ${esc(r.titulo)}</option>`).join('')
     : '<option value="">Sin plantillas — créalas en la lista de Clientes</option>';
 }
 
 async function cargarRetosPlantillas() {
-  const { data: retos } = await sbClient.from('fichas_retos').select('*').order('created_at', { ascending: false });
+  const { data: retos } = await sbClient.from('fichas_retos').select('*, fichas_insignias(nombre)').order('created_at', { ascending: false });
   plantillasCache = retos || [];
   $('retos-lista').className = '';
-  $('retos-lista').innerHTML = plantillasCache.map(r => `<div class="item">
-    <div><div class="tit">${RETO_TIPO_ICONO[r.tipo] || '🎯'} ${esc(r.titulo)}</div><div class="det">${esc(r.descripcion || '')}</div></div>
+  $('retos-lista').innerHTML = plantillasCache.map(r => {
+    const insignia = r.fichas_insignias ? ` · 🏅 ${esc(r.fichas_insignias.nombre)}` : '';
+    return `<div class="item">
+    <div><div class="tit">${RETO_CATEGORIA_ICONO[r.categoria] || '🎯'} ${esc(r.titulo)}</div><div class="det">${RETO_CATEGORIA_NOMBRE[r.categoria] || 'Reto'} · ${RETO_TIPO_ICONO[r.tipo] || ''}${insignia}</div></div>
     <span style="display:flex;gap:6px">
       <button class="pill gris" style="border:none;cursor:pointer" onclick="editarPlantilla('${r.id}')">✏️</button>
       <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarPlantilla('${r.id}')">🗑</button>
     </span>
-  </div>`).join('') || '<p class="sub">Sin plantillas creadas.</p>';
+  </div>`;
+  }).join('') || '<p class="sub">Sin plantillas creadas.</p>';
   poblarSelectPlantillas();
 }
+
+function actualizarCamposCategoria() {
+  const cat = $('reto-categoria').value;
+  $('reto-campos-actualizacion').style.display = cat === 'actualizacion' ? 'block' : 'none';
+  $('reto-campos-premio').style.display = cat === 'actualizacion' ? 'none' : 'block';
+}
+$('reto-categoria').onchange = actualizarCamposCategoria;
 
 $('reto-toggle').onclick = () => {
   const f = $('reto-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none';
   if (f.style.display === 'none') cancelarEdicionPlantilla();
+  else actualizarCamposCategoria();
 };
 $('reto-guardar').onclick = guardarPlantilla;
 
@@ -886,7 +963,18 @@ async function guardarPlantilla() {
   const err = $('reto-err'); err.style.display = 'none'; $('reto-ok').style.display = 'none';
   const titulo = $('reto-titulo').value.trim();
   if (!titulo) { err.textContent = 'Escribe un título.'; err.style.display = 'block'; return; }
-  const fila = { titulo, tipo: $('reto-tipo').value, descripcion: $('reto-descripcion').value.trim() || null };
+  const categoria = $('reto-categoria').value;
+  const fila = {
+    titulo,
+    tipo: $('reto-tipo').value,
+    descripcion: $('reto-descripcion').value.trim() || null,
+    categoria,
+    instrucciones: $('reto-instrucciones').value.trim() || null,
+    campo_actualizar: categoria === 'actualizacion' ? ($('reto-campo').value.trim() || null) : null,
+    unidad_campo: categoria === 'actualizacion' ? ($('reto-unidad').value.trim() || null) : null,
+    insignia_id: categoria !== 'actualizacion' ? ($('reto-insignia').value || null) : null,
+    envia_correo: categoria !== 'actualizacion' ? $('reto-correo').checked : false,
+  };
   const btn = $('reto-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
   try {
     if (retoEditId) {
@@ -910,21 +998,124 @@ window.editarPlantilla = (id) => {
   if (!r) return;
   retoEditId = id;
   $('reto-form').style.display = 'block';
+  $('reto-categoria').value = r.categoria || 'reto';
   $('reto-titulo').value = r.titulo;
-  $('reto-tipo').value = r.tipo;
+  $('reto-tipo').value = r.tipo || 'formulario';
   $('reto-descripcion').value = r.descripcion || '';
+  $('reto-instrucciones').value = r.instrucciones || '';
+  $('reto-campo').value = r.campo_actualizar || '';
+  $('reto-unidad').value = r.unidad_campo || '';
+  $('reto-insignia').value = r.insignia_id || '';
+  $('reto-correo').checked = !!r.envia_correo;
+  actualizarCamposCategoria();
   $('reto-guardar').textContent = 'Guardar cambios';
   $('reto-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 function cancelarEdicionPlantilla() {
   retoEditId = null;
   $('reto-guardar').textContent = 'Guardar plantilla';
-  $('reto-titulo').value = ''; $('reto-descripcion').value = ''; $('reto-tipo').value = 'video';
+  $('reto-categoria').value = 'reto';
+  $('reto-titulo').value = ''; $('reto-descripcion').value = ''; $('reto-instrucciones').value = ''; $('reto-tipo').value = 'video';
+  $('reto-campo').value = ''; $('reto-unidad').value = ''; $('reto-insignia').value = ''; $('reto-correo').checked = false;
 }
 window.borrarPlantilla = async (id) => {
   if (!confirm('¿Borrar esta plantilla? (no borra los retos ya asignados a clientes)')) return;
   await sbClient.from('fichas_retos').delete().eq('id', id);
   cargarRetosPlantillas();
+};
+
+// ===== Catálogo de insignias =====
+let insigniasCache = [], insigniaEditId = null;
+const INSIGNIA_ICONOS = {
+  medal: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><path d="m9 15 1.5 1.5L15 12.5"/><path d="M9 9V3h6v6"/></svg>',
+  trophy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h3a2 2 0 0 1-2 4h-1M7 5H4a2 2 0 0 0 2 4h1"/></svg>',
+  flag: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22V15"/></svg>',
+  zap: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>',
+  flame: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 17a2.5 2.5 0 0 0 2.5-2.5c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7.5 7.5 0 1 1-15 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/></svg>',
+  target: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  star: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9 22 10 17 15 18 22 12 18.5 6 22 7 15 2 10 9 9 12 2Z"/></svg>',
+};
+
+function poblarSelectInsignias() {
+  const sel = $('reto-insignia');
+  if (!sel) return;
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Sin insignia</option>' + insigniasCache.map(i => `<option value="${i.id}">${esc(i.nombre)}</option>`).join('');
+  sel.value = actual;
+}
+
+async function cargarInsignias() {
+  const { data } = await sbClient.from('fichas_insignias').select('*').order('created_at', { ascending: false });
+  insigniasCache = data || [];
+  $('insignias-lista').className = '';
+  $('insignias-lista').innerHTML = insigniasCache.map(i => `<div class="item">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:50%;background:${i.color};color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0">${INSIGNIA_ICONOS[i.icono] || INSIGNIA_ICONOS.medal}</div>
+      <div><div class="tit">${esc(i.nombre)}</div><div class="det">${esc(i.descripcion || '')}</div></div>
+    </div>
+    <span style="display:flex;gap:6px">
+      <button class="pill gris" style="border:none;cursor:pointer" onclick="editarInsignia('${i.id}')">✏️</button>
+      <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarInsignia('${i.id}')">🗑</button>
+    </span>
+  </div>`).join('') || '<p class="sub">Sin insignias creadas.</p>';
+  poblarSelectInsignias();
+}
+
+$('insignia-toggle').onclick = () => {
+  const f = $('insignia-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'none') cancelarEdicionInsignia();
+};
+$('insignia-guardar').onclick = guardarInsignia;
+
+async function guardarInsignia() {
+  const err = $('insignia-err'); err.style.display = 'none'; $('insignia-ok').style.display = 'none';
+  const nombre = $('insignia-nombre').value.trim();
+  if (!nombre) { err.textContent = 'Escribe un nombre.'; err.style.display = 'block'; return; }
+  const fila = {
+    nombre,
+    descripcion: $('insignia-descripcion').value.trim() || null,
+    icono: $('insignia-icono').value,
+    color: $('insignia-color').value,
+  };
+  const btn = $('insignia-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    if (insigniaEditId) {
+      const { error } = await sbClient.from('fichas_insignias').update(fila).eq('id', insigniaEditId);
+      if (error) throw error;
+    } else {
+      fila.creado_por = miUserId;
+      const { error } = await sbClient.from('fichas_insignias').insert(fila);
+      if (error) throw error;
+    }
+    cancelarEdicionInsignia();
+    $('insignia-form').style.display = 'none';
+    $('insignia-ok').style.display = 'block'; setTimeout(() => $('insignia-ok').style.display = 'none', 2500);
+    cargarInsignias();
+  } catch (e) { err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block'; }
+  btn.disabled = false; btn.textContent = insigniaEditId ? 'Guardar cambios' : 'Guardar insignia';
+}
+
+window.editarInsignia = (id) => {
+  const i = insigniasCache.find(x => x.id === id);
+  if (!i) return;
+  insigniaEditId = id;
+  $('insignia-form').style.display = 'block';
+  $('insignia-nombre').value = i.nombre;
+  $('insignia-descripcion').value = i.descripcion || '';
+  $('insignia-icono').value = i.icono;
+  $('insignia-color').value = i.color;
+  $('insignia-guardar').textContent = 'Guardar cambios';
+  $('insignia-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+function cancelarEdicionInsignia() {
+  insigniaEditId = null;
+  $('insignia-guardar').textContent = 'Guardar insignia';
+  $('insignia-nombre').value = ''; $('insignia-descripcion').value = ''; $('insignia-icono').value = 'medal'; $('insignia-color').value = '#21b57c';
+}
+window.borrarInsignia = async (id) => {
+  if (!confirm('¿Borrar esta insignia? (los clientes que ya la ganaron la conservan en su historial)')) return;
+  await sbClient.from('fichas_insignias').delete().eq('id', id);
+  cargarInsignias();
 };
 
 async function init() {
@@ -938,6 +1129,7 @@ async function init() {
   await cargarLista();
   cargarConfig();
   cargarCalendario();
+  await cargarInsignias();
   cargarRetosPlantillas();
   cargarMensajesPendientes();
   cargarInbox();
@@ -1343,17 +1535,24 @@ async function enviarMensajeCoach() {
 }
 
 // ===== Retos asignados =====
+const ESTADO_RETO_PILL = {
+  pendiente: ['amarillo', 'Pendiente'],
+  aceptado: ['gris', 'Aceptado · en curso'],
+  cumplido: ['verde', 'Cumplido'],
+  completado: ['verde', 'Cumplido'],
+  fallido: ['rojo', 'Fallido'],
+  vencido: ['rojo', 'Vencido'],
+};
 async function cargarRetosDetalle() {
-  const { data: asignados } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(titulo, descripcion, tipo)').eq('cliente_id', actual.id).order('created_at', { ascending: false });
-  const ESTADO_PILL = { pendiente: ['amarillo', 'Pendiente'], completado: ['verde', 'Completado'], vencido: ['rojo', 'Vencido'] };
+  const { data: asignados } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(titulo, descripcion, tipo, categoria)').eq('cliente_id', actual.id).order('created_at', { ascending: false });
   $('d-retos').innerHTML = (asignados || []).map(a => {
     const r = a.fichas_retos || {};
-    const [cl, tx] = ESTADO_PILL[a.estado] || ['gris', a.estado];
+    const [cl, tx] = ESTADO_RETO_PILL[a.estado] || ['gris', a.estado];
     const verArchivo = a.archivo_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verArchivoReto('${a.archivo_path}')">Ver archivo</button>` : '';
     const respuesta = a.respuesta ? `<div class="det" style="margin-top:4px">📋 ${esc(JSON.stringify(a.respuesta))}</div>` : '';
     return `<div class="item" style="align-items:flex-start">
       <div style="flex:1;min-width:0">
-        <div class="tit">${RETO_TIPO_ICONO[r.tipo] || '🎯'} ${esc(r.titulo || '—')}</div>
+        <div class="tit">${RETO_CATEGORIA_ICONO[r.categoria] || '🎯'} ${esc(r.titulo || '—')}</div>
         <div class="det">${a.fecha_limite ? 'Vence: ' + ATL.fmtFecha(a.fecha_limite) : 'Sin fecha límite'}</div>
         ${respuesta}
       </div>
@@ -1364,6 +1563,18 @@ async function cargarRetosDetalle() {
       </span>
     </div>`;
   }).join('') || '<p class="sub">Sin retos asignados.</p>';
+  cargarInsigniasDetalle();
+}
+
+async function cargarInsigniasDetalle() {
+  const { data } = await sbClient.from('fichas_insignias_cliente').select('*, fichas_insignias(nombre, icono, color)').eq('cliente_id', actual.id).order('fecha_otorgada', { ascending: false });
+  const ganadas = data || [];
+  $('d-insignias').innerHTML = ganadas.length
+    ? ganadas.map(g => {
+        const i = g.fichas_insignias || {};
+        return `<span title="${esc(i.nombre || '')}" style="display:flex;align-items:center;gap:6px;background:${i.color || '#21b57c'};color:#fff;border-radius:999px;padding:5px 12px 5px 8px;font-size:12.5px;font-weight:700">${INSIGNIA_ICONOS[i.icono] || INSIGNIA_ICONOS.medal}${esc(i.nombre || '')}</span>`;
+      }).join('')
+    : '';
 }
 window.verArchivoReto = async (path) => {
   const { data } = await sbClient.storage.from('fichas-retos').createSignedUrl(path, 600);
