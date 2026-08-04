@@ -363,8 +363,7 @@
     </div>
     <div id="rt-aceptado" style="display:none">
       <div id="rt-campo-numero" style="display:none">
-        <label id="rt-campo-label">Valor</label>
-        <input type="number" id="rt-valor" inputmode="decimal">
+        <div id="rt-campos-numero-lista"></div>
       </div>
       <div id="rt-campo-archivo" style="display:none">
         <label>Evidencia (foto o video)</label>
@@ -1284,8 +1283,15 @@ window.abrirReto = (id) => {
     const esNumero = reto.tipo === 'numero';
     const esArchivo = reto.tipo === 'foto' || reto.tipo === 'video';
     $('rt-campo-numero').style.display = esNumero ? 'block' : 'none';
-    $('rt-campo-label').textContent = reto.unidad_campo ? `Valor (${reto.unidad_campo})` : 'Valor';
-    $('rt-valor').value = '';
+    if (esNumero) {
+      const campos = (reto.campos_actualizar && reto.campos_actualizar.length > 0)
+        ? reto.campos_actualizar
+        : [{ campo: 'valor', unidad: reto.unidad_campo || '', label: 'Valor' }];
+      $('rt-campos-numero-lista').innerHTML = campos.map(c => `
+        <label>${esc(c.label || c.campo)}${c.unidad ? ' (' + esc(c.unidad) + ')' : ''}</label>
+        <input type="number" class="rt-valor-campo" data-campo="${esc(c.campo)}" inputmode="decimal" style="margin-bottom:10px">
+      `).join('');
+    }
     $('rt-campo-archivo').style.display = esArchivo ? 'block' : 'none';
     $('rt-archivo').value = ''; $('rt-archivo-label').textContent = '📎 Elegir archivo';
     retoArchivoSel = null;
@@ -1334,9 +1340,16 @@ $('rt-cumplido').onclick = async () => {
   const err = $('rt-err'); err.style.display = 'none';
   let respuesta = null, archivo_path = null;
   if (reto.tipo === 'numero') {
-    const v = Number($('rt-valor').value);
-    if (!$('rt-valor').value || isNaN(v)) { err.textContent = 'Escribe un valor.'; err.style.display = 'block'; return; }
-    respuesta = { valor: v };
+    const inputs = Array.from(document.querySelectorAll('.rt-valor-campo'));
+    const resp = {};
+    let faltante = false;
+    inputs.forEach(inp => {
+      const num = Number(inp.value);
+      if (!inp.value || isNaN(num)) faltante = true;
+      resp[inp.dataset.campo] = num;
+    });
+    if (faltante || inputs.length === 0) { err.textContent = 'Completa todos los valores.'; err.style.display = 'block'; return; }
+    respuesta = resp;
   }
   const esActualizacion = (reto.categoria || 'reto') === 'actualizacion';
   const btn = $('rt-cumplido'); btn.disabled = true; $('rt-cumplido-label').textContent = 'Guardando...';

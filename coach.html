@@ -971,17 +971,64 @@ const CAMPO_ACTUALIZAR_OPCIONES = [
   { valor: 'peso_levantado', label: 'Peso levantado (fuerza)', unidad: 'kg' },
   { valor: 'otro', label: 'Otro (especificar)', unidad: '' },
 ];
-$('reto-campo-select').innerHTML = CAMPO_ACTUALIZAR_OPCIONES.map(o => `<option value="${o.valor}">${esc(o.label)}</option>`).join('');
-$('reto-campo-select').onchange = () => {
-  const op = CAMPO_ACTUALIZAR_OPCIONES.find(o => o.valor === $('reto-campo-select').value);
-  $('reto-campo-otro-wrap').style.display = $('reto-campo-select').value === 'otro' ? 'block' : 'none';
-  if (op && op.valor !== 'otro') $('reto-unidad').value = op.unidad;
+let camposActualizarState = [];
+function nuevoCampoFila(valores) {
+  return Object.assign({ campo: 'peso', unidad: 'kg', campoOtro: '' }, valores || {});
+}
+function renderCamposActualizar() {
+  const cont = $('reto-campos-lista');
+  cont.innerHTML = camposActualizarState.map((f, i) => `
+    <div style="border:1px solid var(--borde);border-radius:10px;padding:10px;margin-bottom:8px">
+      <label>Dato ${i + 1}</label>
+      <select class="rcf-select" data-i="${i}">
+        ${CAMPO_ACTUALIZAR_OPCIONES.map(o => `<option value="${o.valor}" ${f.campo === o.valor ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}
+      </select>
+      <div class="rcf-otro-wrap" style="display:${f.campo === 'otro' ? 'block' : 'none'}">
+        <label>Nombre del dato personalizado</label>
+        <input type="text" class="rcf-otro" data-i="${i}" placeholder="Ej: flexibilidad_isquiotibiales" value="${esc(f.campoOtro || '')}">
+      </div>
+      <label>Unidad</label>
+      <input type="text" class="rcf-unidad" data-i="${i}" placeholder="Ej: kg, ppm" value="${esc(f.unidad || '')}">
+      ${camposActualizarState.length > 1 ? `<button type="button" class="btn linea rcf-quitar" data-i="${i}" style="margin-top:8px">Quitar este dato</button>` : ''}
+    </div>
+  `).join('');
+}
+$('reto-campos-lista').addEventListener('change', (e) => {
+  const i = Number(e.target.dataset.i);
+  if (Number.isNaN(i)) return;
+  if (e.target.classList.contains('rcf-select')) {
+    camposActualizarState[i].campo = e.target.value;
+    const op = CAMPO_ACTUALIZAR_OPCIONES.find(o => o.valor === e.target.value);
+    if (op && op.valor !== 'otro') camposActualizarState[i].unidad = op.unidad;
+    renderCamposActualizar();
+  }
+});
+$('reto-campos-lista').addEventListener('input', (e) => {
+  const i = Number(e.target.dataset.i);
+  if (Number.isNaN(i)) return;
+  if (e.target.classList.contains('rcf-otro')) camposActualizarState[i].campoOtro = e.target.value;
+  if (e.target.classList.contains('rcf-unidad')) camposActualizarState[i].unidad = e.target.value;
+});
+$('reto-campos-lista').addEventListener('click', (e) => {
+  if (e.target.classList.contains('rcf-quitar')) {
+    const i = Number(e.target.dataset.i);
+    camposActualizarState.splice(i, 1);
+    renderCamposActualizar();
+  }
+});
+$('reto-campo-agregar').onclick = () => {
+  camposActualizarState.push(nuevoCampoFila());
+  renderCamposActualizar();
 };
 
 function actualizarCamposCategoria() {
   const cat = $('reto-categoria').value;
   $('reto-campos-actualizacion').style.display = cat === 'actualizacion' ? 'block' : 'none';
   $('reto-campos-premio').style.display = cat === 'actualizacion' ? 'none' : 'block';
+  if (cat === 'actualizacion') {
+    if (camposActualizarState.length === 0) camposActualizarState = [nuevoCampoFila()];
+    renderCamposActualizar();
+  }
 }
 $('reto-categoria').onchange = actualizarCamposCategoria;
 
@@ -997,16 +1044,25 @@ async function guardarPlantilla() {
   const titulo = $('reto-titulo').value.trim();
   if (!titulo) { err.textContent = 'Escribe un título.'; err.style.display = 'block'; return; }
   const categoria = $('reto-categoria').value;
+  let camposActualizarFinal = [];
+  if (categoria === 'actualizacion') {
+    camposActualizarFinal = camposActualizarState.map(f => {
+      const campo = f.campo === 'otro' ? (f.campoOtro || '').trim() : f.campo;
+      const opcion = CAMPO_ACTUALIZAR_OPCIONES.find(o => o.valor === f.campo);
+      const label = f.campo === 'otro' ? campo : (opcion ? opcion.label : campo);
+      return { campo, unidad: (f.unidad || '').trim(), label };
+    }).filter(f => f.campo);
+    if (camposActualizarFinal.length === 0) { err.textContent = 'Agrega al menos un dato a actualizar.'; err.style.display = 'block'; return; }
+  }
   const fila = {
     titulo,
     tipo: $('reto-tipo').value,
     descripcion: $('reto-descripcion').value.trim() || null,
     categoria,
     instrucciones: $('reto-instrucciones').value.trim() || null,
-    campo_actualizar: categoria === 'actualizacion'
-      ? ($('reto-campo-select').value === 'otro' ? ($('reto-campo-otro').value.trim() || null) : $('reto-campo-select').value)
-      : null,
-    unidad_campo: categoria === 'actualizacion' ? ($('reto-unidad').value.trim() || null) : null,
+    campo_actualizar: null,
+    unidad_campo: null,
+    campos_actualizar: categoria === 'actualizacion' ? camposActualizarFinal : [],
     insignia_id: categoria !== 'actualizacion' ? ($('reto-insignia').value || null) : null,
     envia_correo: categoria !== 'actualizacion' ? $('reto-correo').checked : false,
   };
@@ -1038,11 +1094,17 @@ window.editarPlantilla = (id) => {
   $('reto-tipo').value = r.tipo || 'formulario';
   $('reto-descripcion').value = r.descripcion || '';
   $('reto-instrucciones').value = r.instrucciones || '';
-  const campoConocido = CAMPO_ACTUALIZAR_OPCIONES.some(o => o.valor === r.campo_actualizar);
-  $('reto-campo-select').value = r.campo_actualizar && campoConocido ? r.campo_actualizar : 'otro';
-  $('reto-campo-otro-wrap').style.display = $('reto-campo-select').value === 'otro' ? 'block' : 'none';
-  $('reto-campo-otro').value = (r.campo_actualizar && !campoConocido) ? r.campo_actualizar : '';
-  $('reto-unidad').value = r.unidad_campo || '';
+  if (r.campos_actualizar && Array.isArray(r.campos_actualizar) && r.campos_actualizar.length > 0) {
+    camposActualizarState = r.campos_actualizar.map(c => {
+      const conocido = CAMPO_ACTUALIZAR_OPCIONES.some(o => o.valor === c.campo);
+      return nuevoCampoFila({ campo: conocido ? c.campo : 'otro', campoOtro: conocido ? '' : (c.campo || ''), unidad: c.unidad || '' });
+    });
+  } else if (r.campo_actualizar) {
+    const conocido = CAMPO_ACTUALIZAR_OPCIONES.some(o => o.valor === r.campo_actualizar);
+    camposActualizarState = [nuevoCampoFila({ campo: conocido ? r.campo_actualizar : 'otro', campoOtro: conocido ? '' : r.campo_actualizar, unidad: r.unidad_campo || '' })];
+  } else {
+    camposActualizarState = [nuevoCampoFila()];
+  }
   $('reto-insignia').value = r.insignia_id || '';
   $('reto-correo').checked = !!r.envia_correo;
   actualizarCamposCategoria();
@@ -1054,8 +1116,8 @@ function cancelarEdicionPlantilla() {
   $('reto-guardar').textContent = 'Guardar plantilla';
   $('reto-categoria').value = 'reto';
   $('reto-titulo').value = ''; $('reto-descripcion').value = ''; $('reto-instrucciones').value = ''; $('reto-tipo').value = 'video';
-  $('reto-campo-select').value = 'peso'; $('reto-campo-otro-wrap').style.display = 'none'; $('reto-campo-otro').value = '';
-  $('reto-unidad').value = ''; $('reto-insignia').value = ''; $('reto-correo').checked = false;
+  camposActualizarState = [nuevoCampoFila()];
+  $('reto-insignia').value = ''; $('reto-correo').checked = false;
 }
 window.borrarPlantilla = async (id) => {
   if (!confirm('¿Borrar esta plantilla? (no borra los retos ya asignados a clientes)')) return;
