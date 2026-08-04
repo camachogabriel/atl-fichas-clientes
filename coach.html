@@ -23,6 +23,24 @@
   .stat-chip { flex: 1; min-width: 110px; background: #fafbfc; border: 1px solid var(--borde); border-radius: 10px; padding: 12px; text-align: center; }
   .stat-chip .n { font-size: 22px; font-weight: 800; }
   .stat-chip .e { font-size: 11.5px; color: var(--gris-claro); margin-top: 2px; }
+
+  .hoja { position: fixed; inset: 0; background: rgba(13,17,23,.45); z-index: 60; display: none; align-items: flex-end; }
+  .hoja .panel { background: #fff; width: 100%; border-radius: 18px 18px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); max-height: 85vh; overflow-y: auto; }
+  .hoja .panel h2 { margin-bottom: 4px; }
+  .hoja .panel .sub { margin-bottom: 16px; }
+  .hoja .cerrar { display: block; width: 40px; height: 4px; background: var(--borde); border-radius: 999px; margin: 0 auto 14px; }
+
+  .toggle-vista { display: flex; gap: 6px; margin-bottom: 12px; }
+  .toggle-vista button { flex: 1; padding: 9px; border-radius: 9px; border: 1.5px solid var(--borde); background: #fff; font-size: 13px; font-weight: 700; color: var(--gris); cursor: pointer; }
+  .toggle-vista button.on { border-color: var(--verde); background: var(--verde-suave); color: #2c6e46; }
+  .mes-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .mes-grid .dia-cab { text-align: center; font-size: 10.5px; color: var(--gris-claro); font-weight: 700; padding-bottom: 4px; }
+  .mes-grid .dia-celda { aspect-ratio: 1; border-radius: 8px; background: var(--fondo); padding: 3px; color: var(--gris); display: flex; flex-direction: column; overflow: hidden; }
+  .mes-grid .dia-celda.hoy { background: var(--verde-suave); color: #2c6e46; }
+  .mes-grid .dia-num { font-size: 10.5px; font-weight: 700; margin-bottom: 2px; flex-shrink: 0; }
+  .mes-grid .dia-celda.hoy .dia-num { font-weight: 800; }
+  .mes-grid .dia-eventos { display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-height: 0; }
+  .mes-grid .evt-chip { font-size: 7.8px; line-height: 1.3; padding: 1.5px 3px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -100,9 +118,27 @@
   <section id="sec-calendario" style="display:none">
     <h1>Calendario</h1>
     <p class="sub">Eventos grupales o de un cliente específico: pruebas, reevaluaciones, entrenamientos, fechas importantes.</p>
+
+    <div class="card">
+      <h2>Filtros</h2>
+      <label style="margin-top:0">Tipo de evento</label>
+      <div class="chips" id="cal-filtro-tipo">
+        <div class="chip on" data-cat="cita">🧪 Citas</div>
+        <div class="chip on" data-cat="evento">🚴 Eventos</div>
+        <div class="chip on" data-cat="otro">📌 Otros</div>
+      </div>
+      <label>Clientes</label>
+      <button class="btn linea" id="cal-filtro-clientes-btn" style="text-align:left">👥 Mostrando: todos los clientes</button>
+    </div>
+
     <div class="card">
       <h2>📅 Todos los eventos</h2>
+      <div class="toggle-vista">
+        <button class="on" id="cal-vista-lista">Lista</button>
+        <button id="cal-vista-mes">Mes</button>
+      </div>
       <div id="cal-lista" class="cargando">Cargando...</div>
+      <div id="cal-mes" style="display:none"></div>
       <button class="btn linea" id="cal-toggle" style="margin-top:10px">➕ Nuevo evento</button>
       <div id="cal-form" style="display:none">
         <label>Título</label>
@@ -137,6 +173,31 @@
       </div>
     </div>
   </section>
+
+  <div class="hoja" id="hoja-filtro-clientes">
+    <div class="panel">
+      <div class="cerrar" id="cfc-cerrar"></div>
+      <h2>Filtrar por cliente</h2>
+      <p class="sub">Elige qué clientes quieres ver en el calendario. Los eventos grupales siempre se muestran.</p>
+      <input type="text" id="cfc-buscar" placeholder="Buscar cliente...">
+      <div style="display:flex;gap:8px;margin:10px 0">
+        <button class="btn linea" id="cfc-todos" style="width:auto;padding:8px 14px">Todos</button>
+        <button class="btn linea" id="cfc-ninguno" style="width:auto;padding:8px 14px">Ninguno</button>
+      </div>
+      <div id="cfc-lista" style="max-height:42vh;overflow-y:auto"></div>
+      <button class="btn oscuro" id="cfc-aplicar" style="margin-top:12px">Aplicar</button>
+    </div>
+  </div>
+
+  <div class="hoja" id="hoja-dia-coach">
+    <div class="panel">
+      <div class="cerrar" id="dc-cerrar"></div>
+      <h2 id="dc-titulo">—</h2>
+      <p class="sub" id="dc-sub"></p>
+      <div id="dc-lista"></div>
+      <button class="btn linea" id="dc-cerrar-btn" style="margin-top:10px">Cerrar</button>
+    </div>
+  </div>
 
   <!-- RETOS -->
   <section id="sec-retos" style="display:none">
@@ -477,7 +538,7 @@ $('volver').onclick = () => {
 
 function copiarLinkRegistro(sufijo) {
   return async () => {
-    const url = location.origin + location.pathname.replace('coach.html', '') + 'onboarding.html' + sufijo;
+    const url = location.origin + location.pathname.replace(/[^/]*$/, '') + 'onboarding.html' + sufijo;
     try { await navigator.clipboard.writeText(url); } catch (_) { prompt('Copia el link:', url); }
     $('copiado').style.display = 'block'; setTimeout(() => $('copiado').style.display = 'none', 2500);
   };
@@ -501,6 +562,23 @@ const TIPO_ICONO_EVENTO = { prueba: '🧪', reevaluacion: '🔁', entrenamiento_
 const COLOR_SEM = { alta: 'var(--rojo)', media: 'var(--amarillo)', baja: 'var(--verde)' };
 const dotSem = (c) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:2px"></span>`;
 
+// Categorías del filtro: citas (pruebas/reevaluaciones), eventos (entrenamientos/importantes) y otros
+function categoriaEvento(tipo) {
+  if (tipo === 'prueba' || tipo === 'reevaluacion') return 'cita';
+  if (tipo === 'entrenamiento_grupal' || tipo === 'importante') return 'evento';
+  return 'otro';
+}
+let calFiltroTipo = new Set(['cita', 'evento', 'otro']);
+let calFiltroClientes = null; // null = todos los clientes; si no, Set de cliente_id (los grupales siempre se muestran)
+
+function eventosFiltrados() {
+  return eventosCache.filter(e => {
+    if (!calFiltroTipo.has(categoriaEvento(e.tipo))) return false;
+    if (calFiltroClientes && e.cliente_id && !calFiltroClientes.has(e.cliente_id)) return false;
+    return true;
+  });
+}
+
 function poblarSelectClientes() {
   const sel = $('cal-cliente');
   const valorActual = sel.value;
@@ -508,14 +586,75 @@ function poblarSelectClientes() {
   sel.value = valorActual;
 }
 
+document.querySelectorAll('#cal-filtro-tipo .chip').forEach(chip => {
+  chip.onclick = () => {
+    const cat = chip.dataset.cat;
+    if (calFiltroTipo.has(cat)) { calFiltroTipo.delete(cat); chip.classList.remove('on'); }
+    else { calFiltroTipo.add(cat); chip.classList.add('on'); }
+    renderizarCalendario();
+  };
+});
+
+// --- Filtro por cliente ---
+let calFiltroClientesTmp = null;
+function clientesFiltrables() { return clientes.filter(c => c.estado !== 'inactivo'); }
+function renderizarListaFiltroClientes(busqueda = '') {
+  const q = busqueda.trim().toLowerCase();
+  const base = clientesFiltrables();
+  const lista = q ? base.filter(c => (c.nombre || '').toLowerCase().includes(q)) : base;
+  $('cfc-lista').innerHTML = lista.map(c => {
+    const marcado = calFiltroClientesTmp.has(c.id);
+    return `<label style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--fondo);font-weight:400">
+      <input type="checkbox" data-id="${c.id}" ${marcado ? 'checked' : ''} style="width:auto"> ${esc(c.nombre)}
+    </label>`;
+  }).join('') || '<p class="sub">Sin resultados.</p>';
+}
+function actualizarResumenFiltroClientes() {
+  const btn = $('cal-filtro-clientes-btn');
+  if (!calFiltroClientes) { btn.textContent = '👥 Mostrando: todos los clientes'; return; }
+  btn.textContent = `👥 Mostrando: ${calFiltroClientes.size} cliente${calFiltroClientes.size === 1 ? '' : 's'}`;
+}
+$('cal-filtro-clientes-btn').onclick = () => {
+  calFiltroClientesTmp = calFiltroClientes ? new Set(calFiltroClientes) : new Set(clientesFiltrables().map(c => c.id));
+  $('cfc-buscar').value = '';
+  renderizarListaFiltroClientes();
+  $('hoja-filtro-clientes').style.display = 'flex';
+};
+$('cfc-buscar').addEventListener('input', () => renderizarListaFiltroClientes($('cfc-buscar').value));
+$('cfc-todos').onclick = () => { calFiltroClientesTmp = new Set(clientesFiltrables().map(c => c.id)); renderizarListaFiltroClientes($('cfc-buscar').value); };
+$('cfc-ninguno').onclick = () => { calFiltroClientesTmp = new Set(); renderizarListaFiltroClientes($('cfc-buscar').value); };
+$('cfc-lista').addEventListener('change', (e) => {
+  const cb = e.target.closest('input[type=checkbox]'); if (!cb) return;
+  if (cb.checked) calFiltroClientesTmp.add(cb.dataset.id); else calFiltroClientesTmp.delete(cb.dataset.id);
+});
+$('cfc-aplicar').onclick = () => {
+  const total = clientesFiltrables().length;
+  calFiltroClientes = calFiltroClientesTmp.size >= total ? null : new Set(calFiltroClientesTmp);
+  $('hoja-filtro-clientes').style.display = 'none';
+  actualizarResumenFiltroClientes();
+  renderizarCalendario();
+};
+$('cfc-cerrar').onclick = () => { $('hoja-filtro-clientes').style.display = 'none'; };
+$('hoja-filtro-clientes').onclick = (e) => { if (e.target.id === 'hoja-filtro-clientes') $('hoja-filtro-clientes').style.display = 'none'; };
+
+// --- Lista / Mes ---
+$('cal-vista-lista').onclick = () => { $('cal-vista-lista').classList.add('on'); $('cal-vista-mes').classList.remove('on'); $('cal-lista').style.display = 'block'; $('cal-mes').style.display = 'none'; };
+$('cal-vista-mes').onclick = () => { $('cal-vista-mes').classList.add('on'); $('cal-vista-lista').classList.remove('on'); $('cal-mes').style.display = 'block'; $('cal-lista').style.display = 'none'; pintarMesCoach(eventosFiltrados()); };
+
 async function cargarCalendario() {
   const { data: eventos } = await sbClient.from('fichas_eventos').select('*').order('fecha_inicio', { ascending: true });
   eventosCache = eventos || [];
   poblarSelectClientes();
+  actualizarResumenFiltroClientes();
+  renderizarCalendario();
+}
+
+function renderizarCalendario() {
+  const filtrados = eventosFiltrados();
   $('cal-lista').className = '';
   const ahora = new Date();
-  const futuros = eventosCache.filter(e => new Date(e.fecha_fin || e.fecha_inicio) >= ahora);
-  const lista = futuros.length ? futuros : eventosCache.slice(-10);
+  const futuros = filtrados.filter(e => new Date(e.fecha_fin || e.fecha_inicio) >= ahora);
+  const lista = futuros.length ? futuros : filtrados.slice(-10);
   $('cal-lista').innerHTML = lista.map(e => {
     const esGrupal = !e.cliente_id;
     const cliente = esGrupal ? 'Grupal (todos)' : (clientes.find(c => c.id === e.cliente_id)?.nombre || '—');
@@ -530,9 +669,80 @@ async function cargarCalendario() {
         <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarEvento('${e.id}')">🗑</button>
       </span>
     </div>`;
-  }).join('') || '<p class="sub">Sin eventos programados.</p>';
+  }).join('') || '<p class="sub">Sin eventos programados con estos filtros.</p>';
+  if ($('cal-vista-mes').classList.contains('on')) pintarMesCoach(filtrados);
   pintarDashboardEventos();
 }
+
+function nombreCortoCliente(nombre) {
+  const partes = (nombre || '').trim().split(/\s+/);
+  if (partes.length <= 1) return partes[0] || '—';
+  return partes[0] + ' ' + partes[1][0] + '.';
+}
+
+function pintarMesCoach(eventos) {
+  const hoy = new Date();
+  const anio = hoy.getFullYear(), mes = hoy.getMonth();
+  const primerDia = new Date(anio, mes, 1).getDay();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const COLOR_IMP = { alta: '#ee2f63', media: '#fecb15', baja: '#21b57c' };
+  const TEXTO_IMP = { alta: '#fff', media: '#3d2f00', baja: '#fff' };
+  const porDia = {};
+  eventos.forEach(e => {
+    const d = new Date(e.fecha_inicio);
+    if (d.getFullYear() === anio && d.getMonth() === mes) {
+      const dia = d.getDate();
+      if (!porDia[dia]) porDia[dia] = [];
+      porDia[dia].push(e);
+    }
+  });
+  Object.values(porDia).forEach(lista => lista.sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio)));
+  const nombreMes = hoy.toLocaleDateString('es-CR', { month: 'long' });
+  let html = ['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(d => `<div class="dia-cab">${d}</div>`).join('');
+  for (let i = 0; i < primerDia; i++) html += '<div></div>';
+  for (let d = 1; d <= diasEnMes; d++) {
+    const esHoy = d === hoy.getDate();
+    const lista = porDia[d] || [];
+    let chips = '';
+    if (lista.length) {
+      const etiquetaFecha = JSON.stringify(d + ' de ' + nombreMes);
+      const todosIds = JSON.stringify(lista.map(x => x.id));
+      chips = lista.slice(0, 2).map((e, i) => {
+        if (i === 1 && lista.length > 2) {
+          return `<div class="evt-chip" style="background:var(--gris-claro);color:#fff" onclick="event.stopPropagation();abrirDiaCoach(${etiquetaFecha}, ${todosIds})">+${lista.length - 1} más</div>`;
+        }
+        const esGrupal = !e.cliente_id;
+        const c = COLOR_IMP[e.importancia] || COLOR_IMP.media;
+        const t = TEXTO_IMP[e.importancia] || '#fff';
+        const nombreCorto = esGrupal ? 'Grupal' : nombreCortoCliente((clientes.find(x => x.id === e.cliente_id) || {}).nombre);
+        return `<div class="evt-chip" style="background:${c};color:${t}" onclick="event.stopPropagation();irAEventoDesdeDia('${e.id}')">${esc((TIPO_ICONO_EVENTO[e.tipo] || '') + ' ' + nombreCorto)}</div>`;
+      }).join('');
+    }
+    const click = lista.length ? ` onclick='abrirDiaCoach(${JSON.stringify(d + ' de ' + nombreMes)}, ${JSON.stringify(lista.map(e => e.id))})' style="cursor:pointer"` : '';
+    html += `<div class="dia-celda${esHoy ? ' hoy' : ''}"${click}><div class="dia-num">${d}</div><div class="dia-eventos">${chips}</div></div>`;
+  }
+  $('cal-mes').innerHTML = `<div class="mes-grid">${html}</div>`;
+}
+
+window.abrirDiaCoach = (etiquetaFecha, ids) => {
+  const eventos = ids.map(id => eventosCache.find(e => e.id === id)).filter(Boolean).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio));
+  $('dc-titulo').textContent = etiquetaFecha;
+  $('dc-sub').textContent = eventos.length + (eventos.length === 1 ? ' evento' : ' eventos');
+  $('dc-lista').innerHTML = eventos.map(e => {
+    const esGrupal = !e.cliente_id;
+    const nombre = esGrupal ? 'Grupal (todos)' : (clientes.find(c => c.id === e.cliente_id)?.nombre || '—');
+    const hora = new Date(e.fecha_inicio).toLocaleTimeString('es-CR', { timeZone: 'America/Costa_Rica', hour: 'numeric', minute: '2-digit' });
+    return `<div class="item" style="cursor:pointer" onclick="irAEventoDesdeDia('${e.id}')"><div><div class="tit">${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div><div class="det">${hora} · ${esc(nombre)}</div></div></div>`;
+  }).join('');
+  $('hoja-dia-coach').style.display = 'flex';
+};
+window.irAEventoDesdeDia = (id) => {
+  $('hoja-dia-coach').style.display = 'none';
+  editarEvento(id);
+};
+$('dc-cerrar').onclick = () => { $('hoja-dia-coach').style.display = 'none'; };
+$('dc-cerrar-btn').onclick = () => { $('hoja-dia-coach').style.display = 'none'; };
+$('hoja-dia-coach').onclick = (e) => { if (e.target.id === 'hoja-dia-coach') $('hoja-dia-coach').style.display = 'none'; };
 
 function pintarDashboardEventos() {
   const ahora = new Date();

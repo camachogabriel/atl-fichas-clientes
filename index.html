@@ -57,7 +57,7 @@ $('olvide').onclick = async () => {
   error('');
   const email = $('email').value.trim();
   if (!email) return error('Escribe tu correo arriba y vuelve a tocar "¿Olvidaste tu contraseña?".');
-  const { error: e } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname.replace('index.html', '') + 'clave.html' });
+  const { error: e } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'clave.html' });
   if (e) return error('No pudimos enviar el correo de recuperación.');
   $('aviso').textContent = '📬 Te enviamos un correo para restablecer tu contraseña.';
   $('aviso').style.display = 'block';
