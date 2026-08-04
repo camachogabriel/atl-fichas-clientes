@@ -483,7 +483,6 @@ function initObjetivoSelectsCliente() {
   $('ep-objetivo-p-tipo').innerHTML = opts;
   $('ep-objetivo-s-tipo').innerHTML = opts;
 }
-initObjetivoSelectsCliente();
 
 let objetivosClienteCache = {};
 async function cargarObjetivosCliente() {
@@ -494,6 +493,7 @@ async function cargarObjetivosCliente() {
 const nombreDisc = (id) => (ATL.DISCIPLINAS.find(d => d.id === id) || { nombre: id }).nombre;
 const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
 function dato(k, v) { return v ? `<div class="dato"><div class="k">${k}</div><div class="v">${v}</div></div>` : ''; }
+initObjetivoSelectsCliente();
 
 // ===== Navegación inferior =====
 document.querySelectorAll('.tabs5 button[data-sec]').forEach(b => b.onclick = () => {
