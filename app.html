@@ -28,13 +28,19 @@
   .menu-flot .item-not .h { font-weight: 700; color: var(--ink); }
   .menu-flot .item-not .d { color: var(--gris-claro); font-size: 12px; margin-top: 2px; }
 
-  .tabs5 { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); display: flex; align-items: flex-end; z-index: 30; padding-bottom: env(safe-area-inset-bottom); }
-  .tabs5 button { flex: 1; background: none; border: none; padding: 9px 2px 10px; font-size: 11px; color: var(--gris-claro); cursor: pointer; }
+  .tabs5 { position: fixed; bottom: 0; left: 0; right: 0; background: #000; border-top: 1px solid #24252a; display: flex; align-items: flex-end; z-index: 30; padding-bottom: env(safe-area-inset-bottom); }
+  .tabs5 button { flex: 1; background: none; border: none; padding: 9px 2px 10px; font-size: 11px; color: #6b7280; cursor: pointer; }
   .tabs5 button .ico { display: flex; justify-content: center; margin-bottom: 3px; }
-  .tabs5 button .ico svg { display: block; }
-  .tabs5 button.on { color: var(--verde); font-weight: 700; }
+  .tabs5 button .ico svg { display: block; color: var(--tab-c, #6b7280); opacity: .55; transition: opacity .15s, color .15s; }
+  .tabs5 button.on { font-weight: 700; }
+  .tabs5 button.on .ico svg { opacity: 1; }
+  .tabs5 button[data-sec="home"] { --tab-c: var(--verde); }
+  .tabs5 button[data-sec="calendario"] { --tab-c: #5b6eea; }
+  .tabs5 button[data-sec="chat"] { --tab-c: var(--amarillo); }
+  .tabs5 button[data-sec="evaluaciones"] { --tab-c: var(--rojo); }
+  .tabs5 button[data-sec].on { color: var(--tab-c); }
   .fab-slot { flex: 1; display: flex; justify-content: center; }
-  .fab { width: 52px; height: 52px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 26px; font-weight: 800; border: 4px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.18); margin-top: -22px; cursor: pointer; line-height: 1; }
+  .fab { width: 52px; height: 52px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 26px; font-weight: 800; border: 4px solid #000; box-shadow: 0 3px 10px rgba(0,0,0,.5); margin-top: -22px; cursor: pointer; line-height: 1; }
 
   .hoja { position: fixed; inset: 0; background: rgba(13,17,23,.45); z-index: 60; display: none; align-items: flex-end; }
   .hoja .panel { background: #fff; width: 100%; border-radius: 18px 18px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); }
@@ -65,7 +71,7 @@
   h2 svg.ico { flex-shrink: 0; color: var(--verde); }
 
   /* ===== Laboratorio de rendimiento ===== */
-  .lab-card { background: var(--dark); border-radius: 16px; padding: 20px 18px; color: #fff; margin-bottom: 14px; }
+  .lab-card { background: linear-gradient(160deg, #17191f, #0a0b0d); border: 1px solid #24272c; box-shadow: 0 0 0 1px rgba(33,181,124,.08), 0 10px 26px rgba(0,0,0,.4); border-radius: 16px; padding: 20px 18px; color: #fff; margin-bottom: 14px; }
   .lab-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
   .lab-icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--verde); }
   .lab-title { font-weight: 800; font-size: 15px; }
@@ -91,6 +97,37 @@
   .chat-caja { position: fixed; bottom: 62px; left: 0; right: 0; background: #fff; border-top: 1px solid var(--borde); padding: 10px 12px; display: flex; gap: 8px; z-index: 25; }
   .chat-caja textarea { flex: 1; border: 1px solid var(--borde); border-radius: 20px; padding: 10px 14px; font-size: 14px; resize: none; max-height: 90px; }
   .chat-caja button { background: var(--verde); color: #fff; border: none; border-radius: 50%; width: 42px; height: 42px; font-size: 17px; flex-shrink: 0; cursor: pointer; }
+
+  /* ===== Tema oscuro (app cliente) — al final para ganar el cascade ===== */
+  body { background: #000; color: #eef0f2; }
+  h1, h2 { color: #f5f6f8; }
+  .sub { color: #9aa4b2; }
+  .card { background: #16171b; border-color: #26272c; }
+  input[type=text], input[type=email], input[type=tel], input[type=date], input[type=datetime-local], input[type=number], input[type=password], textarea, select {
+    background: #1c1d22; border-color: #33343a; color: #f5f6f8;
+  }
+  input::placeholder, textarea::placeholder { color: #6b7280; }
+  .btn.linea { background: #1c1d22; color: #eef0f2; border-color: #33343a; }
+  .chip { background: #1c1d22; border-color: #33343a; color: #eef0f2; }
+  .chip.on { border-color: var(--verde); background: rgba(33,181,124,.16); color: var(--verde); }
+  .item, .dato, .dia-fila { border-bottom-color: #24252a; }
+  .item .det, .dato .k, .cargando, .paso .nom, .mes-grid .dia-cab { color: #8b95a3; }
+  .dia-fila .desc-btn { background: #1c1d22; border-color: #33343a; color: #8b95a3; }
+  .foto-btn { color: #9aa4b2; border-color: #3a3b42; }
+  .paso .punto { background: #1c1d22; border-color: #33343a; color: #8b95a3; }
+  .paso.hecho .nom, .paso.actual .nom { color: #eef0f2; }
+  .paso::after { background: #2a2b31; }
+  .mes-grid .dia-celda { background: #1c1d22; color: #9aa4b2; }
+  .toggle-vista button { background: #1c1d22; border-color: #33343a; color: #9aa4b2; }
+  .menu-flot { background: #16171b; border-color: #26272c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .menu-flot button { color: #eef0f2; border-bottom-color: #24252a; }
+  .menu-flot .item-not { border-bottom-color: #24252a; }
+  .menu-flot .item-not .h { color: #eef0f2; }
+  .hoja .panel { background: #121317; }
+  .hoja .cerrar { background: #33343a; }
+  .msj.otro { background: #1c1d22; border-color: #33343a; color: #eef0f2; }
+  .chat-caja { background: #000; border-top-color: #24252a; }
+  .chat-caja textarea { background: #1c1d22; border-color: #33343a; color: #eef0f2; }
 </style>
 </head>
 <body>
