@@ -47,9 +47,12 @@
   .toggle-vista button.on { border-color: var(--verde); background: var(--verde-suave); color: #2c6e46; }
   .mes-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
   .mes-grid .dia-cab { text-align: center; font-size: 10.5px; color: var(--gris-claro); font-weight: 700; padding-bottom: 4px; }
-  .mes-grid .dia-celda { aspect-ratio: 1; border-radius: 8px; background: var(--fondo); font-size: 11.5px; padding: 4px; position: relative; color: var(--gris); }
-  .mes-grid .dia-celda.hoy { background: var(--verde-suave); font-weight: 800; color: #2c6e46; }
-  .mes-grid .dia-celda .pto { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; border-radius: 50%; background: var(--verde); }
+  .mes-grid .dia-celda { aspect-ratio: 1; border-radius: 8px; background: var(--fondo); padding: 3px; color: var(--gris); display: flex; flex-direction: column; overflow: hidden; }
+  .mes-grid .dia-celda.hoy { background: var(--verde-suave); color: #2c6e46; }
+  .mes-grid .dia-num { font-size: 10.5px; font-weight: 700; margin-bottom: 2px; flex-shrink: 0; }
+  .mes-grid .dia-celda.hoy .dia-num { font-weight: 800; }
+  .mes-grid .dia-eventos { display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-height: 0; }
+  .mes-grid .evt-chip { font-size: 7.8px; line-height: 1.3; padding: 1.5px 3px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; font-weight: 700; }
 
   .msj { max-width: 78%; padding: 9px 13px; border-radius: 14px; font-size: 14px; margin: 5px 0; line-height: 1.35; }
   .msj.yo { background: var(--verde); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
@@ -767,28 +770,39 @@ function pintarMes(eventos) {
   const anio = hoy.getFullYear(), mes = hoy.getMonth();
   const primerDia = new Date(anio, mes, 1).getDay();
   const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-  const RANGO_IMP = { alta: 3, media: 2, baja: 1 };
   const COLOR_IMP = { alta: '#ee2f63', media: '#fecb15', baja: '#21b57c' };
+  const TEXTO_IMP = { alta: '#fff', media: '#3d2f00', baja: '#fff' };
   const porDia = {};
   eventos.forEach(e => {
     const d = new Date(e.fecha_inicio);
     if (d.getFullYear() === anio && d.getMonth() === mes) {
       const dia = d.getDate();
-      if (!porDia[dia]) porDia[dia] = { ids: [], rango: 0, color: COLOR_IMP.media };
-      porDia[dia].ids.push(e.id);
-      const rango = RANGO_IMP[e.importancia] || 2;
-      if (rango > porDia[dia].rango) { porDia[dia].rango = rango; porDia[dia].color = COLOR_IMP[e.importancia] || COLOR_IMP.media; }
+      if (!porDia[dia]) porDia[dia] = [];
+      porDia[dia].push(e);
     }
   });
+  Object.values(porDia).forEach(lista => lista.sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio)));
   const nombreMes = hoy.toLocaleDateString('es-CR', { month: 'long' });
   let html = ['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(d => `<div class="dia-cab">${d}</div>`).join('');
   for (let i = 0; i < primerDia; i++) html += '<div></div>';
   for (let d = 1; d <= diasEnMes; d++) {
     const esHoy = d === hoy.getDate();
-    const info = porDia[d];
-    const marca = info ? `<div class="pto" style="background:${info.color}"></div>` : '';
-    const click = info ? ` onclick='abrirDiaEventos(${JSON.stringify(d + ' de ' + nombreMes)}, ${JSON.stringify(info.ids)})' style="cursor:pointer"` : '';
-    html += `<div class="dia-celda${esHoy ? ' hoy' : ''}"${click}>${d}${marca}</div>`;
+    const lista = porDia[d] || [];
+    let chips = '';
+    if (lista.length) {
+      const etiquetaFecha = JSON.stringify(d + ' de ' + nombreMes);
+      const todosIds = JSON.stringify(lista.map(x => x.id));
+      chips = lista.slice(0, 2).map((e, i) => {
+        if (i === 1 && lista.length > 2) {
+          return `<div class="evt-chip" style="background:var(--gris-claro);color:#fff" onclick="event.stopPropagation();abrirDiaEventos(${etiquetaFecha}, ${todosIds})">+${lista.length - 1} más</div>`;
+        }
+        const c = COLOR_IMP[e.importancia] || COLOR_IMP.media;
+        const t = TEXTO_IMP[e.importancia] || '#fff';
+        return `<div class="evt-chip" style="background:${c};color:${t}" onclick="event.stopPropagation();abrirEvento('${e.id}')">${esc((ICONOS_TXT[e.tipo] || '') + ' ' + e.titulo)}</div>`;
+      }).join('');
+    }
+    const click = lista.length ? ` onclick='abrirDiaEventos(${JSON.stringify(d + ' de ' + nombreMes)}, ${JSON.stringify(lista.map(e => e.id))})' style="cursor:pointer"` : '';
+    html += `<div class="dia-celda${esHoy ? ' hoy' : ''}"${click}><div class="dia-num">${d}</div><div class="dia-eventos">${chips}</div></div>`;
   }
   $('cal-mes').innerHTML = `<div class="mes-grid">${html}</div>`;
 }
