@@ -41,6 +41,10 @@
   .mes-grid .dia-celda.hoy .dia-num { font-weight: 800; }
   .mes-grid .dia-eventos { display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-height: 0; }
   .mes-grid .evt-chip { font-size: 7.8px; line-height: 1.3; padding: 1.5px 3px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; font-weight: 700; }
+
+  /* ===== Encabezados con icono ===== */
+  h2.h2-izq { display: flex; align-items: center; gap: 8px; }
+  h2 svg.ico { flex-shrink: 0; color: var(--verde); }
 </style>
 </head>
 <body>
@@ -64,7 +68,7 @@
     <h1>Centro de control</h1>
     <p class="sub">Resumen de tu operación en ATL</p>
     <div class="card" id="resumen-card">
-      <h2>📊 Resumen</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Resumen</h2>
       <div id="resumen-stats" class="cargando">Cargando...</div>
     </div>
     <div class="card" id="registros-card" style="display:none">
@@ -72,7 +76,7 @@
       <div id="registros-pendientes"></div>
     </div>
     <div class="card" id="mensajes-card" style="display:none">
-      <h2>💬 Mensajes sin leer</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Mensajes sin leer</h2>
       <div id="mensajes-pendientes"></div>
     </div>
     <div class="card" id="pendientes-card" style="display:none">
@@ -80,7 +84,7 @@
       <div id="pagos-pendientes"></div>
     </div>
     <div class="card">
-      <h2>📅 Próximos eventos</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Próximos eventos</h2>
       <div id="dash-eventos" class="cargando">Cargando...</div>
       <button class="btn linea" id="dash-ir-calendario" style="margin-top:10px">Ver calendario completo →</button>
     </div>
@@ -91,7 +95,7 @@
     <h1>Clientes</h1>
     <p class="sub">Fichas, pagos y evaluaciones</p>
     <div class="card">
-      <h2>👥 Clientes</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</h2>
       <input type="text" id="buscar" placeholder="Buscar por nombre o correo..." style="margin-bottom:8px">
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <select id="orden" style="flex:1;padding:9px 10px;font-size:14px">
@@ -132,7 +136,7 @@
     </div>
 
     <div class="card">
-      <h2>📅 Todos los eventos</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Todos los eventos</h2>
       <div class="toggle-vista">
         <button class="on" id="cal-vista-lista">Lista</button>
         <button id="cal-vista-mes">Mes</button>
@@ -204,7 +208,7 @@
     <h1>Retos</h1>
     <p class="sub">Plantillas recurrentes que puedes asignar a tus clientes.</p>
     <div class="card">
-      <h2>🎯 Plantillas de retos</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Plantillas de retos</h2>
       <p class="sub" style="margin-bottom:8px">Ej. subir video semanal, registrar peso.</p>
       <div id="retos-lista" class="cargando">Cargando...</div>
       <button class="btn linea" id="reto-toggle" style="margin-top:10px">➕ Nueva plantilla</button>
@@ -232,14 +236,14 @@
     <h1>Configuración</h1>
     <p class="sub">Links de registro y recursos de los correos</p>
     <div class="card">
-      <h2>🔗 Links de registro</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Links de registro</h2>
       <p class="sub" style="margin-bottom:8px">Envíalos por WhatsApp según el tipo de cliente:</p>
       <button class="btn linea" id="copiar-link" style="margin-bottom:10px">📋 Cliente nuevo (con onboarding)</button>
       <button class="btn linea" id="copiar-link-actual">📋 Cliente actual de ATL (entra activo)</button>
       <div class="aviso ok" id="copiado" style="display:none">✅ Copiado.</div>
     </div>
     <div class="card">
-      <h2>⚙️ Links y recursos (correos)</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Links y recursos (correos)</h2>
       <p class="sub" style="margin-bottom:8px">Se usan en los correos del onboarding. Los marcados "correo final" van en el correo de evaluación completada.</p>
       <div id="config-lista"></div>
       <button class="btn linea" id="config-guardar" style="margin-top:10px">Guardar links</button>
@@ -296,12 +300,12 @@
         <div class="error" id="ed-err"></div>
         <div class="aviso ok" id="ed-ok" style="display:none">✅ Ficha actualizada.</div>
       </div>
-      <h2 style="margin-top:14px">📅 Disponibilidad</h2>
+      <h2 class="h2-izq" style="margin-top:14px"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Disponibilidad</h2>
       <div id="d-dispo"></div>
     </div>
 
     <div class="card">
-      <h2>🚀 Onboarding</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>Onboarding</h2>
       <div class="pasos" id="d-pasos" style="margin-bottom:10px"></div>
       <div id="d-onb-zona"></div>
       <div class="aviso ok" id="d-onb-ok" style="display:none"></div>
@@ -309,7 +313,7 @@
     </div>
 
     <div class="card">
-      <h2>⚙️ Administración</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Administración</h2>
       <label>Tarifa mensual (₡)</label>
       <input type="number" id="d-tarifa" inputmode="decimal" placeholder="Ej: 35000">
       <label>Próxima fecha de pago</label>
@@ -331,7 +335,7 @@
     </div>
 
     <div class="card">
-      <h2 id="d-pruebas-titulo">🧪 Pruebas fisiológicas</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L5.5 17a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 8.5V3"/><path d="M8.5 13h7"/></svg><span id="d-pruebas-titulo">Pruebas fisiológicas</span></h2>
       <div id="d-pruebas"></div>
       <button class="btn linea" id="pr-toggle" style="margin-top:10px">➕ Registrar prueba</button>
       <div id="pr-form" style="display:none">
@@ -387,7 +391,7 @@
     </div>
 
     <div class="card">
-      <h2 id="d-limit-titulo">🧠 Análisis de limitaciones</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span id="d-limit-titulo">Análisis de limitaciones</span></h2>
       <p class="sub" style="margin-bottom:8px">Evaluaciones perceptivas ligadas a este cliente (al inicio, tras entrenos fuertes o carreras).</p>
       <div id="d-limitaciones"></div>
       <button class="btn linea" id="d-copiar-eval" style="margin-top:10px">📋 Copiar link de evaluación personalizado</button>
@@ -396,7 +400,7 @@
 
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <h2>💬 Chat</h2>
+        <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chat</h2>
         <button class="volver" id="d-chat-abrir-bandeja" style="margin:0;font-size:13px">Abrir en Chats →</button>
       </div>
       <div id="d-chat-mensajes" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px"></div>
@@ -407,7 +411,7 @@
     </div>
 
     <div class="card">
-      <h2>🎯 Retos asignados</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Retos asignados</h2>
       <div id="d-retos"></div>
       <label>Asignar plantilla</label>
       <select id="reto-asignar-sel"></select>
@@ -418,9 +422,9 @@
     </div>
 
     <div class="card">
-      <h2>💳 Pagos</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Pagos</h2>
       <div id="d-pagos"></div>
-      <h2 style="margin-top:16px">➕ Registrar pago manual</h2>
+      <h2 class="h2-izq" style="margin-top:16px"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Registrar pago manual</h2>
       <p class="sub" style="margin-bottom:4px">Para pagos por SINPE, efectivo, etc. Queda aprobado de una vez: avanza la fecha de pago y avisa al cliente por correo.</p>
       <label>Monto (₡)</label>
       <input type="number" id="mp-monto" inputmode="decimal" placeholder="Ej: 35000">
@@ -442,7 +446,7 @@
     </div>
 
     <div class="card">
-      <h2>📂 Evaluaciones</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>Evaluaciones</h2>
       <div id="d-evas"></div>
       <label>Título de la nueva evaluación</label>
       <input type="text" id="eva-titulo" placeholder="Ej: Evaluación inicial FTP">
@@ -1424,7 +1428,7 @@ let pruebasCache = [], prEditId = null, prPdfFile = null;
 async function cargarPruebas() {
   const { data: pruebas } = await sbClient.from('fichas_pruebas').select('*').eq('cliente_id', actual.id).order('fecha', { ascending: false });
   pruebasCache = pruebas || [];
-  $('d-pruebas-titulo').textContent = `🧪 Pruebas fisiológicas (${pruebasCache.length})`;
+  $('d-pruebas-titulo').textContent = `Pruebas fisiológicas (${pruebasCache.length})`;
   $('d-pruebas').innerHTML = pruebasCache.map((p, i) => pruebaHTML(p, true, i === 0)).join('') || '<p class="sub">Sin pruebas registradas.</p>';
   $('pr-toggle').onclick = () => { const f = $('pr-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none'; if (f.style.display === 'none') cancelarEdicionPrueba(); };
   $('pr-guardar').onclick = guardarPrueba;
@@ -1769,7 +1773,7 @@ async function cargarLimitaciones() {
     .order('created_at', { ascending: false });
   evalsCache = evals || [];
   const n = evalsCache.length;
-  $('d-limit-titulo').textContent = `🧠 Análisis de limitaciones (${n})`;
+  $('d-limit-titulo').textContent = `Análisis de limitaciones (${n})`;
   $('d-limitaciones').innerHTML = n ? evalsCache.map(e => {
     return `<div class="item" style="cursor:pointer" onclick="toggleEval('${e.id}')"><div>
       <div class="tit" style="color:var(--verde)">${esc(e.hipotesis_principal ? hipNombre(e.hipotesis_principal) : 'Sin hipótesis')}${e.preliminar ? ' <span class="pill amarillo">preliminar</span>' : ''}</div>
@@ -1807,12 +1811,15 @@ function pintarOnboardingDetalle() {
     }).join('');
   }
 
+  const citaInfo = actual.fecha_prueba && new Date(actual.fecha_prueba) > new Date()
+    ? `<div class="aviso ok" style="margin-bottom:6px">📅 Cita agendada: <b>${fmtFechaHora(actual.fecha_prueba)}</b>${actual.nota_prueba ? '<br>' + esc(actual.nota_prueba) : ''}</div>
+       <div class="aviso ${actual.fecha_prueba_confirmada ? 'ok' : 'warn'}" style="margin-bottom:10px">${actual.fecha_prueba_confirmada ? '✓ El cliente confirmó su asistencia.' : '⏳ El cliente aún no ha confirmado esta cita.'}</div>`
+    : '';
+
   let html = '';
   if (est === 'completado') {
-    const proxima = actual.fecha_prueba && new Date(actual.fecha_prueba) > new Date()
-      ? `<div class="aviso ok" style="margin-bottom:10px">📅 Reevaluación agendada: <b>${fmtFechaHora(actual.fecha_prueba)}</b>${actual.nota_prueba ? '<br>' + esc(actual.nota_prueba) : ''}</div>` : '';
     html += `<span class="pill verde" style="margin-bottom:10px;display:inline-block">✓ Cliente activo — onboarding completado</span>
-      ${proxima}
+      ${citaInfo}
       <label>Fecha y hora de la reevaluación</label>
       <input type="datetime-local" id="onb-fecha" value="${actual.fecha_prueba ? aLocal(actual.fecha_prueba) : ''}">
       <label>Nota para el cliente (lugar, qué llevar...)</label>
@@ -1820,7 +1827,8 @@ function pintarOnboardingDetalle() {
       <button class="btn oscuro" id="onb-agendar" style="margin-top:12px">🔄 Agendar reevaluación y enviar correo</button>`;
   }
   if (est === 'espera_prueba' || est === 'pendiente_evaluacion') {
-    html += `<label>Fecha y hora de la prueba</label>
+    html += `${citaInfo}
+      <label>Fecha y hora de la prueba</label>
       <input type="datetime-local" id="onb-fecha" value="${actual.fecha_prueba ? aLocal(actual.fecha_prueba) : ''}">
       <label>Nota para el cliente (lugar, qué llevar...)</label>
       <input type="text" id="onb-nota" value="${esc(actual.nota_prueba || '')}">

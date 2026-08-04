@@ -54,6 +54,36 @@
   .mes-grid .dia-eventos { display: flex; flex-direction: column; gap: 2px; overflow: hidden; min-height: 0; }
   .mes-grid .evt-chip { font-size: 7.8px; line-height: 1.3; padding: 1.5px 3px; border-radius: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; font-weight: 700; }
 
+  /* ===== Tarjetas colapsables ===== */
+  .card h2.colapsable { display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-bottom: 0; }
+  .card h2.colapsable.abierto { margin-bottom: 10px; }
+  .card h2.colapsable > svg { transition: transform .2s; flex-shrink: 0; color: var(--gris-claro); }
+  .card h2.colapsable.abierto > svg { transform: rotate(180deg); }
+  .h2-izq { display: flex; align-items: center; gap: 8px; }
+
+  /* ===== Encabezados con icono ===== */
+  h2 svg.ico { flex-shrink: 0; color: var(--verde); }
+
+  /* ===== Laboratorio de rendimiento ===== */
+  .lab-card { background: var(--dark); border-radius: 16px; padding: 20px 18px; color: #fff; margin-bottom: 14px; }
+  .lab-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .lab-icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--verde); }
+  .lab-title { font-weight: 800; font-size: 15px; }
+  .lab-fecha { font-size: 11.5px; color: #9aa4b2; margin-top: 1px; }
+  .lab-stats-principales { display: flex; gap: 10px; margin-bottom: 14px; }
+  .lab-stat { flex: 1; background: rgba(255,255,255,.06); border-radius: 12px; padding: 14px 10px; text-align: center; }
+  .lab-stat-num { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace; font-size: 25px; font-weight: 800; color: var(--verde); line-height: 1; }
+  .lab-stat-unit { font-size: 12px; font-weight: 700; margin-left: 2px; color: #9aa4b2; }
+  .lab-stat-label { font-size: 10.5px; color: #9aa4b2; margin-top: 6px; text-transform: uppercase; letter-spacing: .4px; }
+  .lab-stats-sec { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .lab-mini { background: rgba(255,255,255,.05); border-radius: 9px; padding: 8px 10px; }
+  .lab-mini .k { font-size: 9.5px; color: #9aa4b2; text-transform: uppercase; letter-spacing: .3px; }
+  .lab-mini .v { font-size: 12.5px; font-weight: 700; margin-top: 3px; font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace; }
+  .lab-zonas-titulo { font-size: 10.5px; color: #9aa4b2; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; font-weight: 700; }
+  .lab-zona { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 10px; border-left: 3px solid var(--c, #21b57c); background: rgba(255,255,255,.04); border-radius: 6px; margin-bottom: 4px; font-size: 12.5px; }
+  .lab-zona-nom { color: #e6e8eb; }
+  .lab-zona-val { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace; font-weight: 700; color: #fff; white-space: nowrap; }
+
   .msj { max-width: 78%; padding: 9px 13px; border-radius: 14px; font-size: 14px; margin: 5px 0; line-height: 1.35; }
   .msj.yo { background: var(--verde); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
   .msj.otro { background: #fff; border: 1px solid var(--borde); margin-right: auto; border-bottom-left-radius: 4px; }
@@ -136,6 +166,10 @@
       <div class="error" id="ep-err"></div>
       <div class="aviso ok" id="ep-ok" style="display:none">✅ Perfil actualizado.</div>
     </div>
+    <div class="card">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Historial de pagos</h2>
+      <div id="pago-lista" class="cargando">Cargando...</div>
+    </div>
   </section>
 
   <!-- ===== HOME ===== -->
@@ -148,52 +182,38 @@
       <p class="sub" id="p-disciplinas" style="margin-bottom:0">—</p>
     </div>
 
+    <div id="p-prueba-card" style="display:none">
+      <div id="p-prueba"></div>
+    </div>
+
     <div class="card" id="coach-card" style="display:none">
-      <h2>🧑‍🏫 Mi(s) entrenador(es)</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mi(s) entrenador(es)</h2>
       <div id="coach-lista"></div>
     </div>
 
     <div class="card" id="onboarding-card" style="display:none">
-      <h2>🚀 Tu proceso de inicio</h2>
+      <h2 class="h2-izq" id="onboarding-titulo"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>Tu proceso de inicio</h2>
       <div class="pasos" id="pasos"></div>
       <div class="aviso warn" id="onb-info" style="display:none;margin-bottom:0"></div>
       <div id="onb-recursos" style="display:none"></div>
     </div>
 
     <div class="card">
-      <h2>💳 Registrar pago</h2>
-      <p class="sub" id="pago-info">Sube tu comprobante y el monto pagado.</p>
-      <label>Monto pagado (₡)</label>
-      <input type="number" id="pago-monto" inputmode="decimal" placeholder="Ej: 35000">
-      <label>Comprobante (foto o archivo)</label>
-      <label class="foto-btn" for="pago-archivo" id="pago-archivo-label">📎 Elegir comprobante</label>
-      <input type="file" id="pago-archivo" accept="image/*,.pdf" style="display:none">
-      <div class="error" id="pago-err"></div>
-      <button class="btn" id="pago-enviar" style="margin-top:14px">Enviar pago</button>
-      <div class="aviso ok" id="pago-ok" style="display:none">✅ Comprobante enviado. Tu coach lo revisará pronto.</div>
-    </div>
-    <div class="card">
-      <h2>Historial de pagos</h2>
-      <div id="pago-lista" class="cargando">Cargando...</div>
+      <h2 class="colapsable" data-target="p-datos-wrap">Mis datos<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="p-datos-wrap" style="display:none">
+        <div id="p-datos"></div>
+      </div>
     </div>
 
     <div class="card">
-      <h2>Mis datos</h2>
-      <div id="p-datos"></div>
+      <h2 class="colapsable" data-target="p-dispo-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Mi disponibilidad</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="p-dispo-wrap" style="display:none">
+        <div id="p-dispo"></div>
+      </div>
     </div>
 
     <div class="card">
-      <h2>📅 Mi disponibilidad</h2>
-      <div id="p-dispo"></div>
-    </div>
-
-    <div class="card" id="p-prueba-card" style="display:none">
-      <h2>🧪 Mi prueba fisiológica</h2>
-      <div id="p-prueba"></div>
-    </div>
-
-    <div class="card">
-      <h2>📂 Documentos y reportes</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>Documentos y reportes</h2>
       <p class="sub">Aquí verás las evaluaciones y reportes que tu coach suba para ti.</p>
       <div id="eva-lista" class="cargando">Cargando...</div>
     </div>
@@ -202,7 +222,7 @@
   <!-- ===== CALENDARIO ===== -->
   <section id="sec-calendario" style="display:none">
     <div class="card">
-      <h2>📅 Calendario</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendario</h2>
       <div class="toggle-vista">
         <button class="on" id="vista-lista">Lista</button>
         <button id="vista-mes">Mes</button>
@@ -215,7 +235,7 @@
   <!-- ===== CHAT ===== -->
   <section id="sec-chat" style="display:none">
     <div class="card" style="min-height:50vh">
-      <h2>💬 Chat con tu entrenador</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chat con tu entrenador</h2>
       <div id="chat-lista" class="cargando">Cargando...</div>
     </div>
   </section>
@@ -223,7 +243,7 @@
   <!-- ===== EVALUACIONES / RETOS ===== -->
   <section id="sec-evaluaciones" style="display:none">
     <div class="card">
-      <h2>🏁 Evaluaciones y retos</h2>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22V15"/></svg>Evaluaciones y retos</h2>
       <p class="sub">Cuestionarios y retos que tu coach te va asignando con el tiempo.</p>
       <div id="retos-lista" class="cargando">Cargando...</div>
     </div>
@@ -249,9 +269,27 @@
     <div class="cerrar"></div>
     <h2>¿Qué necesitas?</h2>
     <p class="sub">Elige una opción y te ayudamos lo antes posible.</p>
+    <button class="btn oscuro" id="op-registrar-pago" style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Registrar pago</button>
     <a class="btn" style="background:#25d366;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px" id="op-cambio-plan" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Solicitar cambio de plan</a>
     <a class="btn peligro" style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px" id="op-ayuda-urgente" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Ayuda urgente</a>
     <button class="btn linea" id="op-cancelar">Cancelar</button>
+  </div>
+</div>
+
+<div class="hoja" id="hoja-pago">
+  <div class="panel">
+    <div class="cerrar" id="pago-cerrar"></div>
+    <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Registrar pago</h2>
+    <p class="sub" id="pago-info">Sube tu comprobante y el monto pagado.</p>
+    <label>Monto pagado (₡)</label>
+    <input type="number" id="pago-monto" inputmode="decimal" placeholder="Ej: 35000">
+    <label>Comprobante (foto o archivo)</label>
+    <label class="foto-btn" for="pago-archivo" id="pago-archivo-label">📎 Elegir comprobante</label>
+    <input type="file" id="pago-archivo" accept="image/*,.pdf" style="display:none">
+    <div class="error" id="pago-err"></div>
+    <button class="btn" id="pago-enviar" style="margin-top:14px">Enviar pago</button>
+    <div class="aviso ok" id="pago-ok" style="display:none">✅ Comprobante enviado. Tu coach lo revisará pronto.</div>
+    <button class="btn linea" id="pago-cerrar-btn" style="margin-top:10px">Cerrar</button>
   </div>
 </div>
 
@@ -396,6 +434,20 @@ async function marcarTodasLeidas() {
 $('btn-fab').onclick = () => { $('hoja-fab').style.display = 'flex'; };
 $('op-cancelar').onclick = () => { $('hoja-fab').style.display = 'none'; };
 $('hoja-fab').onclick = (e) => { if (e.target.id === 'hoja-fab') $('hoja-fab').style.display = 'none'; };
+$('op-registrar-pago').onclick = () => { $('hoja-fab').style.display = 'none'; $('hoja-pago').style.display = 'flex'; };
+$('pago-cerrar').onclick = () => { $('hoja-pago').style.display = 'none'; };
+$('pago-cerrar-btn').onclick = () => { $('hoja-pago').style.display = 'none'; };
+$('hoja-pago').onclick = (e) => { if (e.target.id === 'hoja-pago') $('hoja-pago').style.display = 'none'; };
+
+// ===== Tarjetas colapsables =====
+document.querySelectorAll('h2.colapsable').forEach(h => {
+  h.onclick = () => {
+    const target = $(h.dataset.target);
+    const abrir = target.style.display === 'none';
+    target.style.display = abrir ? 'block' : 'none';
+    h.classList.toggle('abierto', abrir);
+  };
+});
 
 async function init() {
   const { data: { session } } = await sbClient.auth.getSession();
@@ -567,7 +619,7 @@ async function pintarOnboarding() {
   // Clientes activos: no se muestra el onboarding; solo su próxima reevaluación y la opción de agendar
   if (cliente.onboarding_estado === 'completado') {
     $('onboarding-card').style.display = 'block';
-    document.querySelector('#onboarding-card h2').textContent = '📅 Reevaluación';
+    $('onboarding-titulo').innerHTML = '<svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Reevaluación';
     let html = '';
     if (cliente.fecha_prueba && new Date(cliente.fecha_prueba) > new Date()) {
       const f = new Date(cliente.fecha_prueba).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
@@ -652,21 +704,40 @@ async function pintarPrueba() {
   if (!pruebas || !pruebas.length) return;
   const p = pruebas[0];
   $('p-prueba-card').style.display = 'block';
-  const fila = (k, v) => v ? `<div class="dato"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
+
+  const mini = (k, v) => v ? `<div class="lab-mini"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>` : '';
+  const wkg = (p.ftp && p.peso) ? (p.ftp / p.peso).toFixed(2) : null;
+
+  const statsHtml = [
+    p.ftp ? `<div class="lab-stat"><div class="lab-stat-num">${p.ftp}<span class="lab-stat-unit">W</span></div><div class="lab-stat-label">FTP</div></div>` : '',
+    wkg ? `<div class="lab-stat"><div class="lab-stat-num">${wkg}<span class="lab-stat-unit">W/kg</span></div><div class="lab-stat-label">Potencia relativa</div></div>` : '',
+    p.pulso_maximo ? `<div class="lab-stat"><div class="lab-stat-num">${p.pulso_maximo}<span class="lab-stat-unit">ppm</span></div><div class="lab-stat-label">Pulso máximo</div></div>` : '',
+  ].filter(Boolean).join('');
+
+  const secMini =
+    mini('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
+    mini('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
+    mini('Peso en la prueba', p.peso ? p.peso + ' kg' : null) +
+    mini('Recuperación cardiaca', [p.rec_1min != null ? '1 min: ' + p.rec_1min + '%' : null, p.rec_2min != null ? '2 min: ' + p.rec_2min + '%' : null].filter(Boolean).join(' · ')) +
+    mini('Limitación principal', p.limitacion_principal) +
+    mini('Limitación secundaria', p.limitacion_secundaria);
+
   const zonas = p.zonas ? ZONAS_DEF.filter(([k]) => p.zonas[k]).map(([k, nom, color]) =>
-    `<div style="display:flex;align-items:center;gap:8px;margin:4px 0;font-size:13.5px">
-      <span style="background:${color};color:${color === '#fecb15' ? '#3d2f00' : '#fff'};border-radius:6px;padding:3px 8px;font-weight:700;min-width:76px;text-align:center">${p.zonas[k]} ppm</span><span>${nom}</span></div>`).join('') : '';
-  $('p-prueba').innerHTML =
-    fila('Fecha de la prueba', ATL.fmtFecha(p.fecha)) +
-    fila('Umbral aeróbico', [p.pulso_umbral_aerobico ? p.pulso_umbral_aerobico + ' ppm' : null, p.potencia_umbral_aerobico ? p.potencia_umbral_aerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
-    fila('Umbral anaeróbico', [p.pulso_umbral_anaerobico ? p.pulso_umbral_anaerobico + ' ppm' : null, p.potencia_umbral_anaerobico ? p.potencia_umbral_anaerobico + ' ' + (p.unidad_potencia || 'W') : null].filter(Boolean).join(' · ')) +
-    fila('Pulso máximo', p.pulso_maximo ? p.pulso_maximo + ' ppm' : null) +
-    fila('FTP', p.ftp ? p.ftp + ' W' + (p.peso ? ' · ' + (p.ftp / p.peso).toFixed(2) + ' W/kg' : '') : null) +
-    fila('Peso en la prueba', p.peso ? p.peso + ' kg' : null) +
-    fila('Recuperación cardiaca', [p.rec_1min != null ? '1 min: ' + p.rec_1min + '%' : null, p.rec_2min != null ? '2 min: ' + p.rec_2min + '%' : null].filter(Boolean).join(' · ')) +
-    fila('Limitación principal', p.limitacion_principal) +
-    fila('Limitación secundaria', p.limitacion_secundaria) +
-    (zonas ? `<div class="dato"><div class="k">Mis zonas de entrenamiento</div><div style="margin-top:6px">${zonas}</div></div>` : '');
+    `<div class="lab-zona" style="--c:${color}"><span class="lab-zona-nom">${nom}</span><span class="lab-zona-val">${p.zonas[k]} ppm</span></div>`).join('') : '';
+
+  $('p-prueba').innerHTML = `
+    <div class="lab-card">
+      <div class="lab-header">
+        <div class="lab-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L5.5 17a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 8.5V3"/><path d="M8.5 13h7"/></svg></div>
+        <div>
+          <div class="lab-title">Laboratorio de rendimiento</div>
+          <div class="lab-fecha">Última prueba: ${ATL.fmtFecha(p.fecha)}</div>
+        </div>
+      </div>
+      ${statsHtml ? `<div class="lab-stats-principales">${statsHtml}</div>` : ''}
+      ${secMini ? `<div class="lab-stats-sec">${secMini}</div>` : ''}
+      ${zonas ? `<div class="lab-zonas-titulo">Zonas de entrenamiento</div>${zonas}` : ''}
+    </div>`;
 }
 
 // ===== Documentos y reportes (PDFs subidos por el coach) =====
@@ -718,6 +789,7 @@ $('pago-enviar').onclick = async () => {
     $('pago-ok').style.display = 'block';
     $('pago-monto').value = ''; comprobante = null; $('pago-archivo').value = ''; $('pago-archivo-label').textContent = '📎 Elegir comprobante';
     cargarPagos();
+    setTimeout(() => { $('hoja-pago').style.display = 'none'; $('pago-ok').style.display = 'none'; }, 2200);
   } catch (e) {
     err.textContent = 'No pudimos enviar tu pago: ' + (e.message || e); err.style.display = 'block';
   }
