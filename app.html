@@ -123,6 +123,7 @@
   /* ===== Tema oscuro (app cliente) — al final para ganar el cascade ===== */
   body { background: #000; color: #eef0f2; }
   h1, h2 { color: #f5f6f8; }
+  label { color: #c7cbd1; }
   .sub { color: #9aa4b2; }
   .card { background: #16171b; border-color: #26272c; }
   input[type=text], input[type=email], input[type=tel], input[type=date], input[type=datetime-local], input[type=number], input[type=password], textarea, select {
@@ -402,6 +403,10 @@
           <label>Evidencia (foto o video)</label>
           <label class="foto-btn" for="rt-archivo" id="rt-archivo-label">📎 Elegir archivo</label>
           <input type="file" id="rt-archivo" accept="image/*,video/*" style="display:none">
+        </div>
+        <div id="rt-campo-texto" style="display:none">
+          <label>Tu respuesta</label>
+          <textarea id="rt-texto"></textarea>
         </div>
         <button class="btn" id="rt-cumplido" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="rt-cumplido-label">Marcar cumplido</span></button>
         <button class="btn linea" id="rt-fallido" style="margin-top:8px">No lo logré</button>
@@ -1371,6 +1376,7 @@ window.abrirReto = (id) => {
   if (mostrarFormulario) {
     const esNumero = reto.tipo === 'numero';
     const esArchivo = reto.tipo === 'foto' || reto.tipo === 'video';
+    const esTexto = reto.tipo === 'formulario';
     $('rt-campo-numero').style.display = esNumero ? 'block' : 'none';
     if (esNumero) {
       const campos = (reto.campos_actualizar && reto.campos_actualizar.length > 0)
@@ -1398,6 +1404,8 @@ window.abrirReto = (id) => {
     $('rt-campo-archivo').style.display = esArchivo ? 'block' : 'none';
     $('rt-archivo').value = ''; $('rt-archivo-label').textContent = '📎 Elegir archivo';
     retoArchivoSel = null;
+    $('rt-campo-texto').style.display = esTexto ? 'block' : 'none';
+    if (esTexto) $('rt-texto').value = '';
   }
   $('rt-err').style.display = 'none';
   $('rt-ok').style.display = 'none';
@@ -1460,6 +1468,10 @@ $('rt-cumplido').onclick = async () => {
     });
     if (faltante || (inputs.length === 0 && objetivoBoxes.length === 0)) { err.textContent = 'Completa todos los valores.'; err.style.display = 'block'; return; }
     respuesta = resp;
+  } else if (reto.tipo === 'formulario') {
+    const texto = $('rt-texto').value.trim();
+    if (!texto) { err.textContent = 'Escribe tu respuesta.'; err.style.display = 'block'; return; }
+    respuesta = { texto };
   }
   const esActualizacion = (reto.categoria || 'reto') === 'actualizacion';
   const btn = $('rt-cumplido'); btn.disabled = true; $('rt-cumplido-label').textContent = 'Guardando...';
