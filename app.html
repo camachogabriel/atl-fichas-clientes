@@ -220,8 +220,12 @@
       <select id="ep-rodillo"><option value="">—</option><option value="no_tiene">No tengo</option><option value="normal">Normal</option><option value="inteligente">Inteligente</option></select>
       <label>Trabajo de fuerza</label>
       <select id="ep-fuerza"><option value="">—</option><option value="gym_con_ayuda">Gimnasio, con ayuda</option><option value="gym_sin_ayuda">Gimnasio, por mi cuenta</option><option value="casa_funcionales">Funcionales en casa</option><option value="ninguno">No por ahora</option></select>
-      <label>Objetivo</label>
-      <textarea id="ep-objetivo"></textarea>
+      <label>Objetivo primario</label>
+      <select id="ep-objetivo-p-tipo"></select>
+      <input type="text" id="ep-objetivo-p-detalle" placeholder="Detalle (ej: hacer la distancia larga, top 10...)">
+      <label>Objetivo secundario</label>
+      <select id="ep-objetivo-s-tipo"></select>
+      <input type="text" id="ep-objetivo-s-detalle" placeholder="Detalle (opcional)">
       <button class="btn oscuro" id="ep-guardar" style="margin-top:14px">Guardar cambios</button>
       <div class="error" id="ep-err"></div>
       <div class="aviso ok" id="ep-ok" style="display:none">✅ Perfil actualizado.</div>
@@ -460,6 +464,33 @@ let canalChat = null;
 const FUMADO = { fuma: 'Fumo', exfumador: 'Exfumador', no_fuma: 'No fumo' };
 const RODILLO = { no_tiene: 'No tengo', normal: 'Normal', inteligente: 'Inteligente' };
 const FUERZA = { gym_con_ayuda: 'Gimnasio, con ayuda en la programación', gym_sin_ayuda: 'Gimnasio, por mi cuenta', casa_funcionales: 'Funcionales en casa', ninguno: 'No por ahora' };
+
+const OBJETIVO_CLIENTE_OPCIONES = [
+  { valor: 'gran_fondo', label: 'Gran Fondo / evento de resistencia' },
+  { valor: 'carrera_ruta', label: 'Carrera de ruta' },
+  { valor: 'triatlon', label: 'Triatlón' },
+  { valor: 'mtb', label: 'Ciclismo de montaña' },
+  { valor: 'bajar_peso', label: 'Bajar de peso' },
+  { valor: 'subir_masa', label: 'Subir masa muscular' },
+  { valor: 'mejorar_tiempo', label: 'Mejorar tiempo / marca personal' },
+  { valor: 'primera_vez', label: 'Completar por primera vez la distancia' },
+  { valor: 'volver_lesion', label: 'Volver de una lesión' },
+  { valor: 'salud_general', label: 'Salud y bienestar general' },
+  { valor: 'otro', label: 'Otro' },
+];
+function initObjetivoSelectsCliente() {
+  const opts = `<option value="">Sin definir</option>` + OBJETIVO_CLIENTE_OPCIONES.map(o => `<option value="${o.valor}">${esc(o.label)}</option>`).join('');
+  $('ep-objetivo-p-tipo').innerHTML = opts;
+  $('ep-objetivo-s-tipo').innerHTML = opts;
+}
+initObjetivoSelectsCliente();
+
+let objetivosClienteCache = {};
+async function cargarObjetivosCliente() {
+  const { data } = await sbClient.from('fichas_objetivos_historial').select('*').eq('cliente_id', cliente.id).order('fecha', { ascending: false });
+  objetivosClienteCache = {};
+  (data || []).forEach(row => { if (!objetivosClienteCache[row.nivel]) objetivosClienteCache[row.nivel] = row; });
+}
 const nombreDisc = (id) => (ATL.DISCIPLINAS.find(d => d.id === id) || { nombre: id }).nombre;
 const esc = (s) => String(s ?? '').replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
 function dato(k, v) { return v ? `<div class="dato"><div class="k">${k}</div><div class="v">${v}</div></div>` : ''; }
@@ -608,6 +639,7 @@ async function init() {
     return;
   }
 
+  await cargarObjetivosCliente();
   pintarHome();
   cargarCoaches();
   pintarOnboarding();
@@ -670,7 +702,10 @@ $('op-editar-perfil').onclick = () => {
   $('ep-fumado').value = cliente.fumado || '';
   $('ep-rodillo').value = cliente.rodillo || '';
   $('ep-fuerza').value = cliente.fuerza || '';
-  $('ep-objetivo').value = cliente.objetivo || '';
+  $('ep-objetivo-p-tipo').value = (objetivosClienteCache.primario && objetivosClienteCache.primario.tipo) || '';
+  $('ep-objetivo-p-detalle').value = (objetivosClienteCache.primario && objetivosClienteCache.primario.detalle) || '';
+  $('ep-objetivo-s-tipo').value = (objetivosClienteCache.secundario && objetivosClienteCache.secundario.tipo) || '';
+  $('ep-objetivo-s-detalle').value = (objetivosClienteCache.secundario && objetivosClienteCache.secundario.detalle) || '';
   $('ep-err').style.display = 'none';
   $('ep-ok').style.display = 'none';
 
@@ -735,12 +770,21 @@ $('ep-guardar').onclick = async () => {
     fumado: $('ep-fumado').value || null,
     rodillo: $('ep-rodillo').value || null,
     fuerza: $('ep-fuerza').value || null,
-    objetivo: $('ep-objetivo').value.trim() || null,
   };
   const btn = $('ep-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
   const { error } = await sbClient.from('fichas_clientes').update(upd).eq('id', cliente.id);
   if (error) { err.textContent = 'No se pudo guardar: ' + error.message; err.style.display = 'block'; btn.disabled = false; btn.textContent = 'Guardar cambios'; return; }
+  const filasObjetivo = [];
+  const addObj = (nivel, tipoId, detId) => {
+    const tipo = $(tipoId).value || null;
+    const detalle = $(detId).value.trim() || null;
+    if (tipo || detalle) filasObjetivo.push({ cliente_id: cliente.id, nivel, tipo, detalle, origen: 'cliente' });
+  };
+  addObj('primario', 'ep-objetivo-p-tipo', 'ep-objetivo-p-detalle');
+  addObj('secundario', 'ep-objetivo-s-tipo', 'ep-objetivo-s-detalle');
+  if (filasObjetivo.length > 0) await sbClient.from('fichas_objetivos_historial').insert(filasObjetivo);
   Object.assign(cliente, upd);
+  await cargarObjetivosCliente();
   pintarHome();
   pintarDatos();
   $('ep-ok').style.display = 'block';
@@ -806,6 +850,14 @@ async function pintarOnboarding() {
 
 // ===== Mis datos + disponibilidad =====
 async function pintarDatos() {
+  const nombreObjetivo = (v) => (OBJETIVO_CLIENTE_OPCIONES.find(o => o.valor === v) || {}).label || v || '';
+  const objTxt = (nivel) => {
+    const r = objetivosClienteCache[nivel];
+    if (!r || (!r.tipo && !r.detalle)) return '';
+    return esc(nombreObjetivo(r.tipo)) + (r.detalle ? ' — ' + esc(r.detalle) : '');
+  };
+  let objetivoHtml = dato('Objetivo primario', objTxt('primario')) + dato('Objetivo secundario', objTxt('secundario'));
+  if (!objetivoHtml && cliente.objetivo) objetivoHtml = dato('Objetivo', esc(cliente.objetivo));
   $('p-datos').innerHTML =
     dato('Correo', esc(cliente.email)) +
     dato('Teléfono', esc(cliente.telefono)) +
@@ -817,7 +869,7 @@ async function pintarDatos() {
     dato('Fumado', FUMADO[cliente.fumado]) +
     dato('Rodillo', RODILLO[cliente.rodillo]) +
     dato('Trabajo de fuerza', FUERZA[cliente.fuerza]) +
-    dato('Objetivo', esc(cliente.objetivo)) +
+    objetivoHtml +
     dato('Mensualidad', cliente.tarifa_mensual ? ATL.fmtMonto(cliente.tarifa_mensual, cliente.moneda) : '') +
     dato('Fecha de pago mensual', cliente.fecha_pago ? 'Día ' + Number(cliente.fecha_pago.slice(8, 10)) + ' de cada mes' : '');
 
@@ -1323,11 +1375,25 @@ window.abrirReto = (id) => {
     if (esNumero) {
       const campos = (reto.campos_actualizar && reto.campos_actualizar.length > 0)
         ? reto.campos_actualizar
-        : [{ campo: 'valor', unidad: reto.unidad_campo || '', label: 'Valor' }];
-      $('rt-campos-numero-lista').innerHTML = campos.map(c => `
-        <label>${esc(c.label || c.campo)}${c.unidad ? ' (' + esc(c.unidad) + ')' : ''}</label>
-        <input type="number" class="rt-valor-campo" data-campo="${esc(c.campo)}" inputmode="decimal" style="margin-bottom:10px">
-      `).join('');
+        : [{ campo: 'valor', unidad: reto.unidad_campo || '', label: 'Valor', tipo: 'numero' }];
+      $('rt-campos-numero-lista').innerHTML = campos.map(c => {
+        if (c.tipo === 'objetivo') {
+          const opts = (c.opciones || []).map(o => `<option value="${esc(o.valor)}">${esc(o.label)}</option>`).join('');
+          return `
+            <div class="rt-campo-objetivo" data-campo="${esc(c.campo)}" style="margin-bottom:10px">
+              <label>${esc(c.label || c.campo)}</label>
+              <select>
+                <option value="">Elige una opción</option>${opts}
+              </select>
+              <input type="text" placeholder="Detalle (opcional)" style="margin-top:8px">
+            </div>
+          `;
+        }
+        return `
+          <label>${esc(c.label || c.campo)}${c.unidad ? ' (' + esc(c.unidad) + ')' : ''}</label>
+          <input type="number" class="rt-valor-campo" data-campo="${esc(c.campo)}" inputmode="decimal" style="margin-bottom:10px">
+        `;
+      }).join('');
     }
     $('rt-campo-archivo').style.display = esArchivo ? 'block' : 'none';
     $('rt-archivo').value = ''; $('rt-archivo-label').textContent = '📎 Elegir archivo';
@@ -1378,6 +1444,7 @@ $('rt-cumplido').onclick = async () => {
   let respuesta = null, archivo_path = null;
   if (reto.tipo === 'numero') {
     const inputs = Array.from(document.querySelectorAll('.rt-valor-campo'));
+    const objetivoBoxes = Array.from(document.querySelectorAll('.rt-campo-objetivo'));
     const resp = {};
     let faltante = false;
     inputs.forEach(inp => {
@@ -1385,7 +1452,13 @@ $('rt-cumplido').onclick = async () => {
       if (!inp.value || isNaN(num)) faltante = true;
       resp[inp.dataset.campo] = num;
     });
-    if (faltante || inputs.length === 0) { err.textContent = 'Completa todos los valores.'; err.style.display = 'block'; return; }
+    objetivoBoxes.forEach(box => {
+      const tipo = box.querySelector('select').value || null;
+      const detalle = box.querySelector('input[type=text]').value.trim() || null;
+      if (!tipo && !detalle) { faltante = true; return; }
+      resp[box.dataset.campo] = { tipo, detalle };
+    });
+    if (faltante || (inputs.length === 0 && objetivoBoxes.length === 0)) { err.textContent = 'Completa todos los valores.'; err.style.display = 'block'; return; }
     respuesta = resp;
   }
   const esActualizacion = (reto.categoria || 'reto') === 'actualizacion';

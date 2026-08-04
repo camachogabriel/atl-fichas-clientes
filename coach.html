@@ -59,6 +59,7 @@
   <button data-nav="clientes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
   <button data-nav="calendario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>Calendario</button>
   <button data-nav="retos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Retos</button>
+  <button data-nav="difusion"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Difusión</button>
   <button data-nav="config"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Configuración</button>
 </div>
 <div class="wrap">
@@ -299,6 +300,62 @@
     </div>
   </section>
 
+  <!-- DIFUSIÓN: asignación masiva y comunicados -->
+  <section id="sec-difusion" style="display:none">
+    <h1>Difusión</h1>
+    <p class="sub">Asigna una plantilla (o envía un comunicado) a varios clientes a la vez.</p>
+    <div class="card">
+      <label>Tipo de envío</label>
+      <select id="dif-tipo-envio">
+        <option value="reto">Plantilla de reto / actualización</option>
+        <option value="comunicado">Comunicado (mensaje)</option>
+      </select>
+
+      <div id="dif-reto-zona">
+        <label>Plantilla</label>
+        <select id="dif-plantilla"></select>
+        <label>Programación</label>
+        <select id="dif-programacion">
+          <option value="puntual">Puntual (una fecha límite)</option>
+          <option value="recurrente">Recurrente (rango de fechas + días)</option>
+        </select>
+        <div id="dif-puntual-zona">
+          <label>Fecha límite (opcional)</label>
+          <input type="date" id="dif-fecha-limite">
+        </div>
+        <div id="dif-recurrente-zona" style="display:none">
+          <label>Fecha de inicio</label>
+          <input type="date" id="dif-fecha-inicio">
+          <label>Fecha de fin</label>
+          <input type="date" id="dif-fecha-fin">
+          <label>Días de la semana</label>
+          <div class="chips" id="dif-dias"></div>
+          <p class="sub" style="margin-top:6px">Se crea una asignación por cada fecha que caiga en esos días dentro del rango.</p>
+        </div>
+      </div>
+
+      <div id="dif-comunicado-zona" style="display:none">
+        <label>Título</label>
+        <input type="text" id="dif-com-titulo" placeholder="Ej: Cambio de horario esta semana">
+        <label>Mensaje</label>
+        <textarea id="dif-com-mensaje"></textarea>
+      </div>
+
+      <label style="margin-top:16px">Destinatarios</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin:6px 0">
+        <input type="checkbox" id="dif-todos" style="width:auto"> Todos los clientes activos
+      </label>
+      <div id="dif-clientes-zona">
+        <input type="text" id="dif-buscar" placeholder="Buscar cliente...">
+        <div id="dif-clientes-lista" style="max-height:260px;overflow-y:auto;margin-top:8px"></div>
+      </div>
+
+      <button class="btn oscuro" id="dif-enviar" style="margin-top:14px">Enviar</button>
+      <div class="error" id="dif-err"></div>
+      <div class="aviso ok" id="dif-ok" style="display:none"></div>
+    </div>
+  </section>
+
   <!-- CONFIGURACIÓN -->
   <section id="sec-config" style="display:none">
     <h1>Configuración</h1>
@@ -358,8 +415,6 @@
         <select id="ed-rodillo"><option value="">—</option><option value="no_tiene">No tiene</option><option value="normal">Normal</option><option value="inteligente">Inteligente</option></select>
         <label>Trabajo de fuerza</label>
         <select id="ed-fuerza"><option value="">—</option><option value="gym_con_ayuda">Gym, con ayuda</option><option value="gym_sin_ayuda">Gym por su cuenta</option><option value="casa_funcionales">Funcionales en casa</option><option value="ninguno">No por ahora</option></select>
-        <label>Objetivo</label>
-        <textarea id="ed-objetivo"></textarea>
         <p class="sub" style="margin-top:8px;font-size:12px">El correo no se edita aquí porque está ligado a la cuenta de acceso del cliente.</p>
         <label style="display:flex;align-items:center;gap:8px;font-weight:400;margin-top:12px">
           <input type="checkbox" id="ed-notificar" style="width:auto"> Notificar al cliente sobre este cambio
@@ -370,6 +425,29 @@
       </div>
       <h2 class="h2-izq" style="margin-top:14px"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Disponibilidad</h2>
       <div id="d-dispo"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Objetivos</h2>
+      <div id="obj-actual" class="cargando">Cargando...</div>
+      <button class="btn linea" id="obj-toggle" style="margin-top:12px">✏️ Actualizar objetivos</button>
+      <div id="obj-form" style="display:none">
+        <label>Objetivo primario del cliente</label>
+        <select id="obj-primario-tipo"></select>
+        <input type="text" id="obj-primario-detalle" placeholder="Detalle (ej: hacer la distancia larga, top 10...)">
+        <label>Objetivo secundario del cliente</label>
+        <select id="obj-secundario-tipo"></select>
+        <input type="text" id="obj-secundario-detalle" placeholder="Detalle">
+        <label>Objetivo fisiológico primario (coach)</label>
+        <select id="obj-fisio-primario"></select>
+        <input type="text" id="obj-fisio-primario-detalle" placeholder="Detalle (ej: subir FTP 10%)">
+        <label>Objetivo fisiológico secundario (coach)</label>
+        <select id="obj-fisio-secundario"></select>
+        <input type="text" id="obj-fisio-secundario-detalle" placeholder="Detalle">
+        <button class="btn oscuro" id="obj-guardar" style="margin-top:10px">Guardar objetivos</button>
+        <div class="error" id="obj-err"></div>
+        <div class="aviso ok" id="obj-ok" style="display:none">✅ Objetivos actualizados.</div>
+      </div>
     </div>
 
     <div class="card">
@@ -579,7 +657,7 @@ let chatChannel = null;
 $('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
 
 // ===== Navegación por menú =====
-const SECCIONES_NAV = ['dashboard', 'chats', 'clientes', 'calendario', 'retos', 'config'];
+const SECCIONES_NAV = ['dashboard', 'chats', 'clientes', 'calendario', 'retos', 'difusion', 'config'];
 let seccionActiva = 'dashboard';
 function irASeccion(nombre) {
   $('sec-detalle').style.display = 'none';
@@ -590,6 +668,7 @@ function irASeccion(nombre) {
   cerrarMenuNav();
   window.scrollTo(0, 0);
   if (nombre === 'chats') pintarInbox();
+  if (nombre === 'difusion' && typeof prepararDifusion === 'function') prepararDifusion();
 }
 function cerrarMenuNav() { $('menu-nav').style.display = 'none'; }
 $('btn-menu').onclick = (e) => { e.stopPropagation(); $('menu-nav').style.display = $('menu-nav').style.display === 'block' ? 'none' : 'block'; };
@@ -953,6 +1032,29 @@ async function cargarRetosPlantillas() {
   poblarSelectPlantillas();
 }
 
+const OBJETIVO_CLIENTE_OPCIONES = [
+  { valor: 'gran_fondo', label: 'Gran Fondo / evento de resistencia' },
+  { valor: 'carrera_ruta', label: 'Carrera de ruta' },
+  { valor: 'triatlon', label: 'Triatlón' },
+  { valor: 'mtb', label: 'Ciclismo de montaña' },
+  { valor: 'bajar_peso', label: 'Bajar de peso' },
+  { valor: 'subir_masa', label: 'Subir masa muscular' },
+  { valor: 'mejorar_tiempo', label: 'Mejorar tiempo / marca personal' },
+  { valor: 'primera_vez', label: 'Completar por primera vez la distancia' },
+  { valor: 'volver_lesion', label: 'Volver de una lesión' },
+  { valor: 'salud_general', label: 'Salud y bienestar general' },
+  { valor: 'otro', label: 'Otro' },
+];
+const OBJETIVO_FISIO_OPCIONES = [
+  { valor: 'aerobico', label: 'Sistema aeróbico' },
+  { valor: 'anaerobico', label: 'Sistema anaeróbico' },
+  { valor: 'fuerza', label: 'Fuerza' },
+  { valor: 'peso', label: 'Composición corporal / peso' },
+  { valor: 'tecnica', label: 'Técnica / skill' },
+  { valor: 'movilidad', label: 'Movilidad y prevención de lesiones' },
+  { valor: 'recuperacion', label: 'Recuperación' },
+  { valor: 'otro', label: 'Otro' },
+];
 const CAMPO_ACTUALIZAR_OPCIONES = [
   { valor: 'peso', label: 'Peso corporal', unidad: 'kg' },
   { valor: 'porcentaje_grasa', label: '% de grasa corporal', unidad: '%' },
@@ -969,6 +1071,8 @@ const CAMPO_ACTUALIZAR_OPCIONES = [
   { valor: 'cadencia', label: 'Cadencia', unidad: 'rpm' },
   { valor: 'horas_sueno', label: 'Horas de sueño (promedio)', unidad: 'h' },
   { valor: 'peso_levantado', label: 'Peso levantado (fuerza)', unidad: 'kg' },
+  { valor: 'objetivo_primario', label: 'Objetivo primario (cliente)', tipo: 'objetivo', opciones: OBJETIVO_CLIENTE_OPCIONES },
+  { valor: 'objetivo_secundario', label: 'Objetivo secundario (cliente)', tipo: 'objetivo', opciones: OBJETIVO_CLIENTE_OPCIONES },
   { valor: 'otro', label: 'Otro (especificar)', unidad: '' },
 ];
 let camposActualizarState = [];
@@ -977,7 +1081,10 @@ function nuevoCampoFila(valores) {
 }
 function renderCamposActualizar() {
   const cont = $('reto-campos-lista');
-  cont.innerHTML = camposActualizarState.map((f, i) => `
+  cont.innerHTML = camposActualizarState.map((f, i) => {
+    const opSel = CAMPO_ACTUALIZAR_OPCIONES.find(o => o.valor === f.campo);
+    const esObjetivo = opSel && opSel.tipo === 'objetivo';
+    return `
     <div style="border:1px solid var(--borde);border-radius:10px;padding:10px;margin-bottom:8px">
       <label>Dato ${i + 1}</label>
       <select class="rcf-select" data-i="${i}">
@@ -987,11 +1094,13 @@ function renderCamposActualizar() {
         <label>Nombre del dato personalizado</label>
         <input type="text" class="rcf-otro" data-i="${i}" placeholder="Ej: flexibilidad_isquiotibiales" value="${esc(f.campoOtro || '')}">
       </div>
+      ${esObjetivo ? `<p class="sub" style="margin:6px 0 0">El cliente elegirá de una lista (Gran Fondo, Bajar de peso, etc.) y escribirá el detalle. No requiere unidad.</p>` : `
       <label>Unidad</label>
       <input type="text" class="rcf-unidad" data-i="${i}" placeholder="Ej: kg, ppm" value="${esc(f.unidad || '')}">
+      `}
       ${camposActualizarState.length > 1 ? `<button type="button" class="btn linea rcf-quitar" data-i="${i}" style="margin-top:8px">Quitar este dato</button>` : ''}
     </div>
-  `).join('');
+  `; }).join('');
 }
 $('reto-campos-lista').addEventListener('change', (e) => {
   const i = Number(e.target.dataset.i);
@@ -1047,10 +1156,12 @@ async function guardarPlantilla() {
   let camposActualizarFinal = [];
   if (categoria === 'actualizacion') {
     camposActualizarFinal = camposActualizarState.map(f => {
-      const campo = f.campo === 'otro' ? (f.campoOtro || '').trim() : f.campo;
       const opcion = CAMPO_ACTUALIZAR_OPCIONES.find(o => o.valor === f.campo);
+      const esObjetivo = opcion && opcion.tipo === 'objetivo';
+      const campo = f.campo === 'otro' ? (f.campoOtro || '').trim() : f.campo;
       const label = f.campo === 'otro' ? campo : (opcion ? opcion.label : campo);
-      return { campo, unidad: (f.unidad || '').trim(), label };
+      if (esObjetivo) return { campo, label, tipo: 'objetivo', opciones: opcion.opciones };
+      return { campo, label, tipo: 'numero', unidad: (f.unidad || '').trim() };
     }).filter(f => f.campo);
     if (camposActualizarFinal.length === 0) { err.textContent = 'Agrega al menos un dato a actualizar.'; err.style.display = 'block'; return; }
   }
@@ -1268,6 +1379,132 @@ window.borrarInsignia = async (id) => {
   if (!confirm('¿Borrar esta insignia? (los clientes que ya la ganaron la conservan en su historial)')) return;
   await sbClient.from('fichas_insignias').delete().eq('id', id);
   cargarInsignias();
+};
+
+// ===== Difusión: asignación masiva de retos y comunicados =====
+let difClientesSel = new Set();
+let difDiasSel = new Set();
+
+function clientesFiltrablesDif() { return clientes.filter(c => c.estado !== 'inactivo'); }
+
+const CAT_NOMBRE_COACH = { reto: 'Reto', skill: 'Skill', actualizacion: 'Actualización de datos' };
+function renderDifPlantillas() {
+  $('dif-plantilla').innerHTML = plantillasCache
+    .filter(p => p.activo !== false)
+    .map(p => `<option value="${p.id}">${esc(p.titulo)} — ${CAT_NOMBRE_COACH[p.categoria] || p.categoria || 'reto'}</option>`)
+    .join('') || '<option value="">Sin plantillas — crea una en Retos</option>';
+}
+
+function renderDifClientes(busqueda = '') {
+  const q = busqueda.trim().toLowerCase();
+  const base = clientesFiltrablesDif();
+  const lista = q ? base.filter(c => (c.nombre || '').toLowerCase().includes(q)) : base;
+  $('dif-clientes-lista').innerHTML = lista.map(c => `
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-weight:400">
+      <input type="checkbox" data-id="${c.id}" style="width:auto" ${difClientesSel.has(c.id) ? 'checked' : ''}> ${esc(c.nombre)}
+    </label>`).join('') || '<p class="sub">Sin resultados.</p>';
+}
+$('dif-clientes-lista').addEventListener('change', (e) => {
+  const cb = e.target.closest('input[type=checkbox]'); if (!cb) return;
+  if (cb.checked) difClientesSel.add(cb.dataset.id); else difClientesSel.delete(cb.dataset.id);
+});
+$('dif-buscar').addEventListener('input', () => renderDifClientes($('dif-buscar').value));
+$('dif-todos').addEventListener('change', () => {
+  $('dif-clientes-zona').style.display = $('dif-todos').checked ? 'none' : 'block';
+});
+
+function prepararDifusion() {
+  renderDifPlantillas();
+  difClientesSel = new Set();
+  $('dif-todos').checked = false;
+  $('dif-clientes-zona').style.display = 'block';
+  $('dif-buscar').value = '';
+  renderDifClientes();
+  $('dif-err').style.display = 'none'; $('dif-ok').style.display = 'none';
+}
+
+$('dif-dias').innerHTML = ATL.DIAS.map((d, i) => `<div class="chip" data-dia="${i + 1}">${d}</div>`).join('');
+$('dif-dias').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  const dia = Number(chip.dataset.dia);
+  if (difDiasSel.has(dia)) { difDiasSel.delete(dia); chip.classList.remove('on'); }
+  else { difDiasSel.add(dia); chip.classList.add('on'); }
+});
+$('dif-tipo-envio').onchange = () => {
+  const esComunicado = $('dif-tipo-envio').value === 'comunicado';
+  $('dif-reto-zona').style.display = esComunicado ? 'none' : 'block';
+  $('dif-comunicado-zona').style.display = esComunicado ? 'block' : 'none';
+};
+$('dif-programacion').onchange = () => {
+  const rec = $('dif-programacion').value === 'recurrente';
+  $('dif-puntual-zona').style.display = rec ? 'none' : 'block';
+  $('dif-recurrente-zona').style.display = rec ? 'block' : 'none';
+};
+
+function fechasEntreDif(inicioStr, finStr, diasSet) {
+  const out = [];
+  let d = new Date(inicioStr + 'T00:00:00');
+  const fin = new Date(finStr + 'T00:00:00');
+  while (d <= fin) {
+    const iso = d.getDay() === 0 ? 7 : d.getDay();
+    if (diasSet.has(iso)) out.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+$('dif-enviar').onclick = async () => {
+  const err = $('dif-err'); err.style.display = 'none'; $('dif-ok').style.display = 'none';
+  const destinatarios = $('dif-todos').checked ? clientesFiltrablesDif().map(c => c.id) : [...difClientesSel];
+  if (destinatarios.length === 0) { err.textContent = 'Selecciona al menos un cliente o marca "Todos los clientes activos".'; err.style.display = 'block'; return; }
+  const btn = $('dif-enviar'); btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    if ($('dif-tipo-envio').value === 'comunicado') {
+      const titulo = $('dif-com-titulo').value.trim();
+      const mensaje = $('dif-com-mensaje').value.trim();
+      if (!titulo || !mensaje) throw new Error('Escribe título y mensaje.');
+      const filas = destinatarios.map(id => ({ cliente_id: id, tipo: 'comunicado', titulo, cuerpo: mensaje }));
+      const { error } = await sbClient.from('fichas_notificaciones').insert(filas);
+      if (error) throw error;
+      $('dif-ok').textContent = `✅ Comunicado enviado a ${destinatarios.length} cliente(s).`;
+      $('dif-com-titulo').value = ''; $('dif-com-mensaje').value = '';
+    } else {
+      const retoId = $('dif-plantilla').value;
+      if (!retoId) throw new Error('Elige una plantilla (crea una primero en la sección Retos).');
+      const plantilla = plantillasCache.find(p => p.id === retoId);
+      const esActualizacion = plantilla && plantilla.categoria === 'actualizacion';
+      const recurrente = $('dif-programacion').value === 'recurrente';
+      let fechas = [];
+      let serieId = null;
+      if (recurrente) {
+        const ini = $('dif-fecha-inicio').value, fin = $('dif-fecha-fin').value;
+        if (!ini || !fin) throw new Error('Define fecha de inicio y fin.');
+        if (fin < ini) throw new Error('La fecha de fin debe ser posterior a la de inicio.');
+        if (difDiasSel.size === 0) throw new Error('Selecciona al menos un día de la semana.');
+        fechas = fechasEntreDif(ini, fin, difDiasSel);
+        if (fechas.length === 0) throw new Error('No hay fechas que coincidan con los días elegidos en ese rango.');
+        serieId = crypto.randomUUID();
+      } else {
+        fechas = [$('dif-fecha-limite').value || null];
+      }
+      const filas = [];
+      destinatarios.forEach(clienteId => {
+        fechas.forEach(f => {
+          const fila = { reto_id: retoId, cliente_id: clienteId, fecha_limite: f, serie_id: serieId };
+          if (esActualizacion) { fila.estado = 'aceptado'; fila.aceptado_at = new Date().toISOString(); }
+          filas.push(fila);
+        });
+      });
+      const { error } = await sbClient.from('fichas_retos_asignados').insert(filas);
+      if (error) throw error;
+      $('dif-ok').textContent = `✅ Asignado a ${destinatarios.length} cliente(s)` + (fechas.length > 1 ? ` · ${fechas.length} fechas cada uno` : '') + '.';
+    }
+    $('dif-ok').style.display = 'block';
+    difClientesSel = new Set(); $('dif-todos').checked = false; $('dif-clientes-zona').style.display = 'block'; renderDifClientes();
+  } catch (e) {
+    err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Enviar';
 };
 
 async function init() {
@@ -1621,7 +1858,6 @@ window.abrirDetalle = async (id) => {
     dato('Diabetes', actual.diabetes === null ? '' : actual.diabetes ? '⚠️ Sí' : 'No') +
     dato('Fumado', FUMADO[actual.fumado]) + dato('Rodillo', RODILLO[actual.rodillo]) +
     dato('Trabajo de fuerza', FUERZA[actual.fuerza]) +
-    dato('Objetivo', esc(actual.objetivo)) +
     dato('Correo confirmado', actual.correo_confirmado ? 'Sí' : 'No') +
     dato('Fecha de pago', actual.fecha_pago ? 'Día ' + Number(actual.fecha_pago.slice(8, 10)) + ' de cada mes' : 'Pendiente de confirmar correo') +
     dato('Próximo pago', actual.proximo_pago ? ATL.fmtFecha(actual.proximo_pago) : '');
@@ -1640,7 +1876,8 @@ window.abrirDetalle = async (id) => {
 
   pintarOnboardingDetalle();
   cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones(); cargarPruebas();
-  cargarChatDetalle(); cargarRetosDetalle();
+  cargarChatDetalle(); cargarRetosDetalle(); cargarObjetivos(actual.id);
+  $('obj-form').style.display = 'none';
   $('d-chat-abrir-bandeja').onclick = () => abrirChat(actual.id);
   $('ed-form').style.display = 'none';
   $('ed-toggle').onclick = abrirEdicionFicha;
@@ -2027,7 +2264,6 @@ function abrirEdicionFicha() {
   $('ed-fumado').value = actual.fumado || '';
   $('ed-rodillo').value = actual.rodillo || '';
   $('ed-fuerza').value = actual.fuerza || '';
-  $('ed-objetivo').value = actual.objetivo || '';
   edDisc = new Set(actual.disciplinas || []);
   $('ed-disciplinas').innerHTML = '';
   ATL.DISCIPLINAS.forEach(d => {
@@ -2056,7 +2292,6 @@ async function guardarFicha() {
     fumado: $('ed-fumado').value || null,
     rodillo: $('ed-rodillo').value || null,
     fuerza: $('ed-fuerza').value || null,
-    objetivo: $('ed-objetivo').value.trim() || null,
   };
   const { error } = await sbClient.from('fichas_clientes').update(upd).eq('id', actual.id);
   if (error) { err.textContent = 'Error: ' + error.message; err.style.display = 'block'; return; }
@@ -2071,6 +2306,79 @@ async function guardarFicha() {
   $('ed-form').style.display = 'none';
   abrirDetalle(actual.id);
 }
+
+// ===== Objetivos del cliente (primario/secundario) y fisiológicos (coach) =====
+function initObjetivosSelects() {
+  const opts = (arr) => `<option value="">Sin definir</option>` + arr.map(o => `<option value="${o.valor}">${esc(o.label)}</option>`).join('');
+  $('obj-primario-tipo').innerHTML = opts(OBJETIVO_CLIENTE_OPCIONES);
+  $('obj-secundario-tipo').innerHTML = opts(OBJETIVO_CLIENTE_OPCIONES);
+  $('obj-fisio-primario').innerHTML = opts(OBJETIVO_FISIO_OPCIONES);
+  $('obj-fisio-secundario').innerHTML = opts(OBJETIVO_FISIO_OPCIONES);
+}
+initObjetivosSelects();
+
+let objetivosActualCache = {};
+async function cargarObjetivos(clienteId) {
+  $('obj-actual').className = 'cargando'; $('obj-actual').textContent = 'Cargando...';
+  const { data } = await sbClient.from('fichas_objetivos_historial').select('*').eq('cliente_id', clienteId).order('fecha', { ascending: false });
+  objetivosActualCache = {};
+  (data || []).forEach(row => { if (!objetivosActualCache[row.nivel]) objetivosActualCache[row.nivel] = row; });
+  $('obj-actual').className = '';
+  const nombreTipo = (catalogo, v) => (catalogo.find(o => o.valor === v) || {}).label || v || '';
+  const fila = (label, nivel, catalogo) => {
+    const r = objetivosActualCache[nivel];
+    if (!r || (!r.tipo && !r.detalle)) return `<div class="dato"><div class="k">${label}</div><div class="v">Sin definir</div></div>`;
+    const tipoTxt = nombreTipo(catalogo, r.tipo);
+    return `<div class="dato"><div class="k">${label}</div><div class="v">${esc(tipoTxt)}${r.detalle ? ' — ' + esc(r.detalle) : ''}</div></div>`;
+  };
+  let html = fila('Primario (cliente)', 'primario', OBJETIVO_CLIENTE_OPCIONES) +
+    fila('Secundario (cliente)', 'secundario', OBJETIVO_CLIENTE_OPCIONES) +
+    fila('Primario fisiológico (coach)', 'fisio_primario', OBJETIVO_FISIO_OPCIONES) +
+    fila('Secundario fisiológico (coach)', 'fisio_secundario', OBJETIVO_FISIO_OPCIONES);
+  if (!objetivosActualCache.primario && actual && actual.objetivo) {
+    html += `<div class="dato"><div class="k">Objetivo (histórico, texto libre)</div><div class="v">${esc(actual.objetivo)}</div></div>`;
+  }
+  $('obj-actual').innerHTML = html;
+}
+
+function abrirEdicionObjetivos() {
+  const f = $('obj-form');
+  if (f.style.display === 'block') { f.style.display = 'none'; return; }
+  f.style.display = 'block';
+  const pre = (nivel, selId, detId) => {
+    const r = objetivosActualCache[nivel];
+    $(selId).value = r ? (r.tipo || '') : '';
+    $(detId).value = r ? (r.detalle || '') : '';
+  };
+  pre('primario', 'obj-primario-tipo', 'obj-primario-detalle');
+  pre('secundario', 'obj-secundario-tipo', 'obj-secundario-detalle');
+  pre('fisio_primario', 'obj-fisio-primario', 'obj-fisio-primario-detalle');
+  pre('fisio_secundario', 'obj-fisio-secundario', 'obj-fisio-secundario-detalle');
+  $('obj-err').style.display = 'none'; $('obj-ok').style.display = 'none';
+}
+$('obj-toggle').onclick = abrirEdicionObjetivos;
+
+$('obj-guardar').onclick = async () => {
+  const err = $('obj-err'); err.style.display = 'none'; $('obj-ok').style.display = 'none';
+  const filas = [];
+  const add = (nivel, selId, detId) => {
+    const tipo = $(selId).value || null;
+    const detalle = $(detId).value.trim() || null;
+    if (tipo || detalle) filas.push({ cliente_id: actual.id, nivel, tipo, detalle, origen: 'coach' });
+  };
+  add('primario', 'obj-primario-tipo', 'obj-primario-detalle');
+  add('secundario', 'obj-secundario-tipo', 'obj-secundario-detalle');
+  add('fisio_primario', 'obj-fisio-primario', 'obj-fisio-primario-detalle');
+  add('fisio_secundario', 'obj-fisio-secundario', 'obj-fisio-secundario-detalle');
+  if (filas.length === 0) { err.textContent = 'No hay cambios que guardar.'; err.style.display = 'block'; return; }
+  const btn = $('obj-guardar'); btn.disabled = true; btn.textContent = 'Guardando...';
+  const { error } = await sbClient.from('fichas_objetivos_historial').insert(filas);
+  btn.disabled = false; btn.textContent = 'Guardar objetivos';
+  if (error) { err.textContent = 'Error: ' + error.message; err.style.display = 'block'; return; }
+  $('obj-ok').style.display = 'block'; setTimeout(() => $('obj-ok').style.display = 'none', 2000);
+  $('obj-form').style.display = 'none';
+  cargarObjetivos(actual.id);
+};
 
 window.borrarPrueba = async (id) => {
   if (!confirm('¿Borrar esta prueba?')) return;

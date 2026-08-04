@@ -93,7 +93,12 @@
 
     <div class="card">
       <h2>🎯 Tu objetivo</h2>
-      <textarea id="objetivo" placeholder="Ej: terminar mi primer medio Ironman, mejorar mi tiempo en la Ruta de los Conquistadores..."></textarea>
+      <label>Objetivo primario</label>
+      <select id="objetivo-p-tipo"></select>
+      <input type="text" id="objetivo-p-detalle" placeholder="Detalle (ej: terminar mi primer medio Ironman, top 10 en mi categoría...)">
+      <label>Objetivo secundario (opcional)</label>
+      <select id="objetivo-s-tipo"></select>
+      <input type="text" id="objetivo-s-detalle" placeholder="Detalle (opcional)">
     </div>
 
     <div class="card">
@@ -153,6 +158,26 @@ function seg(id, cb) {
 }
 seg('condicion', v => { $('condicion-det').style.display = v === 'si' ? 'block' : 'none'; });
 seg('fumado'); seg('rodillo'); seg('fuerza'); seg('hipertension'); seg('diabetes');
+
+// Objetivo primario/secundario
+const OBJETIVO_CLIENTE_OPCIONES = [
+  { valor: 'gran_fondo', label: 'Gran Fondo / evento de resistencia' },
+  { valor: 'carrera_ruta', label: 'Carrera de ruta' },
+  { valor: 'triatlon', label: 'Triatlón' },
+  { valor: 'mtb', label: 'Ciclismo de montaña' },
+  { valor: 'bajar_peso', label: 'Bajar de peso' },
+  { valor: 'subir_masa', label: 'Subir masa muscular' },
+  { valor: 'mejorar_tiempo', label: 'Mejorar tiempo / marca personal' },
+  { valor: 'primera_vez', label: 'Completar por primera vez la distancia' },
+  { valor: 'volver_lesion', label: 'Volver de una lesión' },
+  { valor: 'salud_general', label: 'Salud y bienestar general' },
+  { valor: 'otro', label: 'Otro' },
+];
+(() => {
+  const opts = `<option value="">Elige una opción</option>` + OBJETIVO_CLIENTE_OPCIONES.map(o => `<option value="${o.valor}">${o.label}</option>`).join('');
+  $('objetivo-p-tipo').innerHTML = opts;
+  $('objetivo-s-tipo').innerHTML = opts;
+})();
 
 // Disponibilidad
 ATL.DIAS.forEach((nombre, i) => {
@@ -226,7 +251,10 @@ $('enviar').onclick = async () => {
         fumado: $('fumado').dataset.valor || null,
         rodillo: $('rodillo').dataset.valor || null,
         fuerza: $('fuerza').dataset.valor || null,
-        objetivo: $('objetivo').value.trim(),
+        objetivo_primario_tipo: $('objetivo-p-tipo').value || null,
+        objetivo_primario_detalle: $('objetivo-p-detalle').value.trim() || null,
+        objetivo_secundario_tipo: $('objetivo-s-tipo').value || null,
+        objetivo_secundario_detalle: $('objetivo-s-detalle').value.trim() || null,
         disponibilidad: dispo,
         foto_base64: fotoB64, foto_mime: fotoMime,
         tipo_cliente: TIPO_CLIENTE,
