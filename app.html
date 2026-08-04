@@ -90,6 +90,28 @@
   .lab-zona-nom { color: #e6e8eb; }
   .lab-zona-val { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace; font-weight: 700; color: #fff; white-space: nowrap; }
 
+  /* ===== Retos / evaluaciones (estilo Strava/TrainingPeaks) ===== */
+  #retos-lista { margin: -2px 0; }
+  .reto-row { display: flex; align-items: center; gap: 12px; padding: 13px 2px; border-bottom: 1px solid var(--fondo); cursor: pointer; }
+  .reto-row:last-child { border-bottom: none; }
+  .reto-row:active { opacity: .6; }
+  .reto-row .ric { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
+  .reto-row .ric svg { width: 19px; height: 19px; }
+  .reto-row .rbody { flex: 1; min-width: 0; }
+  .reto-row .rtit { font-size: 14.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .reto-row .rmeta { font-size: 12px; color: var(--gris-claro); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .reto-row .rright { flex-shrink: 0; }
+  #rt-banner { padding: 14px 20px 20px; }
+  #rt-banner .rt-cat { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .6px; color: rgba(255,255,255,.85); }
+  #rt-banner h2 { color: #fff; font-size: 18px; line-height: 1.25; margin: 2px 0 0; }
+  #rt-icono { width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; background: rgba(0,0,0,.2); }
+  .rt-body { padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .rt-info-row { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--gris-claro); margin-bottom: 16px; }
+  .rt-seccion { margin-bottom: 16px; }
+  .rt-seccion:last-child { margin-bottom: 0; }
+  .rt-seccion-k { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #6b7280; margin-bottom: 5px; }
+  .rt-seccion-v { font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+
   .msj { max-width: 78%; padding: 9px 13px; border-radius: 14px; font-size: 14px; margin: 5px 0; line-height: 1.35; }
   .msj.yo { background: var(--verde); color: #fff; margin-left: auto; border-bottom-right-radius: 4px; }
   .msj.otro { background: #fff; border: 1px solid var(--borde); margin-right: auto; border-bottom-left-radius: 4px; }
@@ -110,8 +132,9 @@
   .btn.linea { background: #1c1d22; color: #eef0f2; border-color: #33343a; }
   .chip { background: #1c1d22; border-color: #33343a; color: #eef0f2; }
   .chip.on { border-color: var(--verde); background: rgba(33,181,124,.16); color: var(--verde); }
-  .item, .dato, .dia-fila { border-bottom-color: #24252a; }
+  .item, .dato, .dia-fila, .reto-row { border-bottom-color: #24252a; }
   .item .det, .dato .k, .cargando, .paso .nom, .mes-grid .dia-cab { color: #8b95a3; }
+  .rt-body { background: #121317; }
   .dia-fila .desc-btn { background: #1c1d22; border-color: #33343a; color: #8b95a3; }
   .foto-btn { color: #9aa4b2; border-color: #3a3b42; }
   .paso .punto { background: #1c1d22; border-color: #33343a; color: #8b95a3; }
@@ -348,34 +371,41 @@
 </div>
 
 <div class="hoja" id="hoja-reto">
-  <div class="panel">
-    <div class="cerrar" id="rt-cerrar"></div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-      <div id="rt-icono" style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff"></div>
-      <div>
-        <h2 id="rt-titulo" style="margin-bottom:2px">—</h2>
-        <div id="rt-categoria" class="sub" style="margin-bottom:0">—</div>
+  <div class="panel" style="padding:0;overflow:hidden">
+    <div id="rt-banner">
+      <div class="cerrar" id="rt-cerrar" style="background:rgba(255,255,255,.35)"></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0">
+          <div id="rt-icono"></div>
+          <div style="min-width:0">
+            <div id="rt-categoria" class="rt-cat">—</div>
+            <h2 id="rt-titulo">—</h2>
+          </div>
+        </div>
+        <span class="pill" id="rt-estado-pill" style="flex-shrink:0"></span>
       </div>
     </div>
-    <div id="rt-detalles" style="margin:14px 0"></div>
-    <div id="rt-pendiente" style="display:none">
-      <button class="btn" id="rt-aceptar">Aceptar</button>
-    </div>
-    <div id="rt-aceptado" style="display:none">
-      <div id="rt-campo-numero" style="display:none">
-        <div id="rt-campos-numero-lista"></div>
+    <div class="rt-body">
+      <div id="rt-detalles"></div>
+      <div id="rt-pendiente" style="display:none">
+        <button class="btn" id="rt-aceptar">Aceptar</button>
       </div>
-      <div id="rt-campo-archivo" style="display:none">
-        <label>Evidencia (foto o video)</label>
-        <label class="foto-btn" for="rt-archivo" id="rt-archivo-label">📎 Elegir archivo</label>
-        <input type="file" id="rt-archivo" accept="image/*,video/*" style="display:none">
+      <div id="rt-aceptado" style="display:none">
+        <div id="rt-campo-numero" style="display:none">
+          <div id="rt-campos-numero-lista"></div>
+        </div>
+        <div id="rt-campo-archivo" style="display:none">
+          <label>Evidencia (foto o video)</label>
+          <label class="foto-btn" for="rt-archivo" id="rt-archivo-label">📎 Elegir archivo</label>
+          <input type="file" id="rt-archivo" accept="image/*,video/*" style="display:none">
+        </div>
+        <button class="btn" id="rt-cumplido" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="rt-cumplido-label">Marcar cumplido</span></button>
+        <button class="btn linea" id="rt-fallido" style="margin-top:8px">No lo logré</button>
       </div>
-      <button class="btn" id="rt-cumplido" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="rt-cumplido-label">Marcar cumplido</span></button>
-      <button class="btn linea" id="rt-fallido" style="margin-top:8px">No lo logré</button>
+      <div class="error" id="rt-err"></div>
+      <div class="aviso ok" id="rt-ok" style="display:none">✅ ¡Listo!</div>
+      <button class="btn linea" id="rt-cerrar-btn" style="margin-top:10px">Cerrar</button>
     </div>
-    <div class="error" id="rt-err"></div>
-    <div class="aviso ok" id="rt-ok" style="display:none">✅ ¡Listo!</div>
-    <button class="btn linea" id="rt-cerrar-btn" style="margin-top:10px">Cerrar</button>
   </div>
 </div>
 
@@ -1245,10 +1275,14 @@ async function cargarRetos() {
     const reto = r.fichas_retos || {};
     const cat = reto.categoria || 'reto';
     const [cl, tx] = ESTADO_RETO_PILL[r.estado] || ['gris', r.estado];
-    const limite = r.fecha_limite ? ' · Límite: ' + ATL.fmtFecha(r.fecha_limite) : '';
-    return `<div class="item" style="cursor:pointer" onclick="abrirReto('${r.id}')">
-      <div><div class="tit">${esc(reto.titulo || '—')}</div><div class="det">${CAT_NOMBRE[cat] || 'Reto'}${limite}</div></div>
-      <span class="pill ${cl}">${tx}</span>
+    const limite = r.fecha_limite ? ' · Vence ' + ATL.fmtFecha(r.fecha_limite) : '';
+    return `<div class="reto-row" onclick="abrirReto('${r.id}')">
+      <div class="ric" style="background:${CAT_COLOR[cat] || CAT_COLOR.reto}">${CAT_ICONO[cat] || CAT_ICONO.reto}</div>
+      <div class="rbody">
+        <div class="rtit">${esc(reto.titulo || '—')}</div>
+        <div class="rmeta">${CAT_NOMBRE[cat] || 'Reto'}${limite}</div>
+      </div>
+      <div class="rright"><span class="pill ${cl}">${tx}</span></div>
     </div>`;
   }).join('');
 }
@@ -1259,8 +1293,8 @@ window.abrirReto = (id) => {
   retoAbierto = r;
   const reto = r.fichas_retos || {};
   const cat = reto.categoria || 'reto';
+  $('rt-banner').style.background = CAT_COLOR[cat] || CAT_COLOR.reto;
   $('rt-icono').innerHTML = CAT_ICONO[cat] || CAT_ICONO.reto;
-  $('rt-icono').style.background = CAT_COLOR[cat] || CAT_COLOR.reto;
   $('rt-titulo').textContent = reto.titulo || '—';
   $('rt-categoria').textContent = CAT_NOMBRE[cat] || 'Reto';
   const esActualizacion = cat === 'actualizacion';
@@ -1268,12 +1302,15 @@ window.abrirReto = (id) => {
   const mostrarFormulario = r.estado === 'aceptado' || (esActualizacion && r.estado !== 'cumplido' && r.estado !== 'completado' && r.estado !== 'fallido');
   const mostrarEstado = !esActualizacion || r.estado === 'cumplido' || r.estado === 'completado' || r.estado === 'fallido';
   const [cl, tx] = ESTADO_RETO_PILL[r.estado] || ['gris', r.estado];
+  $('rt-estado-pill').className = 'pill ' + cl;
+  $('rt-estado-pill').textContent = tx;
+  $('rt-estado-pill').style.display = mostrarEstado ? 'inline-block' : 'none';
+  const calIco = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
   $('rt-detalles').innerHTML = `
-    ${reto.descripcion ? `<div class="dato"><div class="k">Descripción</div><div class="v">${esc(reto.descripcion)}</div></div>` : ''}
-    ${reto.instrucciones ? `<div class="dato"><div class="k">Instrucciones</div><div class="v">${esc(reto.instrucciones)}</div></div>` : ''}
-    ${r.fecha_limite ? `<div class="dato"><div class="k">Fecha límite</div><div class="v">${ATL.fmtFecha(r.fecha_limite)}</div></div>` : ''}
-    ${mostrarEstado ? `<div class="dato"><div class="k">Estado</div><div class="v"><span class="pill ${cl}">${tx}</span></div></div>` : ''}
-    ${r.archivo_path ? `<div class="dato"><div class="k">Evidencia</div><div class="v"><button class="btn linea" style="width:auto;padding:8px 16px" onclick="verMiArchivoReto('${r.archivo_path}')">Ver archivo</button></div></div>` : ''}
+    ${r.fecha_limite ? `<div class="rt-info-row">${calIco}Vence el ${ATL.fmtFecha(r.fecha_limite)}</div>` : ''}
+    ${reto.descripcion ? `<div class="rt-seccion"><div class="rt-seccion-k">Descripción</div><div class="rt-seccion-v">${esc(reto.descripcion)}</div></div>` : ''}
+    ${reto.instrucciones ? `<div class="rt-seccion"><div class="rt-seccion-k">Instrucciones</div><div class="rt-seccion-v">${esc(reto.instrucciones)}</div></div>` : ''}
+    ${r.archivo_path ? `<div class="rt-seccion"><div class="rt-seccion-k">Evidencia</div><div class="rt-seccion-v"><button class="btn linea" style="width:auto;padding:8px 16px" onclick="verMiArchivoReto('${r.archivo_path}')">Ver archivo</button></div></div>` : ''}
   `;
   $('rt-pendiente').style.display = (!esActualizacion && r.estado === 'pendiente') ? 'block' : 'none';
   $('rt-aceptado').style.display = mostrarFormulario ? 'block' : 'none';
