@@ -45,6 +45,12 @@
   /* ===== Encabezados con icono ===== */
   h2.h2-izq { display: flex; align-items: center; gap: 8px; }
   h2 svg.ico { flex-shrink: 0; color: var(--verde); }
+
+  /* ===== Tarjetas colapsables ===== */
+  .card h2.colapsable { display: flex; align-items: center; justify-content: space-between; cursor: pointer; margin-bottom: 0; }
+  .card h2.colapsable.abierto { margin-bottom: 10px; }
+  .card h2.colapsable > svg.chev { transition: transform .2s; flex-shrink: 0; color: var(--gris-claro); }
+  .card h2.colapsable.abierto > svg.chev { transform: rotate(180deg); }
 </style>
 </head>
 <body>
@@ -386,7 +392,8 @@
     </div>
 
     <div class="card">
-      <h2>Ficha</h2>
+      <h2 class="colapsable" data-target="ficha-wrap">Ficha<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="ficha-wrap" style="display:none">
       <div id="d-datos"></div>
       <button class="btn linea" id="ed-toggle" style="margin-top:12px">✏️ Editar ficha</button>
       <div id="ed-form" style="display:none">
@@ -422,12 +429,19 @@
         <div class="error" id="ed-err"></div>
         <div class="aviso ok" id="ed-ok" style="display:none">✅ Ficha actualizada.</div>
       </div>
-      <h2 class="h2-izq" style="margin-top:14px"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Disponibilidad</h2>
-      <div id="d-dispo"></div>
+      </div>
     </div>
 
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Objetivos</h2>
+      <h2 class="colapsable" data-target="dispo-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Disponibilidad</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="dispo-wrap" style="display:none">
+      <div id="d-dispo"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="colapsable" data-target="obj-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Objetivos</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="obj-wrap" style="display:none">
       <div id="obj-actual" class="cargando">Cargando...</div>
       <button class="btn linea" id="obj-toggle" style="margin-top:12px">✏️ Actualizar objetivos</button>
       <div id="obj-form" style="display:none">
@@ -447,18 +461,22 @@
         <div class="error" id="obj-err"></div>
         <div class="aviso ok" id="obj-ok" style="display:none">✅ Objetivos actualizados.</div>
       </div>
+      </div>
     </div>
 
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>Onboarding</h2>
+      <h2 class="colapsable" data-target="onb-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>Onboarding</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="onb-wrap" style="display:none">
       <div class="pasos" id="d-pasos" style="margin-bottom:10px"></div>
       <div id="d-onb-zona"></div>
       <div class="aviso ok" id="d-onb-ok" style="display:none"></div>
       <div class="error" id="d-onb-err"></div>
+      </div>
     </div>
 
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Administración</h2>
+      <h2 class="colapsable" data-target="admin-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Administración</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="admin-wrap" style="display:none">
       <label>Tarifa mensual (₡)</label>
       <input type="number" id="d-tarifa" inputmode="decimal" placeholder="Ej: 35000">
       <label>Próxima fecha de pago</label>
@@ -477,10 +495,12 @@
       </label>
       <button class="btn oscuro" id="d-guardar" style="margin-top:14px">Guardar cambios</button>
       <div class="aviso ok" id="d-guardado" style="display:none">✅ Guardado.</div>
+      </div>
     </div>
 
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L5.5 17a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 8.5V3"/><path d="M8.5 13h7"/></svg><span id="d-pruebas-titulo">Pruebas fisiológicas</span></h2>
+      <h2 class="colapsable" data-target="pruebas-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L5.5 17a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3L14 8.5V3"/><path d="M8.5 13h7"/></svg><span id="d-pruebas-titulo">Pruebas fisiológicas</span></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="pruebas-wrap" style="display:none">
       <div id="d-pruebas"></div>
       <button class="btn linea" id="pr-toggle" style="margin-top:10px">➕ Registrar prueba</button>
       <div id="pr-form" style="display:none">
@@ -533,30 +553,36 @@
         <div class="error" id="pr-err"></div>
         <div class="aviso ok" id="pr-ok" style="display:none">✅ Prueba guardada.</div>
       </div>
+      </div>
     </div>
 
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span id="d-limit-titulo">Análisis de limitaciones</span></h2>
+      <h2 class="colapsable" data-target="limit-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span id="d-limit-titulo">Análisis de limitaciones</span></span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="limit-wrap" style="display:none">
       <p class="sub" style="margin-bottom:8px">Evaluaciones perceptivas ligadas a este cliente (al inicio, tras entrenos fuertes o carreras).</p>
       <div id="d-limitaciones"></div>
       <button class="btn linea" id="d-copiar-eval" style="margin-top:10px">📋 Copiar link de evaluación personalizado</button>
       <div class="aviso ok" id="d-eval-copiado" style="display:none">✅ Copiado. Envíalo por WhatsApp cuando quieras una nueva evaluación.</div>
+      </div>
     </div>
 
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chat</h2>
-        <button class="volver" id="d-chat-abrir-bandeja" style="margin:0;font-size:13px">Abrir en Chats →</button>
+        <h2 class="colapsable" data-target="chat-wrap" style="flex:1"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chat</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+        <button class="volver" id="d-chat-abrir-bandeja" style="margin:0;font-size:13px;flex-shrink:0">Abrir en Chats →</button>
       </div>
+      <div id="chat-wrap" style="display:none">
       <div id="d-chat-mensajes" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px"></div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <input type="text" id="d-chat-input" placeholder="Escribe un mensaje..." style="flex:1;margin:0">
         <button class="btn" id="d-chat-enviar" style="width:auto;padding:0 18px;margin:0">Enviar</button>
       </div>
+      </div>
     </div>
 
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Retos asignados</h2>
+      <h2 class="colapsable" data-target="retos-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Retos asignados</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="retos-wrap" style="display:none">
       <div id="d-insignias" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
       <div id="d-retos"></div>
       <label>Asignar plantilla</label>
@@ -565,12 +591,19 @@
       <input type="date" id="reto-asignar-fecha">
       <button class="btn linea" id="reto-asignar-btn" style="margin-top:10px">➕ Asignar reto</button>
       <div class="error" id="reto-asignar-err"></div>
+      </div>
     </div>
 
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Pagos</h2>
+      <h2 class="colapsable" data-target="pagos-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Pagos</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="pagos-wrap" style="display:none">
       <div id="d-pagos"></div>
-      <h2 class="h2-izq" style="margin-top:16px"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Registrar pago manual</h2>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="colapsable" data-target="pago-manual-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Registrar pago manual</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="pago-manual-wrap" style="display:none">
       <p class="sub" style="margin-bottom:4px">Para pagos por SINPE, efectivo, etc. Queda aprobado de una vez: avanza la fecha de pago y avisa al cliente por correo.</p>
       <label>Monto (₡)</label>
       <input type="number" id="mp-monto" inputmode="decimal" placeholder="Ej: 35000">
@@ -589,10 +622,12 @@
       <button class="btn" id="mp-registrar" style="margin-top:14px">Registrar pago aprobado</button>
       <div class="error" id="mp-err"></div>
       <div class="aviso ok" id="mp-ok" style="display:none">✅ Pago registrado y aprobado.</div>
+      </div>
     </div>
 
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>Evaluaciones</h2>
+      <h2 class="colapsable" data-target="evas-wrap"><span class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6l2 2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>Evaluaciones</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></h2>
+      <div id="evas-wrap" style="display:none">
       <div id="d-evas"></div>
       <label>Título de la nueva evaluación</label>
       <input type="text" id="eva-titulo" placeholder="Ej: Evaluación inicial FTP">
@@ -604,6 +639,7 @@
       <button class="btn" id="eva-subir" style="margin-top:14px">Subir evaluación</button>
       <div class="error" id="eva-err"></div>
       <div class="aviso ok" id="eva-ok" style="display:none">✅ Evaluación subida.</div>
+      </div>
     </div>
   </section>
 
@@ -675,6 +711,16 @@ $('menu-nav').addEventListener('click', (e) => e.stopPropagation());
 document.body.addEventListener('click', cerrarMenuNav);
 document.querySelectorAll('#menu-nav button[data-nav]').forEach(b => b.onclick = () => irASeccion(b.dataset.nav));
 $('dash-ir-calendario').onclick = () => irASeccion('calendario');
+
+// ===== Tarjetas colapsables (detalle de cliente) =====
+document.querySelectorAll('h2.colapsable').forEach(h => {
+  h.onclick = () => {
+    const target = $(h.dataset.target);
+    const abrir = target.style.display === 'none';
+    target.style.display = abrir ? 'block' : 'none';
+    h.classList.toggle('abierto', abrir);
+  };
+});
 
 function actualizarBadgeMenu() {
   const total = (window.__registrosPend || 0) + (window.__pagosPend || 0) + (window.__mensajesPend || 0);
@@ -1931,13 +1977,31 @@ const ESTADO_RETO_PILL = {
   fallido: ['rojo', 'Fallido'],
   vencido: ['rojo', 'Vencido'],
 };
+function formatearRespuestaReto(respuesta, r) {
+  if (!respuesta || typeof respuesta !== 'object') return '';
+  const nombreObjetivo = (v) => (OBJETIVO_CLIENTE_OPCIONES.find(o => o.valor === v) || {}).label || v || '—';
+  const campos = (r.campos_actualizar && r.campos_actualizar.length > 0) ? r.campos_actualizar : null;
+  if (campos) {
+    return campos.filter(c => respuesta[c.campo] !== undefined).map(c => {
+      const v = respuesta[c.campo];
+      if (c.tipo === 'objetivo' && v && typeof v === 'object') {
+        return `${esc(c.label || c.campo)}: ${esc(nombreObjetivo(v.tipo))}${v.detalle ? ' — ' + esc(v.detalle) : ''}`;
+      }
+      return `${esc(c.label || c.campo)}: ${esc(v)}${c.unidad ? ' ' + esc(c.unidad) : ''}`;
+    }).join('<br>');
+  }
+  if (respuesta.valor !== undefined) return `Valor: ${esc(respuesta.valor)}${r.unidad_campo ? ' ' + esc(r.unidad_campo) : ''}`;
+  if (respuesta.texto !== undefined) return esc(respuesta.texto);
+  return Object.entries(respuesta).map(([k, v]) => `${esc(k)}: ${esc(typeof v === 'object' ? JSON.stringify(v) : v)}`).join('<br>');
+}
 async function cargarRetosDetalle() {
-  const { data: asignados } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(titulo, descripcion, tipo, categoria)').eq('cliente_id', actual.id).order('created_at', { ascending: false });
+  const { data: asignados } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(titulo, descripcion, tipo, categoria, campos_actualizar, campo_actualizar, unidad_campo)').eq('cliente_id', actual.id).order('created_at', { ascending: false });
   $('d-retos').innerHTML = (asignados || []).map(a => {
     const r = a.fichas_retos || {};
     const [cl, tx] = ESTADO_RETO_PILL[a.estado] || ['gris', a.estado];
     const verArchivo = a.archivo_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verArchivoReto('${a.archivo_path}')">Ver archivo</button>` : '';
-    const respuesta = a.respuesta ? `<div class="det" style="margin-top:4px">📋 ${esc(JSON.stringify(a.respuesta))}</div>` : '';
+    const respuestaTxt = formatearRespuestaReto(a.respuesta, r);
+    const respuesta = respuestaTxt ? `<div class="det" style="margin-top:4px">📋 ${respuestaTxt}</div>` : '';
     return `<div class="item" style="align-items:flex-start">
       <div style="flex:1;min-width:0">
         <div class="tit">${RETO_CATEGORIA_ICONO[r.categoria] || '🎯'} ${esc(r.titulo || '—')}</div>
