@@ -238,14 +238,9 @@
         <label>Instrucciones detalladas (opcional)</label>
         <textarea id="reto-instrucciones" placeholder="Pasos a seguir, técnica, qué debe mostrar la evidencia..."></textarea>
         <div id="reto-campos-actualizacion" style="display:none">
-          <label>¿Qué dato actualiza?</label>
-          <select id="reto-campo-select"></select>
-          <div id="reto-campo-otro-wrap" style="display:none">
-            <label>Nombre del dato personalizado</label>
-            <input type="text" id="reto-campo-otro" placeholder="Ej: flexibilidad_isquiotibiales">
-          </div>
-          <label>Unidad</label>
-          <input type="text" id="reto-unidad" placeholder="Ej: kg, ppm">
+          <label>¿Qué dato(s) actualiza?</label>
+          <div id="reto-campos-lista"></div>
+          <button type="button" class="btn linea" id="reto-campo-agregar" style="margin-top:2px">➕ Agregar otro dato</button>
         </div>
         <div id="reto-campos-premio" style="display:none">
           <label>Insignia al completar (opcional)</label>
@@ -1684,11 +1679,18 @@ $('reto-asignar-btn').onclick = async () => {
   const err = $('reto-asignar-err'); err.style.display = 'none';
   const retoId = $('reto-asignar-sel').value;
   if (!retoId) { err.textContent = 'Crea primero una plantilla de reto (sección Clientes).'; err.style.display = 'block'; return; }
-  const { error } = await sbClient.from('fichas_retos_asignados').insert({
+  const plantilla = plantillasCache.find(p => p.id === retoId);
+  const fila = {
     reto_id: retoId,
     cliente_id: actual.id,
     fecha_limite: $('reto-asignar-fecha').value || null,
-  });
+  };
+  // Una "actualización de datos" no requiere aceptación: el cliente ve el formulario directo.
+  if (plantilla && plantilla.categoria === 'actualizacion') {
+    fila.estado = 'aceptado';
+    fila.aceptado_at = new Date().toISOString();
+  }
+  const { error } = await sbClient.from('fichas_retos_asignados').insert(fila);
   if (error) { err.textContent = 'Error: ' + error.message; err.style.display = 'block'; return; }
   $('reto-asignar-fecha').value = '';
   cargarRetosDetalle();

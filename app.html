@@ -371,7 +371,7 @@
         <label class="foto-btn" for="rt-archivo" id="rt-archivo-label">📎 Elegir archivo</label>
         <input type="file" id="rt-archivo" accept="image/*,video/*" style="display:none">
       </div>
-      <button class="btn" id="rt-cumplido" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Marcar cumplido</button>
+      <button class="btn" id="rt-cumplido" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="rt-cumplido-label">Marcar cumplido</span></button>
       <button class="btn linea" id="rt-fallido" style="margin-top:8px">No lo logré</button>
     </div>
     <div class="error" id="rt-err"></div>
@@ -1264,17 +1264,23 @@ window.abrirReto = (id) => {
   $('rt-icono').style.background = CAT_COLOR[cat] || CAT_COLOR.reto;
   $('rt-titulo').textContent = reto.titulo || '—';
   $('rt-categoria').textContent = CAT_NOMBRE[cat] || 'Reto';
+  const esActualizacion = cat === 'actualizacion';
+  // Solo reto/skill pasan por "pendiente → aceptar". Una actualización de datos se llena directo.
+  const mostrarFormulario = r.estado === 'aceptado' || (esActualizacion && r.estado !== 'cumplido' && r.estado !== 'completado' && r.estado !== 'fallido');
+  const mostrarEstado = !esActualizacion || r.estado === 'cumplido' || r.estado === 'completado' || r.estado === 'fallido';
   const [cl, tx] = ESTADO_RETO_PILL[r.estado] || ['gris', r.estado];
   $('rt-detalles').innerHTML = `
     ${reto.descripcion ? `<div class="dato"><div class="k">Descripción</div><div class="v">${esc(reto.descripcion)}</div></div>` : ''}
     ${reto.instrucciones ? `<div class="dato"><div class="k">Instrucciones</div><div class="v">${esc(reto.instrucciones)}</div></div>` : ''}
     ${r.fecha_limite ? `<div class="dato"><div class="k">Fecha límite</div><div class="v">${ATL.fmtFecha(r.fecha_limite)}</div></div>` : ''}
-    <div class="dato"><div class="k">Estado</div><div class="v"><span class="pill ${cl}">${tx}</span></div></div>
+    ${mostrarEstado ? `<div class="dato"><div class="k">Estado</div><div class="v"><span class="pill ${cl}">${tx}</span></div></div>` : ''}
     ${r.archivo_path ? `<div class="dato"><div class="k">Evidencia</div><div class="v"><button class="btn linea" style="width:auto;padding:8px 16px" onclick="verMiArchivoReto('${r.archivo_path}')">Ver archivo</button></div></div>` : ''}
   `;
-  $('rt-pendiente').style.display = r.estado === 'pendiente' ? 'block' : 'none';
-  $('rt-aceptado').style.display = r.estado === 'aceptado' ? 'block' : 'none';
-  if (r.estado === 'aceptado') {
+  $('rt-pendiente').style.display = (!esActualizacion && r.estado === 'pendiente') ? 'block' : 'none';
+  $('rt-aceptado').style.display = mostrarFormulario ? 'block' : 'none';
+  $('rt-fallido').style.display = esActualizacion ? 'none' : 'block';
+  $('rt-cumplido-label').textContent = esActualizacion ? 'Guardar dato' : 'Marcar cumplido';
+  if (mostrarFormulario) {
     const esNumero = reto.tipo === 'numero';
     const esArchivo = reto.tipo === 'foto' || reto.tipo === 'video';
     $('rt-campo-numero').style.display = esNumero ? 'block' : 'none';
@@ -1332,7 +1338,8 @@ $('rt-cumplido').onclick = async () => {
     if (!$('rt-valor').value || isNaN(v)) { err.textContent = 'Escribe un valor.'; err.style.display = 'block'; return; }
     respuesta = { valor: v };
   }
-  const btn = $('rt-cumplido'); btn.disabled = true; btn.textContent = 'Guardando...';
+  const esActualizacion = (reto.categoria || 'reto') === 'actualizacion';
+  const btn = $('rt-cumplido'); btn.disabled = true; $('rt-cumplido-label').textContent = 'Guardando...';
   try {
     if (reto.tipo === 'foto' || reto.tipo === 'video') {
       if (!retoArchivoSel) throw new Error('Adjunta tu evidencia.');
@@ -1348,13 +1355,13 @@ $('rt-cumplido').onclick = async () => {
       respuesta, archivo_path,
     }).eq('id', retoAbierto.id);
     if (error) throw error;
-    $('rt-ok').textContent = reto.insignia_id ? '✅ ¡Cumplido! Ganaste una insignia nueva.' : '✅ ¡Cumplido!';
+    $('rt-ok').textContent = esActualizacion ? '✅ ¡Dato guardado!' : (reto.insignia_id ? '✅ ¡Cumplido! Ganaste una insignia nueva.' : '✅ ¡Cumplido!');
     $('rt-ok').style.display = 'block';
     setTimeout(() => { cerrarHojaReto(); cargarRetos(); if (typeof cargarMisInsignias === 'function') cargarMisInsignias(); }, 1800);
   } catch (e) {
     err.textContent = 'Error: ' + (e.message || e); err.style.display = 'block';
   }
-  btn.disabled = false; btn.textContent = 'Marcar cumplido';
+  btn.disabled = false; $('rt-cumplido-label').textContent = esActualizacion ? 'Guardar dato' : 'Marcar cumplido';
 };
 
 document.getElementById('btn-avatar').addEventListener('click', e => e.stopPropagation());
