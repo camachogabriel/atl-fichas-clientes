@@ -404,10 +404,6 @@
           <label class="foto-btn" for="rt-archivo" id="rt-archivo-label">📎 Elegir archivo</label>
           <input type="file" id="rt-archivo" accept="image/*,video/*" style="display:none">
         </div>
-        <div id="rt-campo-texto" style="display:none">
-          <label>Tu respuesta</label>
-          <textarea id="rt-texto"></textarea>
-        </div>
         <button class="btn" id="rt-cumplido" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="rt-cumplido-label">Marcar cumplido</span></button>
         <button class="btn linea" id="rt-fallido" style="margin-top:8px">No lo logré</button>
       </div>
@@ -1374,10 +1370,8 @@ window.abrirReto = (id) => {
   $('rt-fallido').style.display = esActualizacion ? 'none' : 'block';
   $('rt-cumplido-label').textContent = esActualizacion ? 'Guardar dato' : 'Marcar cumplido';
   if (mostrarFormulario) {
-    const tieneCampos = reto.campos_actualizar && reto.campos_actualizar.length > 0;
-    const esNumero = reto.tipo === 'numero' || (reto.tipo === 'formulario' && tieneCampos);
+    const esNumero = reto.tipo === 'numero';
     const esArchivo = reto.tipo === 'foto' || reto.tipo === 'video';
-    const esTexto = reto.tipo === 'formulario' && !tieneCampos;
     $('rt-campo-numero').style.display = esNumero ? 'block' : 'none';
     if (esNumero) {
       const campos = (reto.campos_actualizar && reto.campos_actualizar.length > 0)
@@ -1405,8 +1399,6 @@ window.abrirReto = (id) => {
     $('rt-campo-archivo').style.display = esArchivo ? 'block' : 'none';
     $('rt-archivo').value = ''; $('rt-archivo-label').textContent = '📎 Elegir archivo';
     retoArchivoSel = null;
-    $('rt-campo-texto').style.display = esTexto ? 'block' : 'none';
-    if (esTexto) $('rt-texto').value = '';
   }
   $('rt-err').style.display = 'none';
   $('rt-ok').style.display = 'none';
@@ -1451,8 +1443,7 @@ $('rt-cumplido').onclick = async () => {
   const reto = retoAbierto.fichas_retos || {};
   const err = $('rt-err'); err.style.display = 'none';
   let respuesta = null, archivo_path = null;
-  const tieneCampos = reto.campos_actualizar && reto.campos_actualizar.length > 0;
-  if (reto.tipo === 'numero' || (reto.tipo === 'formulario' && tieneCampos)) {
+  if (reto.tipo === 'numero') {
     const inputs = Array.from(document.querySelectorAll('.rt-valor-campo'));
     const objetivoBoxes = Array.from(document.querySelectorAll('.rt-campo-objetivo'));
     const resp = {};
@@ -1470,10 +1461,6 @@ $('rt-cumplido').onclick = async () => {
     });
     if (faltante || (inputs.length === 0 && objetivoBoxes.length === 0)) { err.textContent = 'Completa todos los valores.'; err.style.display = 'block'; return; }
     respuesta = resp;
-  } else if (reto.tipo === 'formulario') {
-    const texto = $('rt-texto').value.trim();
-    if (!texto) { err.textContent = 'Escribe tu respuesta.'; err.style.display = 'block'; return; }
-    respuesta = { texto };
   }
   const esActualizacion = (reto.categoria || 'reto') === 'actualizacion';
   const btn = $('rt-cumplido'); btn.disabled = true; $('rt-cumplido-label').textContent = 'Guardando...';

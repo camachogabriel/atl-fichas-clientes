@@ -231,7 +231,6 @@
           <option value="video">Video</option>
           <option value="foto">Foto</option>
           <option value="numero">Número (ej. peso)</option>
-          <option value="formulario">Formulario</option>
           <option value="ninguno">Sin evidencia</option>
         </select>
         <label>Descripción (para el cliente)</label>
@@ -1202,7 +1201,7 @@ window.editarPlantilla = (id) => {
   $('reto-form').style.display = 'block';
   $('reto-categoria').value = r.categoria || 'reto';
   $('reto-titulo').value = r.titulo;
-  $('reto-tipo').value = r.tipo || 'formulario';
+  $('reto-tipo').value = r.tipo || 'numero';
   $('reto-descripcion').value = r.descripcion || '';
   $('reto-instrucciones').value = r.instrucciones || '';
   if (r.campos_actualizar && Array.isArray(r.campos_actualizar) && r.campos_actualizar.length > 0) {
