@@ -1374,9 +1374,10 @@ window.abrirReto = (id) => {
   $('rt-fallido').style.display = esActualizacion ? 'none' : 'block';
   $('rt-cumplido-label').textContent = esActualizacion ? 'Guardar dato' : 'Marcar cumplido';
   if (mostrarFormulario) {
-    const esNumero = reto.tipo === 'numero';
+    const tieneCampos = reto.campos_actualizar && reto.campos_actualizar.length > 0;
+    const esNumero = reto.tipo === 'numero' || (reto.tipo === 'formulario' && tieneCampos);
     const esArchivo = reto.tipo === 'foto' || reto.tipo === 'video';
-    const esTexto = reto.tipo === 'formulario';
+    const esTexto = reto.tipo === 'formulario' && !tieneCampos;
     $('rt-campo-numero').style.display = esNumero ? 'block' : 'none';
     if (esNumero) {
       const campos = (reto.campos_actualizar && reto.campos_actualizar.length > 0)
@@ -1450,7 +1451,8 @@ $('rt-cumplido').onclick = async () => {
   const reto = retoAbierto.fichas_retos || {};
   const err = $('rt-err'); err.style.display = 'none';
   let respuesta = null, archivo_path = null;
-  if (reto.tipo === 'numero') {
+  const tieneCampos = reto.campos_actualizar && reto.campos_actualizar.length > 0;
+  if (reto.tipo === 'numero' || (reto.tipo === 'formulario' && tieneCampos)) {
     const inputs = Array.from(document.querySelectorAll('.rt-valor-campo'));
     const objetivoBoxes = Array.from(document.querySelectorAll('.rt-campo-objetivo'));
     const resp = {};
