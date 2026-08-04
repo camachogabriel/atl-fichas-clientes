@@ -40,7 +40,7 @@
   .tabs5 button[data-sec="evaluaciones"] { --tab-c: var(--rojo); }
   .tabs5 button[data-sec].on { color: var(--tab-c); }
   .fab-slot { flex: 1; display: flex; justify-content: center; }
-  .fab { width: 52px; height: 52px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 26px; font-weight: 800; border: 4px solid #000; box-shadow: 0 3px 10px rgba(0,0,0,.5); margin-top: -22px; cursor: pointer; line-height: 1; }
+  .fab { width: 62px; height: 62px; border-radius: 50%; background: var(--verde); color: #fff; font-size: 34px; font-weight: 800; border: 3px solid #000; box-shadow: 0 0 0 1px rgba(33,181,124,.4), 0 6px 20px rgba(33,181,124,.45); margin-top: -28px; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
 
   .hoja { position: fixed; inset: 0; background: rgba(13,17,23,.45); z-index: 60; display: none; align-items: flex-end; }
   .hoja .panel { background: #fff; width: 100%; border-radius: 18px 18px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); }
@@ -296,7 +296,7 @@
 <div class="tabs5">
   <button data-sec="home" class="on"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/></svg></span>Home</button>
   <button data-sec="calendario"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></span>Calendario</button>
-  <div class="fab-slot"><button class="fab" id="btn-fab">+</button></div>
+  <div class="fab-slot"><button class="fab" id="btn-fab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
   <button data-sec="chat"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg></span>Chat</button>
   <button data-sec="evaluaciones"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4"/><path d="M4 5h11l-1.5 3.5L15 12H4"/></svg></span>Evaluaciones</button>
 </div>
