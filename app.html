@@ -26,8 +26,8 @@
   .menu-flot button:last-child { border-bottom: none; }
   .menu-flot .item-not { padding: 12px 16px; font-size: 13.5px; border-bottom: 1px solid var(--fondo); }
   .menu-flot .item-not:last-child { border-bottom: none; }
-  .menu-flot .item-not .h { font-weight: 700; color: var(--ink); }
-  .menu-flot .item-not .d { color: var(--gris-claro); font-size: 12px; margin-top: 2px; }
+  .menu-flot .item-not .h { font-weight: 700; color: var(--ink); overflow-wrap: break-word; }
+  .menu-flot .item-not .d { color: var(--gris-claro); font-size: 12px; margin-top: 2px; overflow-wrap: break-word; }
 
   .tabs5 { position: fixed; bottom: 0; left: 0; right: 0; background: #000; border-top: 1px solid #24252a; display: flex; align-items: flex-end; z-index: 30; padding-bottom: env(safe-area-inset-bottom); }
   .tabs5 button { flex: 1; background: none; border: none; padding: 9px 2px 10px; font-size: 11px; color: #6b7280; cursor: pointer; }
@@ -576,18 +576,18 @@ function pintarNotificaciones() {
   $('badge-not').style.display = noLeidas > 0 ? 'block' : 'none';
   $('badge-not').textContent = noLeidas > 9 ? '9+' : noLeidas;
   if (!lista.length) { $('not-lista').innerHTML = '<div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div>'; return; }
-  $('not-lista').innerHTML = `<div style="display:flex;justify-content:space-between;padding:8px 16px 0">
-      ${noLeidas > 0 ? `<button id="not-marcar-todas" style="background:none;border:none;color:var(--verde);font-size:12px;font-weight:700;cursor:pointer;padding:0">Marcar todas como leídas</button>` : '<span></span>'}
-      <button id="not-borrar-todas" style="background:none;border:none;color:var(--gris-claro);font-size:12px;font-weight:700;cursor:pointer;padding:0">Borrar todas</button>
+  $('not-lista').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 16px 0">
+      ${noLeidas > 0 ? `<button id="not-marcar-todas" style="background:none;border:none;color:var(--verde);font-size:12px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap">Marcar todas como leídas</button>` : '<span></span>'}
+      <button id="not-borrar-todas" style="background:none;border:none;color:var(--gris-claro);font-size:12px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap">Borrar todas</button>
     </div>` +
-    lista.map(n => `<div class="item-not" style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;background:${n.leido_at ? 'transparent' : 'var(--verde-suave)'}" onclick="abrirNotificacion('${n.id}')">
-      <div style="width:26px;height:26px;border-radius:50%;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${ICONO_NOTIF[n.tipo] || ICONO_NOTIF.evento}</div>
-      <div style="flex:1;min-width:0">
+    lista.map(n => `<div class="item-not" style="display:grid;grid-template-columns:26px 1fr 22px;column-gap:10px;align-items:start;cursor:pointer;background:${n.leido_at ? 'transparent' : 'var(--verde-suave)'}" onclick="abrirNotificacion('${n.id}')">
+      <div style="width:26px;height:26px;border-radius:50%;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px">${ICONO_NOTIF[n.tipo] || ICONO_NOTIF.evento}</div>
+      <div style="min-width:0">
         <div class="h">${esc(n.titulo)}</div>
         <div class="d">${esc((n.cuerpo || '').slice(0, 90))}</div>
         <div class="d" style="margin-top:2px;color:var(--gris-claro)">${tiempoRelativo(n.created_at)}</div>
       </div>
-      <button onclick="event.stopPropagation();borrarNotificacion('${n.id}')" title="Borrar" style="background:none;border:none;color:var(--gris-claro);cursor:pointer;flex-shrink:0;padding:2px;margin-top:1px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      <button onclick="event.stopPropagation();borrarNotificacion('${n.id}')" title="Borrar" style="background:none;border:none;color:var(--gris-claro);cursor:pointer;padding:2px;margin-top:1px;width:22px;height:22px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
     </div>`).join('');
   const btnTodas = $('not-marcar-todas');
   if (btnTodas) btnTodas.onclick = async (e) => { e.stopPropagation(); await marcarTodasLeidas(); };
