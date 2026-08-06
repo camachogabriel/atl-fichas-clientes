@@ -249,6 +249,10 @@
       <div id="insignias-cliente-lista" class="cargando">Cargando...</div>
     </div>
     <div class="card">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Mis tiquetes</h2>
+      <div id="mis-tickets-lista" class="cargando">Cargando...</div>
+    </div>
+    <div class="card">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Historial de pagos</h2>
       <div id="pago-lista" class="cargando">Cargando...</div>
     </div>
@@ -373,9 +377,42 @@
     <h2>¿Qué necesitas?</h2>
     <p class="sub">Elige una opción y te ayudamos lo antes posible.</p>
     <button class="btn oscuro" id="op-registrar-pago" style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Registrar pago</button>
-    <a class="btn" style="background:#25d366;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px" id="op-cambio-plan" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Solicitar cambio de plan</a>
+    <button class="btn" style="background:#5b6eea;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px" id="op-cambio-plan"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Abrir tiquete</button>
     <a class="btn peligro" style="margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px" id="op-ayuda-urgente" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Ayuda urgente</a>
     <button class="btn linea" id="op-cancelar">Cancelar</button>
+  </div>
+</div>
+
+<div class="hoja" id="hoja-cambio-plan">
+  <div class="panel">
+    <div class="cerrar" id="cp-cerrar"></div>
+    <h2 id="cp-titulo">Abrir tiquete</h2>
+    <p class="sub">Contale a tu coach qué necesitás. Te va a responder lo antes posible.</p>
+    <label style="margin-top:0">¿Sobre qué es?</label>
+    <div class="seg" id="cp-categoria">
+      <div class="chip" data-v="cambio_plan">Cambio de plan</div>
+      <div class="chip" data-v="soporte">Soporte</div>
+      <div class="chip" data-v="ayuda">Ayuda</div>
+    </div>
+    <label>Tipo</label>
+    <div class="chips" id="cp-tipo"></div>
+    <label>Urgencia</label>
+    <div class="seg" id="cp-urgencia">
+      <div class="chip" data-v="baja">Baja</div>
+      <div class="chip" data-v="media">Media</div>
+      <div class="chip" data-v="alta">Alta</div>
+    </div>
+    <label>Descripción</label>
+    <textarea id="cp-descripcion" placeholder="Contanos los detalles..."></textarea>
+    <div id="cp-campo-foto" style="display:none">
+      <label>Foto (opcional, si es un problema)</label>
+      <label class="foto-btn" for="cp-foto" id="cp-foto-label">📎 Elegir foto</label>
+      <input type="file" id="cp-foto" accept="image/*" style="display:none">
+    </div>
+    <div class="error" id="cp-err"></div>
+    <button class="btn" id="cp-enviar" style="margin-top:14px">Enviar tiquete</button>
+    <div class="aviso ok" id="cp-ok" style="display:none">✅ Tu tiquete fue enviado. Tu coach lo va a revisar pronto.</div>
+    <button class="btn linea" id="cp-cerrar-btn" style="margin-top:10px">Cerrar</button>
   </div>
 </div>
 
@@ -650,6 +687,156 @@ $('btn-fab').onclick = () => { $('hoja-fab').style.display = 'flex'; };
 $('op-cancelar').onclick = () => { $('hoja-fab').style.display = 'none'; };
 $('hoja-fab').onclick = (e) => { if (e.target.id === 'hoja-fab') $('hoja-fab').style.display = 'none'; };
 $('op-registrar-pago').onclick = () => { $('hoja-fab').style.display = 'none'; $('hoja-pago').style.display = 'flex'; };
+
+// ===== Tiquetes (cambio de plan / soporte / ayuda) =====
+let solicitudTiposCache = [];
+let ticketsCache = [];
+let cpCategoriaSel = 'cambio_plan';
+let cpTipoSel = null;
+let cpUrgenciaSel = 'media';
+let cpFotoSel = null;
+let cpEditId = null; // null = tiquete nuevo; si no, id del tiquete que se está editando
+const CP_CATEGORIA_NOMBRE = { cambio_plan: 'Cambio de plan', soporte: 'Soporte', ayuda: 'Ayuda' };
+const TICKET_ESTADO_PILL = { pendiente: ['amarillo', 'Pendiente'], en_proceso: ['gris', 'En proceso'], resuelta: ['verde', 'Resuelta'], rechazada: ['rojo', 'Rechazada'] };
+
+async function cargarSolicitudTipos() {
+  const { data } = await sbClient.from('fichas_solicitud_tipos').select('*').eq('activo', true).order('orden');
+  solicitudTiposCache = data || [];
+}
+function pintarCpTipos() {
+  const opciones = solicitudTiposCache.filter(t => t.categoria === cpCategoriaSel);
+  $('cp-tipo').innerHTML = opciones.map(t => `<div class="chip${t.tipo === cpTipoSel ? ' on' : ''}" data-v="${esc(t.tipo)}">${esc(t.etiqueta)}</div>`).join('');
+  $('cp-tipo').querySelectorAll('.chip').forEach(c => c.onclick = () => {
+    $('cp-tipo').querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+    c.classList.add('on');
+    cpTipoSel = c.dataset.v;
+  });
+}
+$('cp-categoria').querySelectorAll('.chip').forEach(c => c.onclick = () => {
+  $('cp-categoria').querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+  c.classList.add('on');
+  cpCategoriaSel = c.dataset.v;
+  cpTipoSel = null;
+  pintarCpTipos();
+  $('cp-campo-foto').style.display = (cpCategoriaSel === 'soporte' || cpCategoriaSel === 'ayuda') ? 'block' : 'none';
+});
+$('cp-urgencia').querySelectorAll('.chip').forEach(c => c.onclick = () => {
+  $('cp-urgencia').querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
+  c.classList.add('on');
+  cpUrgenciaSel = c.dataset.v;
+});
+$('cp-foto').addEventListener('change', () => {
+  cpFotoSel = $('cp-foto').files[0] || null;
+  $('cp-foto-label').textContent = cpFotoSel ? '📎 ' + cpFotoSel.name : '📎 Elegir foto';
+});
+
+function abrirHojaTicket(ticket) {
+  cpEditId = ticket ? ticket.id : null;
+  cpCategoriaSel = ticket ? ticket.categoria : 'cambio_plan';
+  cpTipoSel = ticket ? ticket.tipo : null;
+  cpUrgenciaSel = ticket ? ticket.urgencia : 'media';
+  cpFotoSel = null;
+  $('cp-titulo').textContent = ticket ? 'Editar tiquete' : 'Abrir tiquete';
+  $('cp-enviar').textContent = ticket ? 'Guardar cambios' : 'Enviar tiquete';
+  $('cp-descripcion').value = ticket ? (ticket.descripcion || '') : '';
+  $('cp-foto-label').textContent = '📎 Elegir foto';
+  $('cp-err').style.display = 'none';
+  $('cp-ok').style.display = 'none';
+  $('cp-categoria').querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x.dataset.v === cpCategoriaSel));
+  $('cp-urgencia').querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x.dataset.v === cpUrgenciaSel));
+  $('cp-campo-foto').style.display = (cpCategoriaSel === 'soporte' || cpCategoriaSel === 'ayuda') ? 'block' : 'none';
+  pintarCpTipos();
+  $('hoja-cambio-plan').style.display = 'flex';
+}
+$('op-cambio-plan').onclick = () => { $('hoja-fab').style.display = 'none'; abrirHojaTicket(null); };
+$('cp-cerrar').onclick = () => { $('hoja-cambio-plan').style.display = 'none'; };
+$('cp-cerrar-btn').onclick = () => { $('hoja-cambio-plan').style.display = 'none'; };
+$('hoja-cambio-plan').onclick = (e) => { if (e.target.id === 'hoja-cambio-plan') $('hoja-cambio-plan').style.display = 'none'; };
+$('cp-enviar').onclick = async () => {
+  const err = $('cp-err'); err.style.display = 'none';
+  if (!cpTipoSel) { err.textContent = 'Elegí el tipo.'; err.style.display = 'block'; return; }
+  const descripcion = $('cp-descripcion').value.trim();
+  const btn = $('cp-enviar'); btn.disabled = true; btn.textContent = cpEditId ? 'Guardando...' : 'Enviando...';
+  try {
+    let fotoPath = cpEditId ? ((ticketsCache.find(t => t.id === cpEditId) || {}).foto_path || null) : null;
+    if (cpFotoSel) {
+      const { data: { session } } = await sbClient.auth.getSession();
+      const ext = (cpFotoSel.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      const path = `${session.user.id}/${Date.now()}.${ext}`;
+      const { error: eUp } = await sbClient.storage.from('fichas-tickets').upload(path, cpFotoSel, { contentType: cpFotoSel.type || 'application/octet-stream' });
+      if (eUp) throw eUp;
+      fotoPath = path;
+    }
+    const etiqueta = (solicitudTiposCache.find(t => t.categoria === cpCategoriaSel && t.tipo === cpTipoSel) || {}).etiqueta || cpTipoSel;
+    const alertaTipo = cpCategoriaSel === 'cambio_plan' ? 'cambio_plan' : cpCategoriaSel === 'soporte' ? 'ticket_soporte' : 'ticket_ayuda';
+    const alertaDetalle = CP_CATEGORIA_NOMBRE[cpCategoriaSel] + ' · ' + etiqueta + (descripcion ? ': ' + descripcion.slice(0, 100) : '');
+    if (cpEditId) {
+      const { error: eUpd } = await sbClient.from('fichas_solicitudes_cambio').update({
+        categoria: cpCategoriaSel, tipo: cpTipoSel, urgencia: cpUrgenciaSel, descripcion: descripcion || null, foto_path: fotoPath,
+      }).eq('id', cpEditId);
+      if (eUpd) throw eUpd;
+      await sbClient.from('fichas_alertas').update({ tipo: alertaTipo, criticidad: cpUrgenciaSel, detalle: alertaDetalle }).eq('solicitud_cambio_id', cpEditId);
+    } else {
+      const { data: sol, error: e1 } = await sbClient.from('fichas_solicitudes_cambio').insert({
+        cliente_id: cliente.id, categoria: cpCategoriaSel, tipo: cpTipoSel, urgencia: cpUrgenciaSel, descripcion: descripcion || null, foto_path: fotoPath,
+      }).select('id').single();
+      if (e1) throw e1;
+      await sbClient.from('fichas_alertas').insert({
+        cliente_id: cliente.id, tipo: alertaTipo, criticidad: cpUrgenciaSel, origen: 'cliente', detalle: alertaDetalle, solicitud_cambio_id: sol.id,
+      });
+    }
+    $('cp-ok').style.display = 'block';
+    setTimeout(() => { $('hoja-cambio-plan').style.display = 'none'; $('cp-ok').style.display = 'none'; cargarMisTickets(); }, 1600);
+  } catch (e) {
+    err.textContent = 'No se pudo enviar: ' + (e.message || e); err.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = cpEditId ? 'Guardar cambios' : 'Enviar tiquete';
+};
+
+async function cargarMisTickets() {
+  const { data } = await sbClient.from('fichas_solicitudes_cambio').select('*').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
+  ticketsCache = data || [];
+  if (!ticketsCache.length) { $('mis-tickets-lista').innerHTML = '<p class="sub" style="margin:0">Aún no has abierto tiquetes.</p>'; return; }
+  $('mis-tickets-lista').innerHTML = ticketsCache.map(t => {
+    const [cl, tx] = TICKET_ESTADO_PILL[t.estado] || ['gris', t.estado];
+    const tipoInfo = solicitudTiposCache.find(x => x.categoria === t.categoria && x.tipo === t.tipo);
+    const etiqueta = tipoInfo ? tipoInfo.etiqueta : t.tipo;
+    const puedeEditar = t.estado === 'pendiente';
+    const verFoto = t.foto_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verFotoTicket('${t.foto_path}')">Ver foto</button>` : '';
+    const acciones = (puedeEditar || verFoto) ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      ${verFoto}
+      ${puedeEditar ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="editarMiTicket('${t.id}')">✏️ Editar</button>` : ''}
+      ${puedeEditar ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarMiTicket('${t.id}')">🗑 Borrar</button>` : ''}
+    </div>` : '';
+    return `<div class="item" style="align-items:flex-start;flex-direction:column">
+      <div style="display:flex;justify-content:space-between;width:100%;gap:8px">
+        <div class="tit">${esc(CP_CATEGORIA_NOMBRE[t.categoria] || t.categoria)} · ${esc(etiqueta)}</div>
+        <span class="pill ${cl}" style="flex-shrink:0">${tx}</span>
+      </div>
+      ${t.descripcion ? `<div class="det">${esc(t.descripcion)}</div>` : ''}
+      ${t.respuesta_coach ? `<div class="det" style="color:var(--verde)">↳ ${esc(t.respuesta_coach)}</div>` : ''}
+      <div class="det">${new Date(t.created_at).toLocaleDateString('es-CR')}</div>
+      ${acciones}
+    </div>`;
+  }).join('');
+}
+window.editarMiTicket = (id) => {
+  const t = ticketsCache.find(x => x.id === id);
+  if (!t) return;
+  abrirHojaTicket(t);
+};
+window.borrarMiTicket = async (id) => {
+  if (!confirm('¿Borrar este tiquete?')) return;
+  const t = ticketsCache.find(x => x.id === id);
+  const { error } = await sbClient.from('fichas_solicitudes_cambio').delete().eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  if (t && t.foto_path) sbClient.storage.from('fichas-tickets').remove([t.foto_path]).then(() => {});
+  cargarMisTickets();
+};
+window.verFotoTicket = async (path) => {
+  const { data } = await sbClient.storage.from('fichas-tickets').createSignedUrl(path, 600);
+  if (data) window.open(data.signedUrl, '_blank');
+};
 $('pago-cerrar').onclick = () => { $('hoja-pago').style.display = 'none'; };
 $('pago-cerrar-btn').onclick = () => { $('hoja-pago').style.display = 'none'; };
 $('hoja-pago').onclick = (e) => { if (e.target.id === 'hoja-pago') $('hoja-pago').style.display = 'none'; };
@@ -699,10 +886,7 @@ async function init() {
   cargarMisInsignias();
   cargarNotificaciones();
 
-  $('op-cambio-plan').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Quisiera solicitar un cambio de plan.')}`;
-  $('op-cambio-plan').addEventListener('click', () => {
-    sbClient.from('fichas_alertas').insert({ cliente_id: cliente.id, tipo: 'cambio_plan', criticidad: 'alta', origen: 'cliente' }).then(() => {});
-  });
+  cargarSolicitudTipos().then(cargarMisTickets);
   $('op-ayuda-urgente').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Necesito ayuda urgente.')}`;
 }
 

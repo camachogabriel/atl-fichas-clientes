@@ -98,6 +98,10 @@
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Alertas críticas</h2>
       <div id="alertas-criticas-pendientes"></div>
     </div>
+    <div class="card" id="solicitudes-cambio-card" style="display:none">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Solicitudes de cambio</h2>
+      <div id="solicitudes-cambio-pendientes"></div>
+    </div>
     <div class="card" id="registros-card" style="display:none">
       <h2>🆕 Registros por aprobar</h2>
       <div id="registros-pendientes"></div>
@@ -422,6 +426,11 @@
     <div class="card" id="d-alertas-card" style="display:none">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Alertas</h2>
       <div id="d-alertas"></div>
+    </div>
+
+    <div class="card" id="d-solicitudes-card" style="display:none">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Solicitudes de cambio</h2>
+      <div id="d-solicitudes"></div>
     </div>
 
     <div class="card" id="d-scores-card" style="display:none">
@@ -1646,11 +1655,12 @@ let alertasPorCliente = {}; // cliente_id -> { count, top: 'alta'|'media'|'baja'
 let alertasCriticasGlobal = [];
 
 async function cargarLista() {
-  const [{ data: cls }, { data: pend }, { data: prs }, { data: alertas }] = await Promise.all([
+  const [{ data: cls }, { data: pend }, { data: prs }, { data: alertas }, { data: solicitudes }] = await Promise.all([
     sbClient.from('fichas_clientes').select('*').order('created_at', { ascending: false }),
     sbClient.from('fichas_pagos').select('id, cliente_id, monto, moneda, created_at').eq('estado', 'pendiente'),
     sbClient.from('fichas_pruebas').select('cliente_id, fecha, ftp, peso, pulso_umbral_anaerobico, potencia_umbral_anaerobico, unidad_potencia').order('fecha', { ascending: false }),
     sbClient.from('fichas_alertas').select('*, fichas_alertas_catalogo(etiqueta)').eq('resuelta', false).order('created_at', { ascending: false }),
+    sbClient.from('fichas_solicitudes_cambio').select('*, fichas_solicitud_tipos(etiqueta)').in('estado', ['pendiente', 'en_proceso']).order('created_at', { ascending: false }),
   ]);
   clientes = cls || [];
   pendientesGlobal = pend || [];
@@ -1678,6 +1688,22 @@ async function cargarLista() {
       </div>`;
     }).join('');
   } else { $('alertas-criticas-card').style.display = 'none'; $('alertas-criticas-pendientes').innerHTML = ''; }
+
+  // solicitudes de cambio pendientes (dashboard principal)
+  const solicitudesPend = solicitudes || [];
+  if (solicitudesPend.length) {
+    $('solicitudes-cambio-card').style.display = 'block';
+    $('solicitudes-cambio-pendientes').innerHTML = solicitudesPend.map(s => {
+      const c = clientes.find(x => x.id === s.cliente_id) || { nombre: '—' };
+      const etiqueta = (s.fichas_solicitud_tipos || {}).etiqueta || s.tipo;
+      const [cl, tx] = SOLICITUD_ESTADO_PILL[s.estado] || ['gris', s.estado];
+      const cat = SOLICITUD_CATEGORIA_NOMBRE[s.categoria] || s.categoria;
+      return `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${s.cliente_id}')">
+        <div><div class="tit">${esc(c.nombre)}</div><div class="det">${esc(cat)} · ${esc(etiqueta)}${s.descripcion ? ' · ' + esc(s.descripcion.slice(0, 60)) : ''} · ${new Date(s.created_at).toLocaleDateString('es-CR')}</div></div>
+        <span class="pill ${cl}">${tx}</span>
+      </div>`;
+    }).join('');
+  } else { $('solicitudes-cambio-card').style.display = 'none'; $('solicitudes-cambio-pendientes').innerHTML = ''; }
 
   // registros nuevos por aprobar (solo super)
   window.__registrosPend = 0;
@@ -2016,7 +2042,7 @@ window.abrirDetalle = async (id) => {
   $('d-activo').dataset.valor = actual.estado;
 
   pintarOnboardingDetalle();
-  pintarScoresDetalle(); cargarAlertasDetalle();
+  pintarScoresDetalle(); cargarAlertasDetalle(); cargarSolicitudesDetalle();
   cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones(); cargarPruebas();
   cargarChatDetalle(); cargarRetosDetalle(); cargarObjetivos(actual.id);
   $('obj-form').style.display = 'none';
@@ -2580,6 +2606,61 @@ window.resolverAlerta = async (id) => {
   const { data: { session } } = await sbClient.auth.getSession();
   const { error } = await sbClient.from('fichas_alertas').update({ resuelta: true, resuelta_at: new Date().toISOString(), resuelta_por: session.user.id }).eq('id', id);
   if (error) { alert('Error: ' + error.message); return; }
+  cargarAlertasDetalle();
+};
+
+// ===== Solicitudes de cambio =====
+const SOLICITUD_ESTADO_PILL = { pendiente: ['amarillo', 'Pendiente'], en_proceso: ['gris', 'En proceso'], resuelta: ['verde', 'Resuelta'], rechazada: ['rojo', 'Rechazada'] };
+const SOLICITUD_CATEGORIA_NOMBRE = { cambio_plan: 'Cambio de plan', soporte: 'Soporte', ayuda: 'Ayuda' };
+async function cargarSolicitudesDetalle() {
+  const { data } = await sbClient.from('fichas_solicitudes_cambio').select('*, fichas_solicitud_tipos(etiqueta)').eq('cliente_id', actual.id).order('created_at', { ascending: false });
+  const solicitudes = data || [];
+  if (!solicitudes.length) { $('d-solicitudes-card').style.display = 'none'; $('d-solicitudes').innerHTML = ''; return; }
+  $('d-solicitudes-card').style.display = 'block';
+  $('d-solicitudes').innerHTML = solicitudes.map(s => {
+    const etiqueta = (s.fichas_solicitud_tipos || {}).etiqueta || s.tipo;
+    const [cl, tx] = SOLICITUD_ESTADO_PILL[s.estado] || ['gris', s.estado];
+    const activa = s.estado === 'pendiente' || s.estado === 'en_proceso';
+    const verFoto = s.foto_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verFotoSolicitud('${s.foto_path}')">📷 Ver foto</button>` : '';
+    const acciones = (activa || verFoto) ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      ${verFoto}
+      ${activa && s.estado === 'pendiente' ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','en_proceso')">🔧 En proceso</button>` : ''}
+      ${activa ? `<button class="pill verde" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','resuelta')">✅ Resuelta</button>` : ''}
+      ${activa ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','rechazada')">✖ Rechazar</button>` : ''}
+    </div>` : '';
+    return `<div class="alerta-row" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div class="alerta-dot ${s.urgencia}" style="margin-top:6px"></div>
+        <div style="flex:1;min-width:0">
+          <div class="tit">${esc(SOLICITUD_CATEGORIA_NOMBRE[s.categoria] || s.categoria)} · ${esc(etiqueta)} <span class="pill ${cl}" style="font-size:10.5px;padding:2px 8px">${tx}</span></div>
+          ${s.descripcion ? `<div class="det">${esc(s.descripcion)}</div>` : ''}
+          ${s.respuesta_coach ? `<div class="det" style="color:#2c6e46">↳ ${esc(s.respuesta_coach)}</div>` : ''}
+          <div class="det">${new Date(s.created_at).toLocaleDateString('es-CR')}</div>
+        </div>
+      </div>
+      ${acciones}
+    </div>`;
+  }).join('');
+}
+window.verFotoSolicitud = async (path) => {
+  const { data } = await sbClient.storage.from('fichas-tickets').createSignedUrl(path, 600);
+  if (data) window.open(data.signedUrl, '_blank');
+};
+window.actualizarEstadoSolicitud = async (id, nuevoEstado) => {
+  const { data: { session } } = await sbClient.auth.getSession();
+  const fila = { estado: nuevoEstado };
+  if (nuevoEstado === 'resuelta' || nuevoEstado === 'rechazada') {
+    const nota = prompt(nuevoEstado === 'resuelta' ? '¿Algún comentario para el cliente? (opcional)' : '¿Motivo del rechazo? (opcional)');
+    if (nota) fila.respuesta_coach = nota;
+    fila.resuelta_at = new Date().toISOString();
+    fila.resuelta_por = session.user.id;
+  }
+  const { error } = await sbClient.from('fichas_solicitudes_cambio').update(fila).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  if (nuevoEstado === 'resuelta' || nuevoEstado === 'rechazada') {
+    await sbClient.from('fichas_alertas').update({ resuelta: true, resuelta_at: new Date().toISOString(), resuelta_por: session.user.id }).eq('solicitud_cambio_id', id);
+  }
+  cargarSolicitudesDetalle();
   cargarAlertasDetalle();
 };
 
