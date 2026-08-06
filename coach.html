@@ -229,17 +229,19 @@
           <option value="reto">🎯 Reto</option>
           <option value="skill">🤸 Skill</option>
           <option value="actualizacion">📊 Actualización de datos</option>
+          <option value="quiz">🧠 Quiz</option>
         </select>
         <label>Título</label>
         <input type="text" id="reto-titulo" placeholder="Ej: Video semanal de técnica">
-        <label>Formato de respuesta</label>
-        <select id="reto-tipo">
-          <option value="video">Video</option>
-          <option value="foto">Foto</option>
-          <option value="numero">Número (ej. peso)</option>
-          <option value="ninguno">Sin evidencia</option>
-          <option value="quiz">Quiz (perfilador)</option>
-        </select>
+        <div id="reto-campos-formato">
+          <label>Formato de respuesta</label>
+          <select id="reto-tipo">
+            <option value="video">Video</option>
+            <option value="foto">Foto</option>
+            <option value="numero">Número (ej. peso)</option>
+            <option value="ninguno">Sin evidencia</option>
+          </select>
+        </div>
         <label>Descripción (para el cliente)</label>
         <textarea id="reto-descripcion"></textarea>
         <label>Instrucciones detalladas (opcional)</label>
@@ -1055,8 +1057,8 @@ window.borrarEvento = async (id) => {
 // ===== Plantillas de retos =====
 let plantillasCache = [], retoEditId = null;
 const RETO_TIPO_ICONO = { video: '🎥', foto: '📷', numero: '🔢', formulario: '📝', ninguno: '—', quiz: '🧠' };
-const RETO_CATEGORIA_ICONO = { reto: '🎯', skill: '🤸', actualizacion: '📊' };
-const RETO_CATEGORIA_NOMBRE = { reto: 'Reto', skill: 'Skill', actualizacion: 'Actualización de datos' };
+const RETO_CATEGORIA_ICONO = { reto: '🎯', skill: '🤸', actualizacion: '📊', quiz: '🧠' };
+const RETO_CATEGORIA_NOMBRE = { reto: 'Reto', skill: 'Skill', actualizacion: 'Actualización de datos', quiz: 'Quiz' };
 
 function poblarSelectPlantillas() {
   const sel = $('reto-asignar-sel');
@@ -1072,9 +1074,10 @@ async function cargarRetosPlantillas() {
   $('retos-lista').className = '';
   $('retos-lista').innerHTML = plantillasCache.map(r => {
     const insignia = r.fichas_insignias ? ` · 🏅 ${esc(r.fichas_insignias.nombre)}` : '';
-    const quizNom = r.tipo === 'quiz' && r.quiz_tipo ? ` · ${esc((perfilTiposCache.find(p => p.tipo === r.quiz_tipo) || {}).nombre || r.quiz_tipo)}` : '';
+    const esQuizCat = r.categoria === 'quiz';
+    const quizNom = esQuizCat && r.quiz_tipo ? ` · ${esc((perfilTiposCache.find(p => p.tipo === r.quiz_tipo) || {}).nombre || r.quiz_tipo)}` : '';
     return `<div class="item">
-    <div><div class="tit">${RETO_CATEGORIA_ICONO[r.categoria] || '🎯'} ${esc(r.titulo)}</div><div class="det">${RETO_CATEGORIA_NOMBRE[r.categoria] || 'Reto'} · ${RETO_TIPO_ICONO[r.tipo] || ''}${quizNom}${insignia}</div></div>
+    <div><div class="tit">${RETO_CATEGORIA_ICONO[r.categoria] || '🎯'} ${esc(r.titulo)}</div><div class="det">${RETO_CATEGORIA_NOMBRE[r.categoria] || 'Reto'}${esQuizCat ? '' : ' · ' + (RETO_TIPO_ICONO[r.tipo] || '')}${quizNom}${insignia}</div></div>
     <span style="display:flex;gap:6px">
       <button class="pill gris" style="border:none;cursor:pointer" onclick="editarPlantilla('${r.id}')">✏️</button>
       <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarPlantilla('${r.id}')">🗑</button>
@@ -1184,7 +1187,10 @@ $('reto-campo-agregar').onclick = () => {
 
 function actualizarCamposCategoria() {
   const cat = $('reto-categoria').value;
+  const esQuiz = cat === 'quiz';
   $('reto-campos-actualizacion').style.display = cat === 'actualizacion' ? 'block' : 'none';
+  $('reto-campos-quiz').style.display = esQuiz ? 'block' : 'none';
+  $('reto-campos-formato').style.display = (cat === 'actualizacion' || esQuiz) ? 'none' : 'block';
   $('reto-campos-premio').style.display = cat === 'actualizacion' ? 'none' : 'block';
   if (cat === 'actualizacion') {
     if (camposActualizarState.length === 0) camposActualizarState = [nuevoCampoFila()];
@@ -1193,7 +1199,7 @@ function actualizarCamposCategoria() {
 }
 $('reto-categoria').onchange = actualizarCamposCategoria;
 
-// ===== Quices del perfilador (para plantillas tipo 'quiz') =====
+// ===== Quices del perfilador (para plantillas de categoría 'quiz') =====
 let perfilTiposCache = [];
 async function cargarPerfilTipos() {
   const { data } = await sbClient.from('perfil_tipos').select('tipo, nombre, descripcion').eq('activo', true).order('orden');
@@ -1203,15 +1209,11 @@ async function cargarPerfilTipos() {
   sel.innerHTML = '<option value="">Selecciona un quiz…</option>' + perfilTiposCache.map(p => `<option value="${esc(p.tipo)}">${esc(p.nombre)}</option>`).join('');
   sel.value = actual;
 }
-function actualizarCamposTipo() {
-  $('reto-campos-quiz').style.display = $('reto-tipo').value === 'quiz' ? 'block' : 'none';
-}
-$('reto-tipo').onchange = actualizarCamposTipo;
 
 $('reto-toggle').onclick = () => {
   const f = $('reto-form'); f.style.display = f.style.display === 'none' ? 'block' : 'none';
   if (f.style.display === 'none') cancelarEdicionPlantilla();
-  else { actualizarCamposCategoria(); actualizarCamposTipo(); }
+  else actualizarCamposCategoria();
 };
 $('reto-guardar').onclick = guardarPlantilla;
 
@@ -1232,8 +1234,8 @@ async function guardarPlantilla() {
     }).filter(f => f.campo);
     if (camposActualizarFinal.length === 0) { err.textContent = 'Agrega al menos un dato a actualizar.'; err.style.display = 'block'; return; }
   }
-  const tipo = $('reto-tipo').value;
-  if (tipo === 'quiz' && !$('reto-quiz-tipo').value) { err.textContent = 'Selecciona qué quiz del perfilador es.'; err.style.display = 'block'; return; }
+  if (categoria === 'quiz' && !$('reto-quiz-tipo').value) { err.textContent = 'Selecciona qué quiz del perfilador es.'; err.style.display = 'block'; return; }
+  const tipo = categoria === 'quiz' ? 'quiz' : $('reto-tipo').value;
   const fila = {
     titulo,
     tipo,
@@ -1243,7 +1245,7 @@ async function guardarPlantilla() {
     campo_actualizar: null,
     unidad_campo: null,
     campos_actualizar: categoria === 'actualizacion' ? camposActualizarFinal : [],
-    quiz_tipo: tipo === 'quiz' ? $('reto-quiz-tipo').value : null,
+    quiz_tipo: categoria === 'quiz' ? $('reto-quiz-tipo').value : null,
     insignia_id: categoria !== 'actualizacion' ? ($('reto-insignia').value || null) : null,
     envia_correo: categoria !== 'actualizacion' ? $('reto-correo').checked : false,
   };
@@ -1272,7 +1274,7 @@ window.editarPlantilla = (id) => {
   $('reto-form').style.display = 'block';
   $('reto-categoria').value = r.categoria || 'reto';
   $('reto-titulo').value = r.titulo;
-  $('reto-tipo').value = r.tipo || 'numero';
+  $('reto-tipo').value = r.categoria === 'quiz' ? 'video' : (r.tipo || 'numero');
   $('reto-quiz-tipo').value = r.quiz_tipo || '';
   $('reto-descripcion').value = r.descripcion || '';
   $('reto-instrucciones').value = r.instrucciones || '';
@@ -1290,7 +1292,6 @@ window.editarPlantilla = (id) => {
   $('reto-insignia').value = r.insignia_id || '';
   $('reto-correo').checked = !!r.envia_correo;
   actualizarCamposCategoria();
-  actualizarCamposTipo();
   $('reto-guardar').textContent = 'Guardar cambios';
   $('reto-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
@@ -1300,7 +1301,6 @@ function cancelarEdicionPlantilla() {
   $('reto-categoria').value = 'reto';
   $('reto-titulo').value = ''; $('reto-descripcion').value = ''; $('reto-instrucciones').value = ''; $('reto-tipo').value = 'video';
   $('reto-quiz-tipo').value = '';
-  actualizarCamposTipo();
   camposActualizarState = [nuevoCampoFila()];
   $('reto-insignia').value = ''; $('reto-correo').checked = false;
 }
