@@ -333,8 +333,8 @@
   <!-- ===== EVALUACIONES / RETOS ===== -->
   <section id="sec-evaluaciones" style="display:none">
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22V15"/></svg>Evaluaciones y retos</h2>
-      <p class="sub">Cuestionarios y retos que tu coach te va asignando con el tiempo.</p>
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22V15"/></svg>Evaluaciones y tareas</h2>
+      <p class="sub">Tareas y cuestionarios que tu coach te va asignando con el tiempo.</p>
       <div id="retos-lista" class="cargando">Cargando...</div>
     </div>
   </section>
@@ -1389,7 +1389,7 @@ const CAT_ICONO = {
   quiz: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
 };
 const CAT_COLOR = { reto: 'var(--verde)', skill: 'var(--amarillo)', actualizacion: '#5b6eea', quiz: '#a855f7' };
-const CAT_NOMBRE = { reto: 'Reto', skill: 'Skill', actualizacion: 'Actualización de datos', quiz: 'Quiz' };
+const CAT_NOMBRE = { reto: 'Tarea', skill: 'Skill', actualizacion: 'Actualización de datos', quiz: 'Quiz' };
 const ESTADO_RETO_PILL = { pendiente: ['amarillo', 'Pendiente'], aceptado: ['gris', 'Aceptado'], cumplido: ['verde', 'Cumplido'], completado: ['verde', 'Cumplido'], fallido: ['rojo', 'No logrado'], vencido: ['rojo', 'Vencido'] };
 
 let retosCache = [], retoAbierto = null, retoArchivoSel = null;
@@ -1397,7 +1397,7 @@ async function cargarRetos() {
   const { data, error } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(*)').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
   if (error) { $('retos-lista').textContent = 'No se pudo cargar.'; return; }
   retosCache = data || [];
-  if (!retosCache.length) { $('retos-lista').innerHTML = '<p class="sub" style="margin:0">Tu coach todavía no te ha asignado retos o cuestionarios.</p>'; return; }
+  if (!retosCache.length) { $('retos-lista').innerHTML = '<p class="sub" style="margin:0">Tu coach todavía no te ha asignado tareas o cuestionarios.</p>'; return; }
   $('retos-lista').innerHTML = retosCache.map(r => {
     const reto = r.fichas_retos || {};
     const cat = reto.categoria || 'reto';
@@ -1407,7 +1407,7 @@ async function cargarRetos() {
       <div class="ric" style="background:${CAT_COLOR[cat] || CAT_COLOR.reto}">${CAT_ICONO[cat] || CAT_ICONO.reto}</div>
       <div class="rbody">
         <div class="rtit">${esc(reto.titulo || '—')}</div>
-        <div class="rmeta">${CAT_NOMBRE[cat] || 'Reto'}${limite}</div>
+        <div class="rmeta">${CAT_NOMBRE[cat] || 'Tarea'}${limite}</div>
       </div>
       <div class="rright"><span class="pill ${cl}">${tx}</span></div>
     </div>`;
@@ -1423,7 +1423,7 @@ window.abrirReto = (id) => {
   $('rt-banner').style.background = CAT_COLOR[cat] || CAT_COLOR.reto;
   $('rt-icono').innerHTML = CAT_ICONO[cat] || CAT_ICONO.reto;
   $('rt-titulo').textContent = reto.titulo || '—';
-  $('rt-categoria').textContent = CAT_NOMBRE[cat] || 'Reto';
+  $('rt-categoria').textContent = CAT_NOMBRE[cat] || 'Tarea';
   const esActualizacion = cat === 'actualizacion';
   const esQuizTipo = reto.tipo === 'quiz';
   // Solo reto/skill pasan por "pendiente → aceptar". Actualización de datos y quiz se hacen directo.
@@ -1548,7 +1548,7 @@ $('rt-aceptar').onclick = async () => {
 
 $('rt-fallido').onclick = async () => {
   if (!retoAbierto) return;
-  if (!confirm('¿Marcar este reto como no logrado?')) return;
+  if (!confirm('¿Marcar esta tarea como no lograda?')) return;
   const { error } = await sbClient.from('fichas_retos_asignados').update({ estado: 'fallido', completado_at: new Date().toISOString() }).eq('id', retoAbierto.id);
   if (error) { $('rt-err').textContent = 'Error: ' + error.message; $('rt-err').style.display = 'block'; return; }
   cerrarHojaReto();
