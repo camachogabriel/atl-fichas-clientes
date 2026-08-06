@@ -1946,9 +1946,12 @@ function pintarLista() {
     const al = alertasPorCliente[c.id];
     const alColor = al ? (al.top === 'alta' ? 'var(--rojo)' : al.top === 'media' ? 'var(--amarillo)' : 'var(--gris-claro)') : '';
     const alertaBadge = al ? ` <span class="badge-alerta" style="background:${alColor}" title="${al.count} alerta${al.count > 1 ? 's' : ''} sin resolver">${al.count}</span>` : '';
+    const critico = tieneScoreCritico(c.scores);
+    const nombreEstilo = critico ? ' style="color:var(--rojo);font-weight:800"' : '';
+    const nombreTitulo = critico ? ' title="Tiene scores críticos en su perfil"' : '';
     return `<div class="item" style="cursor:pointer;align-items:flex-start" onclick="abrirDetalle('${c.id}')">
       <div style="flex:1;min-width:0">
-        <div class="tit">${esc(c.nombre)}${c.estado === 'inactivo' ? ' <span class="pill gris">inactivo</span>' : c.estado === 'pendiente' ? ' <span class="pill amarillo">pendiente aprobación</span>' : ''}${alertaBadge}</div>
+        <div class="tit"><span${nombreEstilo}${nombreTitulo}>${esc(c.nombre)}</span>${c.estado === 'inactivo' ? ' <span class="pill gris">inactivo</span>' : c.estado === 'pendiente' ? ' <span class="pill amarillo">pendiente aprobación</span>' : ''}${alertaBadge}</div>
         <div class="det" style="margin-top:3px">${stats}</div>
         ${nota}
       </div>
@@ -2491,6 +2494,16 @@ function scoreColorCoach(v, inverso) {
   if (x < 4) return '#e07856';
   if (x < 7) return '#fecb15';
   return '#21b57c';
+}
+function tieneScoreCritico(scores) {
+  if (!scores) return false;
+  for (const [k, v] of Object.entries(scores)) {
+    const num = Number(v);
+    if (isNaN(num)) continue;
+    const x = SCORE_INVERSO_COACH.has(k) ? 10 - num : num;
+    if (x < 4) return true;
+  }
+  return false;
 }
 function gaugeSvgCoach(v, inverso) {
   const r = 24, c = 2 * Math.PI * r;
