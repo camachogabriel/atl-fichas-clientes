@@ -255,6 +255,10 @@
       <p class="sub" id="p-disciplinas" style="margin-bottom:0">—</p>
     </div>
 
+    <div id="p-scores-card" style="display:none">
+      <div id="p-scores"></div>
+    </div>
+
     <div class="card" id="p-fatiga-card" style="display:none">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="flex-shrink:0;text-align:center">
@@ -270,10 +274,6 @@
 
     <div id="p-prueba-card" style="display:none">
       <div id="p-prueba"></div>
-    </div>
-
-    <div id="p-scores-card" style="display:none">
-      <div id="p-scores"></div>
     </div>
 
     <div class="card" id="coach-card" style="display:none">
@@ -1425,8 +1425,9 @@ window.abrirReto = (id) => {
   $('rt-titulo').textContent = reto.titulo || '—';
   $('rt-categoria').textContent = CAT_NOMBRE[cat] || 'Reto';
   const esActualizacion = cat === 'actualizacion';
-  // Solo reto/skill pasan por "pendiente → aceptar". Una actualización de datos se llena directo.
-  const mostrarFormulario = r.estado === 'aceptado' || (esActualizacion && r.estado !== 'cumplido' && r.estado !== 'completado' && r.estado !== 'fallido');
+  const esQuizTipo = reto.tipo === 'quiz';
+  // Solo reto/skill pasan por "pendiente → aceptar". Actualización de datos y quiz se hacen directo.
+  const mostrarFormulario = r.estado === 'aceptado' || ((esActualizacion || esQuizTipo) && r.estado !== 'cumplido' && r.estado !== 'completado' && r.estado !== 'fallido');
   const mostrarEstado = !esActualizacion || r.estado === 'cumplido' || r.estado === 'completado' || r.estado === 'fallido';
   const [cl, tx] = ESTADO_RETO_PILL[r.estado] || ['gris', r.estado];
   $('rt-estado-pill').className = 'pill ' + cl;
@@ -1439,7 +1440,7 @@ window.abrirReto = (id) => {
     ${reto.instrucciones ? `<div class="rt-seccion"><div class="rt-seccion-k">Instrucciones</div><div class="rt-seccion-v">${esc(reto.instrucciones)}</div></div>` : ''}
     ${r.archivo_path ? `<div class="rt-seccion"><div class="rt-seccion-k">Evidencia</div><div class="rt-seccion-v"><button class="btn linea" style="width:auto;padding:8px 16px" onclick="verMiArchivoReto('${r.archivo_path}')">Ver archivo</button></div></div>` : ''}
   `;
-  $('rt-pendiente').style.display = (!esActualizacion && r.estado === 'pendiente') ? 'block' : 'none';
+  $('rt-pendiente').style.display = (!esActualizacion && !esQuizTipo && r.estado === 'pendiente') ? 'block' : 'none';
   $('rt-aceptado').style.display = mostrarFormulario ? 'block' : 'none';
   $('rt-fallido').style.display = esActualizacion ? 'none' : 'block';
   $('rt-cumplido-label').textContent = esActualizacion ? 'Guardar dato' : (reto.tipo === 'quiz' ? 'Ya lo completé' : 'Marcar cumplido');
@@ -1492,7 +1493,7 @@ $('rt-archivo').addEventListener('change', () => {
 });
 
 // ===== Retos tipo 'quiz' (abre el perfilador y autocompleta al volver) =====
-$('rt-quiz-iniciar').onclick = () => {
+$('rt-quiz-iniciar').onclick = async () => {
   if (!retoAbierto) return;
   const reto = retoAbierto.fichas_retos || {};
   if (!reto.quiz_tipo) return;
@@ -1500,6 +1501,15 @@ $('rt-quiz-iniciar').onclick = () => {
   const url = `https://camachogabriel.github.io/ATLKSYS/ATL-Profile-Sys/index.html?tipo=${encodeURIComponent(reto.quiz_tipo)}&atl_id=${encodeURIComponent(cliente.id)}`;
   window.open(url, '_blank');
   $('rt-quiz-estado').textContent = 'Cuando termines el quiz y vuelvas aquí, lo marcamos como cumplido automáticamente.';
+  if (retoAbierto.estado === 'pendiente') {
+    const { error } = await sbClient.from('fichas_retos_asignados').update({ estado: 'aceptado', aceptado_at: new Date().toISOString() }).eq('id', retoAbierto.id);
+    if (!error) {
+      retoAbierto.estado = 'aceptado';
+      const [cl, tx] = ESTADO_RETO_PILL['aceptado'];
+      $('rt-estado-pill').className = 'pill ' + cl; $('rt-estado-pill').textContent = tx;
+      cargarRetos();
+    }
+  }
 };
 async function completarQuiz() {
   if (!retoAbierto) return;
