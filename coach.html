@@ -81,6 +81,7 @@
   <button data-nav="clientes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
   <button data-nav="calendario"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>Calendario</button>
   <button data-nav="retos"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Tareas</button>
+  <button data-nav="tiquetes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Tiquetes<span id="tiquetes-nav-badge" class="pill rojo" style="margin-left:6px;display:none;font-size:10px;padding:2px 7px"></span></button>
   <button data-nav="difusion"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Difusión</button>
   <button data-nav="config"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Configuración</button>
 </div>
@@ -334,6 +335,32 @@
         <div class="error" id="insignia-err"></div>
         <div class="aviso ok" id="insignia-ok" style="display:none">✅ Insignia guardada.</div>
       </div>
+    </div>
+  </section>
+
+  <!-- TIQUETES: módulo de soporte -->
+  <section id="sec-tiquetes" style="display:none">
+    <h1>Tiquetes</h1>
+    <p class="sub">Solicitudes de todos tus clientes: cambios de plan, soporte y revisión de entrenamiento.</p>
+    <div class="card">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Filtros</h2>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <select id="tq-filtro-estado" style="flex:1;min-width:130px;padding:9px 10px;font-size:14px">
+          <option value="activas">Estado: activas</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="resuelta">Resueltas</option>
+          <option value="rechazada">Rechazadas</option>
+          <option value="">Todas</option>
+        </select>
+        <select id="tq-filtro-categoria" style="flex:1;min-width:130px;padding:9px 10px;font-size:14px">
+          <option value="">Categoría: todas</option>
+          <option value="cambio_plan">Cambio de plan</option>
+          <option value="soporte">Soporte</option>
+          <option value="revisar_entrenamiento">Revisar entrenamiento</option>
+        </select>
+      </div>
+      <div id="tq-lista" class="cargando">Cargando...</div>
     </div>
   </section>
 
@@ -744,7 +771,7 @@ let chatChannel = null;
 $('salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
 
 // ===== Navegación por menú =====
-const SECCIONES_NAV = ['dashboard', 'chats', 'clientes', 'calendario', 'retos', 'difusion', 'config'];
+const SECCIONES_NAV = ['dashboard', 'chats', 'clientes', 'calendario', 'retos', 'tiquetes', 'difusion', 'config'];
 let seccionActiva = 'dashboard';
 function irASeccion(nombre) {
   $('sec-detalle').style.display = 'none';
@@ -755,6 +782,7 @@ function irASeccion(nombre) {
   cerrarMenuNav();
   window.scrollTo(0, 0);
   if (nombre === 'chats') pintarInbox();
+  if (nombre === 'tiquetes') cargarTiquetesGlobal();
   if (nombre === 'difusion' && typeof prepararDifusion === 'function') prepararDifusion();
 }
 function cerrarMenuNav() { $('menu-nav').style.display = 'none'; }
@@ -1641,6 +1669,7 @@ async function init() {
   cargarRetosPlantillas();
   cargarMensajesPendientes();
   cargarInbox();
+  cargarCoachesCache();
 }
 
 function estadoPill(c, pendientes) {
@@ -2611,7 +2640,23 @@ window.resolverAlerta = async (id) => {
 
 // ===== Solicitudes de cambio =====
 const SOLICITUD_ESTADO_PILL = { pendiente: ['amarillo', 'Pendiente'], en_proceso: ['gris', 'En proceso'], resuelta: ['verde', 'Resuelta'], rechazada: ['rojo', 'Rechazada'] };
-const SOLICITUD_CATEGORIA_NOMBRE = { cambio_plan: 'Cambio de plan', soporte: 'Soporte', ayuda: 'Ayuda' };
+const SOLICITUD_CATEGORIA_NOMBRE = { cambio_plan: 'Cambio de plan', soporte: 'Soporte', revisar_entrenamiento: 'Revisar entrenamiento' };
+let coachesCache = [];
+async function cargarCoachesCache() {
+  const { data } = await sbClient.from('fichas_coaches').select('user_id, nombre').order('nombre');
+  coachesCache = data || [];
+}
+function selectCoachHTML(ticketId, coachAsignadoId) {
+  if (!coachesCache.length) return '';
+  return `<select onchange="asignarCoachTiquete('${ticketId}', this.value)" style="padding:5px 8px;font-size:12.5px;width:auto;display:inline-block">
+    <option value="">Sin asignar</option>
+    ${coachesCache.map(c => `<option value="${c.user_id}"${c.user_id === coachAsignadoId ? ' selected' : ''}>${esc(c.nombre)}</option>`).join('')}
+  </select>`;
+}
+window.asignarCoachTiquete = async (id, coachId) => {
+  const { error } = await sbClient.from('fichas_solicitudes_cambio').update({ coach_asignado_id: coachId || null }).eq('id', id);
+  if (error) alert('Error: ' + error.message);
+};
 async function cargarSolicitudesDetalle() {
   const { data } = await sbClient.from('fichas_solicitudes_cambio').select('*, fichas_solicitud_tipos(etiqueta)').eq('cliente_id', actual.id).order('created_at', { ascending: false });
   const solicitudes = data || [];
@@ -2622,12 +2667,13 @@ async function cargarSolicitudesDetalle() {
     const [cl, tx] = SOLICITUD_ESTADO_PILL[s.estado] || ['gris', s.estado];
     const activa = s.estado === 'pendiente' || s.estado === 'en_proceso';
     const verFoto = s.foto_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verFotoSolicitud('${s.foto_path}')">📷 Ver foto</button>` : '';
-    const acciones = (activa || verFoto) ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+    const acciones = (activa || verFoto) ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
       ${verFoto}
       ${activa && s.estado === 'pendiente' ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','en_proceso')">🔧 En proceso</button>` : ''}
       ${activa ? `<button class="pill verde" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','resuelta')">✅ Resuelta</button>` : ''}
       ${activa ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','rechazada')">✖ Rechazar</button>` : ''}
-    </div>` : '';
+      ${selectCoachHTML(s.id, s.coach_asignado_id)}
+    </div>` : `<div style="margin-top:8px">${selectCoachHTML(s.id, s.coach_asignado_id)}</div>`;
     return `<div class="alerta-row" style="flex-direction:column;align-items:stretch">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <div class="alerta-dot ${s.urgencia}" style="margin-top:6px"></div>
@@ -2662,7 +2708,54 @@ window.actualizarEstadoSolicitud = async (id, nuevoEstado) => {
   }
   cargarSolicitudesDetalle();
   cargarAlertasDetalle();
+  if (seccionActiva === 'tiquetes') cargarTiquetesGlobal();
 };
+
+// ===== Tiquetes: página global (módulo de soporte) =====
+async function cargarTiquetesGlobal() {
+  if (!coachesCache.length) await cargarCoachesCache();
+  const estadoFiltro = $('tq-filtro-estado').value;
+  const categoriaFiltro = $('tq-filtro-categoria').value;
+  let q = sbClient.from('fichas_solicitudes_cambio').select('*, fichas_solicitud_tipos(etiqueta), fichas_clientes(nombre)').order('created_at', { ascending: false });
+  if (estadoFiltro === 'activas') q = q.in('estado', ['pendiente', 'en_proceso']);
+  else if (estadoFiltro) q = q.eq('estado', estadoFiltro);
+  if (categoriaFiltro) q = q.eq('categoria', categoriaFiltro);
+  const { data } = await q;
+  const tiquetes = data || [];
+  const { data: pendCount } = await sbClient.from('fichas_solicitudes_cambio').select('id').eq('estado', 'pendiente');
+  const nPend = (pendCount || []).length;
+  $('tiquetes-nav-badge').style.display = nPend ? 'inline-block' : 'none';
+  $('tiquetes-nav-badge').textContent = nPend;
+  if (!tiquetes.length) { $('tq-lista').innerHTML = '<p class="sub" style="margin:0">No hay tiquetes para este filtro.</p>'; return; }
+  $('tq-lista').innerHTML = tiquetes.map(s => {
+    const etiqueta = (s.fichas_solicitud_tipos || {}).etiqueta || s.tipo;
+    const nombreCliente = (s.fichas_clientes || {}).nombre || '—';
+    const [cl, tx] = SOLICITUD_ESTADO_PILL[s.estado] || ['gris', s.estado];
+    const activa = s.estado === 'pendiente' || s.estado === 'en_proceso';
+    const verFoto = s.foto_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="event.stopPropagation();verFotoSolicitud('${s.foto_path}')">📷 Ver foto</button>` : '';
+    const acciones = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center" onclick="event.stopPropagation()">
+      ${verFoto}
+      ${activa && s.estado === 'pendiente' ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','en_proceso')">🔧 En proceso</button>` : ''}
+      ${activa ? `<button class="pill verde" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','resuelta')">✅ Resuelta</button>` : ''}
+      ${activa ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','rechazada')">✖ Rechazar</button>` : ''}
+      ${selectCoachHTML(s.id, s.coach_asignado_id)}
+    </div>`;
+    return `<div class="alerta-row" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="abrirDetalle('${s.cliente_id}')">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <div class="alerta-dot ${s.urgencia}" style="margin-top:6px"></div>
+        <div style="flex:1;min-width:0">
+          <div class="tit">${esc(nombreCliente)} · ${esc(SOLICITUD_CATEGORIA_NOMBRE[s.categoria] || s.categoria)} <span class="pill ${cl}" style="font-size:10.5px;padding:2px 8px">${tx}</span></div>
+          <div class="det">${esc(etiqueta)}</div>
+          ${s.descripcion ? `<div class="det">${esc(s.descripcion)}</div>` : ''}
+          <div class="det">${new Date(s.created_at).toLocaleDateString('es-CR')}</div>
+        </div>
+      </div>
+      ${acciones}
+    </div>`;
+  }).join('');
+}
+$('tq-filtro-estado').onchange = () => cargarTiquetesGlobal();
+$('tq-filtro-categoria').onchange = () => cargarTiquetesGlobal();
 
 // ===== Objetivos del cliente (primario/secundario) y fisiológicos (coach) =====
 function initObjetivosSelects() {

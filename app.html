@@ -392,7 +392,7 @@
     <div class="seg" id="cp-categoria">
       <div class="chip" data-v="cambio_plan">Cambio de plan</div>
       <div class="chip" data-v="soporte">Soporte</div>
-      <div class="chip" data-v="ayuda">Ayuda</div>
+      <div class="chip" data-v="revisar_entrenamiento">Revisar entrenamiento</div>
     </div>
     <label>Tipo</label>
     <div class="chips" id="cp-tipo"></div>
@@ -404,8 +404,8 @@
     </div>
     <label>Descripción</label>
     <textarea id="cp-descripcion" placeholder="Contanos los detalles..."></textarea>
-    <div id="cp-campo-foto" style="display:none">
-      <label>Foto (opcional, si es un problema)</label>
+    <div id="cp-campo-foto">
+      <label>Foto (opcional)</label>
       <label class="foto-btn" for="cp-foto" id="cp-foto-label">📎 Elegir foto</label>
       <input type="file" id="cp-foto" accept="image/*" style="display:none">
     </div>
@@ -696,7 +696,7 @@ let cpTipoSel = null;
 let cpUrgenciaSel = 'media';
 let cpFotoSel = null;
 let cpEditId = null; // null = tiquete nuevo; si no, id del tiquete que se está editando
-const CP_CATEGORIA_NOMBRE = { cambio_plan: 'Cambio de plan', soporte: 'Soporte', ayuda: 'Ayuda' };
+const CP_CATEGORIA_NOMBRE = { cambio_plan: 'Cambio de plan', soporte: 'Soporte', revisar_entrenamiento: 'Revisar entrenamiento' };
 const TICKET_ESTADO_PILL = { pendiente: ['amarillo', 'Pendiente'], en_proceso: ['gris', 'En proceso'], resuelta: ['verde', 'Resuelta'], rechazada: ['rojo', 'Rechazada'] };
 
 async function cargarSolicitudTipos() {
@@ -718,7 +718,6 @@ $('cp-categoria').querySelectorAll('.chip').forEach(c => c.onclick = () => {
   cpCategoriaSel = c.dataset.v;
   cpTipoSel = null;
   pintarCpTipos();
-  $('cp-campo-foto').style.display = (cpCategoriaSel === 'soporte' || cpCategoriaSel === 'ayuda') ? 'block' : 'none';
 });
 $('cp-urgencia').querySelectorAll('.chip').forEach(c => c.onclick = () => {
   $('cp-urgencia').querySelectorAll('.chip').forEach(x => x.classList.remove('on'));
@@ -744,7 +743,6 @@ function abrirHojaTicket(ticket) {
   $('cp-ok').style.display = 'none';
   $('cp-categoria').querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x.dataset.v === cpCategoriaSel));
   $('cp-urgencia').querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x.dataset.v === cpUrgenciaSel));
-  $('cp-campo-foto').style.display = (cpCategoriaSel === 'soporte' || cpCategoriaSel === 'ayuda') ? 'block' : 'none';
   pintarCpTipos();
   $('hoja-cambio-plan').style.display = 'flex';
 }
@@ -768,7 +766,7 @@ $('cp-enviar').onclick = async () => {
       fotoPath = path;
     }
     const etiqueta = (solicitudTiposCache.find(t => t.categoria === cpCategoriaSel && t.tipo === cpTipoSel) || {}).etiqueta || cpTipoSel;
-    const alertaTipo = cpCategoriaSel === 'cambio_plan' ? 'cambio_plan' : cpCategoriaSel === 'soporte' ? 'ticket_soporte' : 'ticket_ayuda';
+    const alertaTipo = cpCategoriaSel === 'cambio_plan' ? 'cambio_plan' : cpCategoriaSel === 'soporte' ? 'ticket_soporte' : 'ticket_revision_entrenamiento';
     const alertaDetalle = CP_CATEGORIA_NOMBRE[cpCategoriaSel] + ' · ' + etiqueta + (descripcion ? ': ' + descripcion.slice(0, 100) : '');
     if (cpEditId) {
       const { error: eUpd } = await sbClient.from('fichas_solicitudes_cambio').update({
@@ -784,6 +782,12 @@ $('cp-enviar').onclick = async () => {
       await sbClient.from('fichas_alertas').insert({
         cliente_id: cliente.id, tipo: alertaTipo, criticidad: cpUrgenciaSel, origen: 'cliente', detalle: alertaDetalle, solicitud_cambio_id: sol.id,
       });
+      const { data: { session } } = await sbClient.auth.getSession();
+      const urgenteTxt = cpUrgenciaSel === 'alta' ? ' 🔴 Urgente.' : '';
+      sbClient.from('fichas_mensajes').insert({
+        cliente_id: cliente.id, autor_id: session.user.id, autor_rol: 'cliente',
+        cuerpo: `🎫 Creé un tiquete de ${CP_CATEGORIA_NOMBRE[cpCategoriaSel]}: ${etiqueta}.${urgenteTxt} Podés verlo en la sección de Tiquetes.`,
+      }).then(() => {});
     }
     $('cp-ok').style.display = 'block';
     setTimeout(() => { $('hoja-cambio-plan').style.display = 'none'; $('cp-ok').style.display = 'none'; cargarMisTickets(); }, 1600);
