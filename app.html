@@ -666,6 +666,9 @@ async function init() {
   cargarNotificaciones();
 
   $('op-cambio-plan').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Quisiera solicitar un cambio de plan.')}`;
+  $('op-cambio-plan').addEventListener('click', () => {
+    sbClient.from('fichas_alertas').insert({ cliente_id: cliente.id, tipo: 'cambio_plan', criticidad: 'alta', origen: 'cliente' }).then(() => {});
+  });
   $('op-ayuda-urgente').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Necesito ayuda urgente.')}`;
 }
 
@@ -957,19 +960,22 @@ const SCORE_SUB_LABELS = {
   tm_desc: 'Descensos (MTB)', tm_curva: 'Curvas (MTB)', tm_obst: 'Obstáculos (MTB)', tm_subida: 'Subidas (MTB)', tm_equil: 'Equilibrio (MTB)',
 };
 const SCORE_DIN_LABELS = { adherencia: 'Adherencia', animo: 'Ánimo', fatiga: 'Fatiga', satisfaccion: 'Satisfacción' };
+// Scores donde un valor alto es MALO (se pinta al revés: alto=rojo, bajo=verde)
+const SCORE_INVERSO = new Set(['estres', 'fatiga']);
 
-function scoreColor(v) {
-  if (v < 4) return '#e07856';
-  if (v < 7) return '#fecb15';
+function scoreColor(v, inverso) {
+  const x = inverso ? 10 - v : v;
+  if (x < 4) return '#e07856';
+  if (x < 7) return '#fecb15';
   return '#21b57c';
 }
-function gaugeSvg(v) {
+function gaugeSvg(v, inverso) {
   const r = 26, c = 2 * Math.PI * r;
   const val = Math.max(0, Math.min(10, Number(v) || 0));
   const off = c * (1 - val / 10);
   return `<svg width="60" height="60" viewBox="0 0 64 64">
     <circle cx="32" cy="32" r="${r}" fill="none" stroke="#24252a" stroke-width="6"/>
-    <circle cx="32" cy="32" r="${r}" fill="none" stroke="${scoreColor(val)}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 32 32)"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="${scoreColor(val, inverso)}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 32 32)"/>
     <text x="32" y="37" text-anchor="middle" font-size="15" font-weight="800" fill="#fff" font-family="ui-monospace,'SF Mono','Roboto Mono',Menlo,monospace">${val.toFixed(1).replace(/\.0$/, '')}</text>
   </svg>`;
 }
@@ -979,7 +985,7 @@ function pintarScores() {
   if (!claves.length) { $('p-scores-card').style.display = 'none'; return; }
   $('p-scores-card').style.display = 'block';
 
-  const gauges = claves.map(k => `<div class="score-gauge">${gaugeSvg(scores[k])}<div class="lbl">${SCORE_LABELS[k]}</div></div>`).join('');
+  const gauges = claves.map(k => `<div class="score-gauge">${gaugeSvg(scores[k], SCORE_INVERSO.has(k))}<div class="lbl">${SCORE_LABELS[k]}</div></div>`).join('');
 
   const mini = (k, v) => `<div class="lab-mini"><div class="k">${k}</div><div class="v">${Number(v).toFixed(1)} / 10</div></div>`;
   const subClaves = Object.keys(SCORE_SUB_LABELS).filter(k => scores[k] != null);

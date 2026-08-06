@@ -51,6 +51,22 @@
   .card h2.colapsable.abierto { margin-bottom: 10px; }
   .card h2.colapsable > svg.chev { transition: transform .2s; flex-shrink: 0; color: var(--gris-claro); }
   .card h2.colapsable.abierto > svg.chev { transform: rotate(180deg); }
+
+  /* ===== Scores / tacómetros del perfilador ===== */
+  .score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 6px; }
+  .score-gauge { text-align: center; }
+  .score-gauge svg { display: block; margin: 0 auto; }
+  .score-gauge .lbl { font-size: 9.5px; color: var(--gris-claro); margin-top: 4px; text-transform: uppercase; letter-spacing: .3px; line-height: 1.25; }
+  .score-fecha { font-size: 11.5px; color: var(--gris-claro); margin-bottom: 12px; margin-top: -8px; }
+
+  /* ===== Alertas ===== */
+  .alerta-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--fondo); }
+  .alerta-row:last-child { border-bottom: none; }
+  .alerta-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .alerta-dot.alta { background: var(--rojo); }
+  .alerta-dot.media { background: var(--amarillo); }
+  .alerta-dot.baja { background: var(--gris-claro); }
+  .badge-alerta { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; font-size: 10.5px; font-weight: 800; color: #fff; margin-left: 6px; vertical-align: middle; }
 </style>
 </head>
 <body>
@@ -77,6 +93,10 @@
     <div class="card" id="resumen-card">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Resumen</h2>
       <div id="resumen-stats" class="cargando">Cargando...</div>
+    </div>
+    <div class="card" id="alertas-criticas-card" style="display:none">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Alertas críticas</h2>
+      <div id="alertas-criticas-pendientes"></div>
     </div>
     <div class="card" id="registros-card" style="display:none">
       <h2>🆕 Registros por aprobar</h2>
@@ -397,6 +417,17 @@
       <h1 id="d-nombre" style="margin-top:8px">—</h1>
       <p class="sub" id="d-resumen" style="margin-bottom:6px">—</p>
       <span class="pill gris" id="d-estado-pago">—</span>
+    </div>
+
+    <div class="card" id="d-alertas-card" style="display:none">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Alertas</h2>
+      <div id="d-alertas"></div>
+    </div>
+
+    <div class="card" id="d-scores-card" style="display:none">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>Perfil del deportista</h2>
+      <div id="d-scores-fecha" class="score-fecha"></div>
+      <div id="d-scores"></div>
     </div>
 
     <div class="card">
@@ -1607,17 +1638,42 @@ function estadoPill(c, pendientes) {
 
 let ultimaPrueba = {}; // cliente_id -> última prueba
 let pendientesGlobal = [];
+let alertasPorCliente = {}; // cliente_id -> { count, top: 'alta'|'media'|'baja' }
+let alertasCriticasGlobal = [];
 
 async function cargarLista() {
-  const [{ data: cls }, { data: pend }, { data: prs }] = await Promise.all([
+  const [{ data: cls }, { data: pend }, { data: prs }, { data: alertas }] = await Promise.all([
     sbClient.from('fichas_clientes').select('*').order('created_at', { ascending: false }),
     sbClient.from('fichas_pagos').select('id, cliente_id, monto, moneda, created_at').eq('estado', 'pendiente'),
     sbClient.from('fichas_pruebas').select('cliente_id, fecha, ftp, peso, pulso_umbral_anaerobico, potencia_umbral_anaerobico, unidad_potencia').order('fecha', { ascending: false }),
+    sbClient.from('fichas_alertas').select('*, fichas_alertas_catalogo(etiqueta)').eq('resuelta', false).order('created_at', { ascending: false }),
   ]);
   clientes = cls || [];
   pendientesGlobal = pend || [];
   ultimaPrueba = {};
   for (const p of prs || []) if (!ultimaPrueba[p.cliente_id]) ultimaPrueba[p.cliente_id] = p;
+
+  const RANGO_CRIT = { alta: 2, media: 1, baja: 0 };
+  alertasPorCliente = {};
+  for (const a of alertas || []) {
+    if (!alertasPorCliente[a.cliente_id]) alertasPorCliente[a.cliente_id] = { count: 0, top: 'baja' };
+    alertasPorCliente[a.cliente_id].count++;
+    if (RANGO_CRIT[a.criticidad] > RANGO_CRIT[alertasPorCliente[a.cliente_id].top]) alertasPorCliente[a.cliente_id].top = a.criticidad;
+  }
+  alertasCriticasGlobal = (alertas || []).filter(a => a.criticidad === 'alta');
+
+  // alertas críticas (dashboard principal)
+  if (alertasCriticasGlobal.length) {
+    $('alertas-criticas-card').style.display = 'block';
+    $('alertas-criticas-pendientes').innerHTML = alertasCriticasGlobal.map(a => {
+      const c = clientes.find(x => x.id === a.cliente_id) || { nombre: '—' };
+      const etiqueta = (a.fichas_alertas_catalogo || {}).etiqueta || a.tipo;
+      return `<div class="item" style="cursor:pointer" onclick="abrirDetalle('${a.cliente_id}')">
+        <div><div class="tit">${esc(c.nombre)}</div><div class="det">${esc(etiqueta)}${a.detalle ? ' · ' + esc(a.detalle) : ''} · ${new Date(a.created_at).toLocaleDateString('es-CR')}</div></div>
+        <span class="pill rojo">🔴 Crítica</span>
+      </div>`;
+    }).join('');
+  } else { $('alertas-criticas-card').style.display = 'none'; $('alertas-criticas-pendientes').innerHTML = ''; }
 
   // registros nuevos por aprobar (solo super)
   window.__registrosPend = 0;
@@ -1887,9 +1943,12 @@ function pintarLista() {
     ].filter(Boolean).join(' · ') : '<span style="color:var(--gris-claro)">Sin prueba registrada</span>';
     const nota = c.notas_coach ? `<div class="det" style="color:#8a6d1a;margin-top:3px">📝 ${esc(c.notas_coach.length > 90 ? c.notas_coach.slice(0, 90) + '…' : c.notas_coach)}</div>` : '';
     const cl = claseEstadoPago(c);
+    const al = alertasPorCliente[c.id];
+    const alColor = al ? (al.top === 'alta' ? 'var(--rojo)' : al.top === 'media' ? 'var(--amarillo)' : 'var(--gris-claro)') : '';
+    const alertaBadge = al ? ` <span class="badge-alerta" style="background:${alColor}" title="${al.count} alerta${al.count > 1 ? 's' : ''} sin resolver">${al.count}</span>` : '';
     return `<div class="item" style="cursor:pointer;align-items:flex-start" onclick="abrirDetalle('${c.id}')">
       <div style="flex:1;min-width:0">
-        <div class="tit">${esc(c.nombre)}${c.estado === 'inactivo' ? ' <span class="pill gris">inactivo</span>' : c.estado === 'pendiente' ? ' <span class="pill amarillo">pendiente aprobación</span>' : ''}</div>
+        <div class="tit">${esc(c.nombre)}${c.estado === 'inactivo' ? ' <span class="pill gris">inactivo</span>' : c.estado === 'pendiente' ? ' <span class="pill amarillo">pendiente aprobación</span>' : ''}${alertaBadge}</div>
         <div class="det" style="margin-top:3px">${stats}</div>
         ${nota}
       </div>
@@ -1950,6 +2009,7 @@ window.abrirDetalle = async (id) => {
   $('d-activo').dataset.valor = actual.estado;
 
   pintarOnboardingDetalle();
+  pintarScoresDetalle(); cargarAlertasDetalle();
   cargarPagosDetalle(); cargarEvasDetalle(); cargarLimitaciones(); cargarPruebas();
   cargarChatDetalle(); cargarRetosDetalle(); cargarObjetivos(actual.id);
   $('obj-form').style.display = 'none';
@@ -2415,6 +2475,75 @@ async function guardarFicha() {
   $('ed-form').style.display = 'none';
   abrirDetalle(actual.id);
 }
+
+// ===== Perfil del deportista (scores del perfilador) =====
+const SCORE_LABELS_COACH = {
+  experiencia: 'Experiencia', nutricion: 'Nutrición', hidratacion: 'Hidratación',
+  flexibilidad: 'Flexibilidad', mecanica: 'Mecánica', tecnica_ruta: 'Técnica ruta',
+  tecnica_mtb: 'Técnica MTB', recuperacion: 'Recuperación', sueno: 'Sueño', estres: 'Estrés',
+};
+const SCORE_ORDEN_COACH = ['experiencia', 'nutricion', 'hidratacion', 'flexibilidad', 'mecanica', 'tecnica_ruta', 'tecnica_mtb', 'recuperacion', 'sueno', 'estres'];
+const SCORE_DIN_LABELS_COACH = { adherencia: 'Adherencia', animo: 'Ánimo', fatiga: 'Fatiga', satisfaccion: 'Satisfacción' };
+const SCORE_INVERSO_COACH = new Set(['estres', 'fatiga']);
+
+function scoreColorCoach(v, inverso) {
+  const x = inverso ? 10 - v : v;
+  if (x < 4) return '#e07856';
+  if (x < 7) return '#fecb15';
+  return '#21b57c';
+}
+function gaugeSvgCoach(v, inverso) {
+  const r = 24, c = 2 * Math.PI * r;
+  const val = Math.max(0, Math.min(10, Number(v) || 0));
+  const off = c * (1 - val / 10);
+  return `<svg width="56" height="56" viewBox="0 0 60 60">
+    <circle cx="30" cy="30" r="${r}" fill="none" stroke="var(--fondo)" stroke-width="6"/>
+    <circle cx="30" cy="30" r="${r}" fill="none" stroke="${scoreColorCoach(val, inverso)}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 30 30)"/>
+    <text x="30" y="35" text-anchor="middle" font-size="14" font-weight="800" fill="var(--ink)" font-family="ui-monospace,'SF Mono','Roboto Mono',Menlo,monospace">${val.toFixed(1).replace(/\.0$/, '')}</text>
+  </svg>`;
+}
+function pintarScoresDetalle() {
+  const scores = actual.scores || {};
+  const claves = SCORE_ORDEN_COACH.filter(k => scores[k] != null);
+  if (!claves.length) { $('d-scores-card').style.display = 'none'; return; }
+  $('d-scores-card').style.display = 'block';
+  $('d-scores-fecha').textContent = actual.scores_actualizado ? 'Actualizado: ' + ATL.fmtFecha(actual.scores_actualizado.slice(0, 10)) : '';
+
+  const gauges = claves.map(k => `<div class="score-gauge">${gaugeSvgCoach(scores[k], SCORE_INVERSO_COACH.has(k))}<div class="lbl">${SCORE_LABELS_COACH[k]}</div></div>`).join('');
+
+  const mini = (k, v) => `<div class="dato"><div class="k">${k}</div><div class="v">${Number(v).toFixed(1)} / 10</div></div>`;
+  const dinClaves = Object.keys(SCORE_DIN_LABELS_COACH).filter(k => scores[k] != null);
+  const dinHtml = dinClaves.length ? `<div style="margin-top:14px">${dinClaves.map(k => mini(SCORE_DIN_LABELS_COACH[k], scores[k])).join('')}</div>` : '';
+
+  $('d-scores').innerHTML = `<div class="score-grid">${gauges}</div>${dinHtml}`;
+}
+
+// ===== Alertas =====
+const ALERTA_CRITICIDAD_NOMBRE = { alta: 'Alta', media: 'Media', baja: 'Baja' };
+async function cargarAlertasDetalle() {
+  const { data } = await sbClient.from('fichas_alertas').select('*, fichas_alertas_catalogo(etiqueta)').eq('cliente_id', actual.id).eq('resuelta', false).order('created_at', { ascending: false });
+  const alertas = data || [];
+  if (!alertas.length) { $('d-alertas-card').style.display = 'none'; $('d-alertas').innerHTML = ''; return; }
+  $('d-alertas-card').style.display = 'block';
+  $('d-alertas').innerHTML = alertas.map(a => {
+    const etiqueta = (a.fichas_alertas_catalogo || {}).etiqueta || a.tipo;
+    return `<div class="alerta-row">
+      <div class="alerta-dot ${a.criticidad}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="tit">${esc(etiqueta)} <span class="pill ${a.criticidad === 'alta' ? 'rojo' : a.criticidad === 'media' ? 'amarillo' : 'gris'}" style="font-size:10.5px;padding:2px 8px">${ALERTA_CRITICIDAD_NOMBRE[a.criticidad] || a.criticidad}</span></div>
+        ${a.detalle ? `<div class="det">${esc(a.detalle)}</div>` : ''}
+        <div class="det">${new Date(a.created_at).toLocaleDateString('es-CR')}</div>
+      </div>
+      <button class="pill verde" style="border:none;cursor:pointer;flex-shrink:0" onclick="resolverAlerta('${a.id}')">✅ Resolver</button>
+    </div>`;
+  }).join('');
+}
+window.resolverAlerta = async (id) => {
+  const { data: { session } } = await sbClient.auth.getSession();
+  const { error } = await sbClient.from('fichas_alertas').update({ resuelta: true, resuelta_at: new Date().toISOString(), resuelta_por: session.user.id }).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  cargarAlertasDetalle();
+};
 
 // ===== Objetivos del cliente (primario/secundario) y fisiológicos (coach) =====
 function initObjetivosSelects() {
