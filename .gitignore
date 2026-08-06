@@ -1,3 +1,12 @@
 Recursos/.DS_Store
 .DS_Store
 .DS_Store
+
+# Capacitor (app iOS de prueba)
+node_modules/
+www/
+ios/App/Pods/
+ios/App/App/public/
+ios/App/build/
+ios/.build/
+*.xcuserstate

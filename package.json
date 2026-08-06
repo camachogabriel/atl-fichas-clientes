@@ -1,0 +1,16 @@
+{
+  "name": "athletetrainlab-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AthleteTrainLab - app cliente (Capacitor wrapper para iOS)",
+  "scripts": {
+    "build:www": "node scripts/build-www.js",
+    "sync:ios": "npm run build:www && npx cap sync ios",
+    "open:ios": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0"
+  }
+}
