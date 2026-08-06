@@ -575,7 +575,10 @@ function pintarNotificaciones() {
   $('badge-not').style.display = noLeidas > 0 ? 'block' : 'none';
   $('badge-not').textContent = noLeidas > 9 ? '9+' : noLeidas;
   if (!lista.length) { $('not-lista').innerHTML = '<div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div>'; return; }
-  $('not-lista').innerHTML = (noLeidas > 0 ? `<button id="not-marcar-todas" style="width:100%;text-align:right;background:none;border:none;color:var(--verde);font-size:12px;font-weight:700;padding:8px 16px 0;cursor:pointer">Marcar todas como leídas</button>` : '') +
+  $('not-lista').innerHTML = `<div style="display:flex;justify-content:space-between;padding:8px 16px 0">
+      ${noLeidas > 0 ? `<button id="not-marcar-todas" style="background:none;border:none;color:var(--verde);font-size:12px;font-weight:700;cursor:pointer;padding:0">Marcar todas como leídas</button>` : '<span></span>'}
+      <button id="not-borrar-todas" style="background:none;border:none;color:var(--gris-claro);font-size:12px;font-weight:700;cursor:pointer;padding:0">Borrar todas</button>
+    </div>` +
     lista.map(n => `<div class="item-not" style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;background:${n.leido_at ? 'transparent' : 'var(--verde-suave)'}" onclick="abrirNotificacion('${n.id}')">
       <div style="width:26px;height:26px;border-radius:50%;background:var(--azul);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${ICONO_NOTIF[n.tipo] || ICONO_NOTIF.evento}</div>
       <div style="flex:1;min-width:0">
@@ -583,9 +586,26 @@ function pintarNotificaciones() {
         <div class="d">${esc((n.cuerpo || '').slice(0, 90))}</div>
         <div class="d" style="margin-top:2px;color:var(--gris-claro)">${tiempoRelativo(n.created_at)}</div>
       </div>
+      <button onclick="event.stopPropagation();borrarNotificacion('${n.id}')" title="Borrar" style="background:none;border:none;color:var(--gris-claro);cursor:pointer;flex-shrink:0;padding:2px;margin-top:1px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
     </div>`).join('');
   const btnTodas = $('not-marcar-todas');
   if (btnTodas) btnTodas.onclick = async (e) => { e.stopPropagation(); await marcarTodasLeidas(); };
+  const btnBorrarTodas = $('not-borrar-todas');
+  if (btnBorrarTodas) btnBorrarTodas.onclick = async (e) => { e.stopPropagation(); await borrarTodasNotificaciones(); };
+}
+
+window.borrarNotificacion = async (id) => {
+  window.__notif = (window.__notif || []).filter(n => n.id !== id);
+  pintarNotificaciones();
+  await sbClient.from('fichas_notificaciones').delete().eq('id', id);
+};
+
+async function borrarTodasNotificaciones() {
+  if (!confirm('¿Borrar todas tus notificaciones?')) return;
+  const ids = (window.__notif || []).map(n => n.id);
+  window.__notif = [];
+  pintarNotificaciones();
+  if (ids.length) await sbClient.from('fichas_notificaciones').delete().eq('cliente_id', cliente.id);
 }
 
 window.abrirNotificacion = async (id) => {
@@ -1057,6 +1077,7 @@ $('pago-enviar').onclick = async () => {
     if (eUp) throw eUp;
     const { error: eIns } = await sbClient.from('fichas_pagos').insert({ cliente_id: cliente.id, monto, moneda: cliente.moneda || 'CRC', comprobante_path: path });
     if (eIns) throw eIns;
+    sbClient.from('fichas_mensajes').insert({ cliente_id: cliente.id, autor_id: session.user.id, autor_rol: 'cliente', cuerpo: `💳 Envié un comprobante de pago por ${ATL.fmtMonto(monto, cliente.moneda || 'CRC')}. Quedó pendiente de tu revisión.` }).then(() => {});
     $('pago-ok').style.display = 'block';
     $('pago-monto').value = ''; comprobante = null; $('pago-archivo').value = ''; $('pago-archivo-label').textContent = '📎 Elegir comprobante';
     cargarPagos();
