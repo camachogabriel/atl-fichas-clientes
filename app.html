@@ -261,6 +261,10 @@
     <div class="card">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Mis tiquetes</h2>
       <p class="sub">Tus solicitudes de cambio de plan, soporte y revisión de entrenamiento.</p>
+      <div class="toggle-vista" style="margin:0 0 10px">
+        <button class="on" id="tq-tab-activas">Activas</button>
+        <button id="tq-tab-historial">Historial</button>
+      </div>
       <div id="mis-tickets-lista" class="cargando">Cargando...</div>
       <button class="btn linea" id="tq-nuevo" style="margin-top:10px">➕ Abrir tiquete</button>
     </div>
@@ -573,6 +577,7 @@ document.querySelectorAll('.tabs5 button[data-sec]').forEach(b => b.onclick = ()
   b.classList.add('on');
   const s = b.dataset.sec;
   ['home', 'calendario', 'chat', 'evaluaciones'].forEach(sec => $('sec-' + sec).style.display = sec === s ? 'block' : 'none');
+  $('sec-mis-tiquetes').style.display = 'none';
   $('chat-caja').style.display = s === 'chat' ? 'flex' : 'none';
   window.scrollTo(0, 0);
   if (s === 'calendario' && !window.__calCargado) { cargarCalendario(); window.__calCargado = true; }
@@ -805,20 +810,30 @@ $('cp-enviar').onclick = async () => {
   btn.disabled = false; btn.textContent = cpEditId ? 'Guardar cambios' : 'Enviar tiquete';
 };
 
+let tqFiltro = 'activas';
+$('tq-tab-activas').onclick = () => { tqFiltro = 'activas'; $('tq-tab-activas').classList.add('on'); $('tq-tab-historial').classList.remove('on'); cargarMisTickets(); };
+$('tq-tab-historial').onclick = () => { tqFiltro = 'historial'; $('tq-tab-historial').classList.add('on'); $('tq-tab-activas').classList.remove('on'); cargarMisTickets(); };
+
 async function cargarMisTickets() {
-  const { data } = await sbClient.from('fichas_solicitudes_cambio').select('*').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
+  const { data } = await sbClient.from('fichas_solicitudes_cambio').select('*').eq('cliente_id', cliente.id)
+    .eq('archivado', tqFiltro === 'historial').order('created_at', { ascending: false });
   ticketsCache = data || [];
-  if (!ticketsCache.length) { $('mis-tickets-lista').innerHTML = '<p class="sub" style="margin:0">Aún no has abierto tiquetes.</p>'; return; }
+  if (!ticketsCache.length) {
+    $('mis-tickets-lista').innerHTML = `<p class="sub" style="margin:0">${tqFiltro === 'historial' ? 'No hay tiquetes archivados.' : 'Aún no has abierto tiquetes.'}</p>`;
+    return;
+  }
   $('mis-tickets-lista').innerHTML = ticketsCache.map(t => {
     const [cl, tx] = TICKET_ESTADO_PILL[t.estado] || ['gris', t.estado];
     const tipoInfo = solicitudTiposCache.find(x => x.categoria === t.categoria && x.tipo === t.tipo);
     const etiqueta = tipoInfo ? tipoInfo.etiqueta : t.tipo;
-    const puedeEditar = t.estado === 'pendiente';
+    const puedeEditar = t.estado === 'pendiente' && !t.archivado;
+    const puedeArchivar = t.estado === 'resuelta' || t.estado === 'rechazada';
     const verFoto = t.foto_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verFotoTicket('${t.foto_path}')">Ver foto</button>` : '';
-    const acciones = (puedeEditar || verFoto) ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+    const acciones = (puedeEditar || puedeArchivar || verFoto) ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
       ${verFoto}
       ${puedeEditar ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="editarMiTicket('${t.id}')">✏️ Editar</button>` : ''}
       ${puedeEditar ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarMiTicket('${t.id}')">🗑 Borrar</button>` : ''}
+      ${puedeArchivar ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="toggleArchivarMiTicket('${t.id}', ${!t.archivado})">${t.archivado ? '↩️ Desarchivar' : '🗄 Archivar'}</button>` : ''}
     </div>` : '';
     return `<div class="item" style="align-items:flex-start;flex-direction:column">
       <div style="display:flex;justify-content:space-between;width:100%;gap:8px">
@@ -843,6 +858,13 @@ window.borrarMiTicket = async (id) => {
   const { error } = await sbClient.from('fichas_solicitudes_cambio').delete().eq('id', id);
   if (error) { alert('Error: ' + error.message); return; }
   if (t && t.foto_path) sbClient.storage.from('fichas-tickets').remove([t.foto_path]).then(() => {});
+  cargarMisTickets();
+};
+window.toggleArchivarMiTicket = async (id, archivar) => {
+  const { error } = await sbClient.from('fichas_solicitudes_cambio').update({
+    archivado: archivar, archivado_at: archivar ? new Date().toISOString() : null,
+  }).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
   cargarMisTickets();
 };
 window.verFotoTicket = async (path) => {
@@ -986,17 +1008,16 @@ $('ep-volver').onclick = () => {
 // ===== Mis tiquetes (desde el menú del avatar) =====
 $('op-mis-tiquetes').onclick = () => {
   cerrarMenus();
-  document.querySelector('.tabs5').style.display = 'none';
   $('chat-caja').style.display = 'none';
   ['sec-home', 'sec-calendario', 'sec-chat', 'sec-evaluaciones', 'sec-pendiente', 'sec-editar-perfil'].forEach(id => $(id).style.display = 'none');
   $('sec-mis-tiquetes').style.display = 'block';
+  document.querySelectorAll('.tabs5 button[data-sec]').forEach(x => x.classList.remove('on'));
   window.scrollTo(0, 0);
   cargarMisTickets();
 };
 $('tq-volver').onclick = () => {
   $('sec-mis-tiquetes').style.display = 'none';
   if (cliente.estado === 'pendiente') { $('sec-pendiente').style.display = 'block'; window.scrollTo(0, 0); return; }
-  document.querySelector('.tabs5').style.display = 'flex';
   document.querySelectorAll('.tabs5 button[data-sec]').forEach(x => x.classList.remove('on'));
   document.querySelector('.tabs5 button[data-sec="home"]').classList.add('on');
   $('sec-home').style.display = 'block';

@@ -344,14 +344,17 @@
     <p class="sub">Solicitudes de todos tus clientes: cambios de plan, soporte y revisión de entrenamiento.</p>
     <div class="card">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Filtros</h2>
+      <div class="toggle-vista" style="margin:0 0 10px">
+        <button class="on" id="tq-tab-activas">Activas</button>
+        <button id="tq-tab-historial">Historial</button>
+      </div>
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         <select id="tq-filtro-estado" style="flex:1;min-width:130px;padding:9px 10px;font-size:14px">
-          <option value="activas">Estado: activas</option>
+          <option value="">Estado: todos</option>
           <option value="pendiente">Pendientes</option>
           <option value="en_proceso">En proceso</option>
           <option value="resuelta">Resueltas</option>
           <option value="rechazada">Rechazadas</option>
-          <option value="">Todas</option>
         </select>
         <select id="tq-filtro-categoria" style="flex:1;min-width:130px;padding:9px 10px;font-size:14px">
           <option value="">Categoría: todas</option>
@@ -457,6 +460,10 @@
 
     <div class="card" id="d-solicitudes-card" style="display:none">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Solicitudes de cambio</h2>
+      <div class="toggle-vista" style="margin:0 0 10px">
+        <button class="on" id="d-solicitudes-tab-activas">Activas</button>
+        <button id="d-solicitudes-tab-historial">Historial</button>
+      </div>
       <div id="d-solicitudes"></div>
     </div>
 
@@ -2657,23 +2664,36 @@ window.asignarCoachTiquete = async (id, coachId) => {
   const { error } = await sbClient.from('fichas_solicitudes_cambio').update({ coach_asignado_id: coachId || null }).eq('id', id);
   if (error) alert('Error: ' + error.message);
 };
+let solicitudesDetalleCache = [];
+let solicitudesDetalleFiltro = 'activas';
+$('d-solicitudes-tab-activas').onclick = () => { solicitudesDetalleFiltro = 'activas'; $('d-solicitudes-tab-activas').classList.add('on'); $('d-solicitudes-tab-historial').classList.remove('on'); pintarSolicitudesDetalle(); };
+$('d-solicitudes-tab-historial').onclick = () => { solicitudesDetalleFiltro = 'historial'; $('d-solicitudes-tab-historial').classList.add('on'); $('d-solicitudes-tab-activas').classList.remove('on'); pintarSolicitudesDetalle(); };
 async function cargarSolicitudesDetalle() {
   const { data } = await sbClient.from('fichas_solicitudes_cambio').select('*, fichas_solicitud_tipos(etiqueta)').eq('cliente_id', actual.id).order('created_at', { ascending: false });
-  const solicitudes = data || [];
-  if (!solicitudes.length) { $('d-solicitudes-card').style.display = 'none'; $('d-solicitudes').innerHTML = ''; return; }
+  solicitudesDetalleCache = data || [];
+  if (!solicitudesDetalleCache.length) { $('d-solicitudes-card').style.display = 'none'; $('d-solicitudes').innerHTML = ''; return; }
   $('d-solicitudes-card').style.display = 'block';
+  solicitudesDetalleFiltro = 'activas';
+  $('d-solicitudes-tab-activas').classList.add('on'); $('d-solicitudes-tab-historial').classList.remove('on');
+  pintarSolicitudesDetalle();
+}
+function pintarSolicitudesDetalle() {
+  const solicitudes = solicitudesDetalleCache.filter(s => !!s.archivado === (solicitudesDetalleFiltro === 'historial'));
+  if (!solicitudes.length) { $('d-solicitudes').innerHTML = `<p class="sub" style="margin:0">${solicitudesDetalleFiltro === 'historial' ? 'No hay solicitudes archivadas.' : 'No hay solicitudes activas.'}</p>`; return; }
   $('d-solicitudes').innerHTML = solicitudes.map(s => {
     const etiqueta = (s.fichas_solicitud_tipos || {}).etiqueta || s.tipo;
     const [cl, tx] = SOLICITUD_ESTADO_PILL[s.estado] || ['gris', s.estado];
     const activa = s.estado === 'pendiente' || s.estado === 'en_proceso';
+    const puedeArchivar = s.estado === 'resuelta' || s.estado === 'rechazada';
     const verFoto = s.foto_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verFotoSolicitud('${s.foto_path}')">📷 Ver foto</button>` : '';
-    const acciones = (activa || verFoto) ? `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
+    const acciones = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center">
       ${verFoto}
       ${activa && s.estado === 'pendiente' ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','en_proceso')">🔧 En proceso</button>` : ''}
       ${activa ? `<button class="pill verde" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','resuelta')">✅ Resuelta</button>` : ''}
       ${activa ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','rechazada')">✖ Rechazar</button>` : ''}
+      ${puedeArchivar ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="toggleArchivarSolicitud('${s.id}', ${!s.archivado})">${s.archivado ? '↩️ Desarchivar' : '🗄 Archivar'}</button>` : ''}
       ${selectCoachHTML(s.id, s.coach_asignado_id)}
-    </div>` : `<div style="margin-top:8px">${selectCoachHTML(s.id, s.coach_asignado_id)}</div>`;
+    </div>`;
     return `<div class="alerta-row" style="flex-direction:column;align-items:stretch">
       <div style="display:flex;gap:10px;align-items:flex-start">
         <div class="alerta-dot ${s.urgencia}" style="margin-top:6px"></div>
@@ -2688,6 +2708,14 @@ async function cargarSolicitudesDetalle() {
     </div>`;
   }).join('');
 }
+window.toggleArchivarSolicitud = async (id, archivar) => {
+  const { error } = await sbClient.from('fichas_solicitudes_cambio').update({
+    archivado: archivar, archivado_at: archivar ? new Date().toISOString() : null,
+  }).eq('id', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  cargarSolicitudesDetalle();
+  if (seccionActiva === 'tiquetes') cargarTiquetesGlobal();
+};
 window.verFotoSolicitud = async (path) => {
   const { data } = await sbClient.storage.from('fichas-tickets').createSignedUrl(path, 600);
   if (data) window.open(data.signedUrl, '_blank');
@@ -2721,32 +2749,37 @@ window.actualizarEstadoSolicitud = async (id, nuevoEstado) => {
 };
 
 // ===== Tiquetes: página global (módulo de soporte) =====
+let tqGlobalFiltro = 'activas';
+$('tq-tab-activas').onclick = () => { tqGlobalFiltro = 'activas'; $('tq-tab-activas').classList.add('on'); $('tq-tab-historial').classList.remove('on'); cargarTiquetesGlobal(); };
+$('tq-tab-historial').onclick = () => { tqGlobalFiltro = 'historial'; $('tq-tab-historial').classList.add('on'); $('tq-tab-activas').classList.remove('on'); cargarTiquetesGlobal(); };
 async function cargarTiquetesGlobal() {
   if (!coachesCache.length) await cargarCoachesCache();
   const estadoFiltro = $('tq-filtro-estado').value;
   const categoriaFiltro = $('tq-filtro-categoria').value;
-  let q = sbClient.from('fichas_solicitudes_cambio').select('*, fichas_solicitud_tipos(etiqueta), fichas_clientes(nombre)').order('created_at', { ascending: false });
-  if (estadoFiltro === 'activas') q = q.in('estado', ['pendiente', 'en_proceso']);
-  else if (estadoFiltro) q = q.eq('estado', estadoFiltro);
+  let q = sbClient.from('fichas_solicitudes_cambio').select('*, fichas_solicitud_tipos(etiqueta), fichas_clientes(nombre)')
+    .eq('archivado', tqGlobalFiltro === 'historial').order('created_at', { ascending: false });
+  if (estadoFiltro) q = q.eq('estado', estadoFiltro);
   if (categoriaFiltro) q = q.eq('categoria', categoriaFiltro);
   const { data } = await q;
   const tiquetes = data || [];
-  const { data: pendCount } = await sbClient.from('fichas_solicitudes_cambio').select('id').eq('estado', 'pendiente');
+  const { data: pendCount } = await sbClient.from('fichas_solicitudes_cambio').select('id').eq('estado', 'pendiente').eq('archivado', false);
   const nPend = (pendCount || []).length;
   $('tiquetes-nav-badge').style.display = nPend ? 'inline-block' : 'none';
   $('tiquetes-nav-badge').textContent = nPend;
-  if (!tiquetes.length) { $('tq-lista').innerHTML = '<p class="sub" style="margin:0">No hay tiquetes para este filtro.</p>'; return; }
+  if (!tiquetes.length) { $('tq-lista').innerHTML = `<p class="sub" style="margin:0">${tqGlobalFiltro === 'historial' ? 'No hay tiquetes archivados.' : 'No hay tiquetes para este filtro.'}</p>`; return; }
   $('tq-lista').innerHTML = tiquetes.map(s => {
     const etiqueta = (s.fichas_solicitud_tipos || {}).etiqueta || s.tipo;
     const nombreCliente = (s.fichas_clientes || {}).nombre || '—';
     const [cl, tx] = SOLICITUD_ESTADO_PILL[s.estado] || ['gris', s.estado];
     const activa = s.estado === 'pendiente' || s.estado === 'en_proceso';
+    const puedeArchivar = s.estado === 'resuelta' || s.estado === 'rechazada';
     const verFoto = s.foto_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="event.stopPropagation();verFotoSolicitud('${s.foto_path}')">📷 Ver foto</button>` : '';
     const acciones = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center" onclick="event.stopPropagation()">
       ${verFoto}
       ${activa && s.estado === 'pendiente' ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','en_proceso')">🔧 En proceso</button>` : ''}
       ${activa ? `<button class="pill verde" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','resuelta')">✅ Resuelta</button>` : ''}
       ${activa ? `<button class="pill rojo" style="border:none;cursor:pointer" onclick="actualizarEstadoSolicitud('${s.id}','rechazada')">✖ Rechazar</button>` : ''}
+      ${puedeArchivar ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="toggleArchivarSolicitud('${s.id}', ${!s.archivado})">${s.archivado ? '↩️ Desarchivar' : '🗄 Archivar'}</button>` : ''}
       ${selectCoachHTML(s.id, s.coach_asignado_id)}
     </div>`;
     return `<div class="alerta-row" style="flex-direction:column;align-items:stretch;cursor:pointer" onclick="abrirDetalle('${s.cliente_id}')">
