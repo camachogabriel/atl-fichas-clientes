@@ -18,7 +18,7 @@
 <style>
   /* ===== Shell tipo app: barra superior + navegación inferior de 5 ===== */
   body { padding-bottom: 84px; }
-  .topbar2 { background: var(--dark); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+  .topbar2 { background: var(--dark); padding: calc(12px + env(safe-area-inset-top)) 16px 12px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; }
   .topbar2 .der { display: flex; align-items: center; gap: 10px; }
   .avatar-mini { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #2d333b; background: var(--azul); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 15px; cursor: pointer; flex-shrink: 0; }
   .marca { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: .3px; display: flex; align-items: center; gap: 8px; }
@@ -26,7 +26,7 @@
   .bell-wrap { position: relative; cursor: pointer; }
   .bell { width: 38px; height: 38px; border-radius: 50%; background: #161b22; display: flex; align-items: center; justify-content: center; border: 1px solid #2d333b; color: #fff; }
   .badge { position: absolute; top: -2px; right: -2px; background: var(--rojo); color: #fff; font-size: 10px; font-weight: 800; border-radius: 999px; min-width: 16px; height: 16px; line-height: 16px; text-align: center; padding: 0 3px; }
-  .menu-flot { position: fixed; top: 58px; z-index: 50; background: #fff; border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); min-width: 200px; overflow: hidden; display: none; }
+  .menu-flot { position: fixed; top: calc(58px + env(safe-area-inset-top)); z-index: 50; background: #fff; border: 1px solid var(--borde); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.14); min-width: 200px; overflow: hidden; display: none; }
   .menu-flot.izq { left: 14px; }
   .menu-flot.der { right: 14px; }
   #menu-not { width: 340px; max-width: calc(100vw - 28px); }
@@ -344,6 +344,10 @@
     <div class="card">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22V15"/></svg>Evaluaciones y tareas</h2>
       <p class="sub">Tareas y cuestionarios que tu coach te va asignando con el tiempo.</p>
+      <div class="toggle-vista" style="margin:0 0 10px">
+        <button class="on" id="ev-tab-activas">Activas</button>
+        <button id="ev-tab-historial">Historial</button>
+      </div>
       <div id="retos-lista" class="cargando">Cargando...</div>
     </div>
   </section>
@@ -430,6 +434,7 @@
       </div>
       <div class="error" id="rt-err"></div>
       <div class="aviso ok" id="rt-ok" style="display:none">✅ ¡Listo!</div>
+      <button class="btn linea" id="rt-archivar" style="margin-top:10px;display:none">Archivar</button>
       <button class="btn linea" id="rt-cerrar-btn" style="margin-top:10px">Cerrar</button>
     </div>
   </div>
@@ -1429,12 +1434,20 @@ const CAT_NOMBRE = { reto: 'Tarea', skill: 'Skill', actualizacion: 'Actualizaci�
 const ESTADO_RETO_PILL = { pendiente: ['amarillo', 'Pendiente'], aceptado: ['gris', 'Aceptado'], cumplido: ['verde', 'Cumplido'], completado: ['verde', 'Cumplido'], fallido: ['rojo', 'No logrado'], vencido: ['rojo', 'Vencido'] };
 
 let retosCache = [], retoAbierto = null, retoArchivoSel = null;
+let retosFiltro = 'activas'; // 'activas' | 'historial'
 async function cargarRetos() {
   const { data, error } = await sbClient.from('fichas_retos_asignados').select('*, fichas_retos(*)').eq('cliente_id', cliente.id).order('created_at', { ascending: false });
   if (error) { $('retos-lista').textContent = 'No se pudo cargar.'; return; }
   retosCache = data || [];
-  if (!retosCache.length) { $('retos-lista').innerHTML = '<p class="sub" style="margin:0">Tu coach todavía no te ha asignado tareas o cuestionarios.</p>'; return; }
-  $('retos-lista').innerHTML = retosCache.map(r => {
+  pintarRetosLista();
+}
+function pintarRetosLista() {
+  const vis = retosCache.filter(r => !!r.archivado === (retosFiltro === 'historial'));
+  if (!vis.length) {
+    $('retos-lista').innerHTML = `<p class="sub" style="margin:0">${retosFiltro === 'historial' ? 'Aún no tienes tareas en el historial.' : 'Tu coach todavía no te ha asignado tareas o cuestionarios.'}</p>`;
+    return;
+  }
+  $('retos-lista').innerHTML = vis.map(r => {
     const reto = r.fichas_retos || {};
     const cat = reto.categoria || 'reto';
     const [cl, tx] = ESTADO_RETO_PILL[r.estado] || ['gris', r.estado];
@@ -1449,6 +1462,8 @@ async function cargarRetos() {
     </div>`;
   }).join('');
 }
+$('ev-tab-activas').onclick = () => { retosFiltro = 'activas'; $('ev-tab-activas').classList.add('on'); $('ev-tab-historial').classList.remove('on'); pintarRetosLista(); };
+$('ev-tab-historial').onclick = () => { retosFiltro = 'historial'; $('ev-tab-historial').classList.add('on'); $('ev-tab-activas').classList.remove('on'); pintarRetosLista(); };
 
 window.abrirReto = (id) => {
   const r = retosCache.find(x => x.id === id);
@@ -1516,7 +1531,25 @@ window.abrirReto = (id) => {
   }
   $('rt-err').style.display = 'none';
   $('rt-ok').style.display = 'none';
+  const ESTADOS_TERMINALES = ['cumplido', 'completado', 'fallido', 'vencido'];
+  if (r.archivado) {
+    $('rt-archivar').textContent = 'Desarchivar';
+    $('rt-archivar').style.display = 'block';
+  } else if (ESTADOS_TERMINALES.includes(r.estado)) {
+    $('rt-archivar').textContent = 'Archivar';
+    $('rt-archivar').style.display = 'block';
+  } else {
+    $('rt-archivar').style.display = 'none';
+  }
   $('hoja-reto').style.display = 'flex';
+};
+$('rt-archivar').onclick = async () => {
+  if (!retoAbierto) return;
+  const nuevoEstado = !retoAbierto.archivado;
+  const { error } = await sbClient.from('fichas_retos_asignados').update({ archivado: nuevoEstado, archivado_at: nuevoEstado ? new Date().toISOString() : null }).eq('id', retoAbierto.id);
+  if (error) { $('rt-err').textContent = 'Error: ' + error.message; $('rt-err').style.display = 'block'; return; }
+  cerrarHojaReto();
+  cargarRetos();
 };
 window.verMiArchivoReto = async (path) => {
   const { data } = await sbClient.storage.from('fichas-retos').createSignedUrl(path, 600);
