@@ -1535,7 +1535,6 @@ $('rt-quiz-iniciar').onclick = async () => {
   if (!reto.quiz_tipo) return;
   retoAbierto.__quizOpenedAt = new Date().toISOString();
   const url = `https://camachogabriel.github.io/ATLKSYS/ATL-Profile-Sys/index.html?tipo=${encodeURIComponent(reto.quiz_tipo)}&atl_id=${encodeURIComponent(cliente.id)}`;
-  window.open(url, '_blank');
   $('rt-quiz-estado').textContent = 'Cuando termines el quiz y vuelvas aquí, lo marcamos como cumplido automáticamente.';
   if (retoAbierto.estado === 'pendiente') {
     const { error } = await sbClient.from('fichas_retos_asignados').update({ estado: 'aceptado', aceptado_at: new Date().toISOString() }).eq('id', retoAbierto.id);
@@ -1546,7 +1545,52 @@ $('rt-quiz-iniciar').onclick = async () => {
       cargarRetos();
     }
   }
+  abrirQuizBrowser(url);
 };
+
+// Abre el quiz dentro de la misma app (SFSafariViewController vía Capacitor cuando corremos
+// como app nativa). Al cerrarse esa vista, volvemos a Home y refrescamos los scores.
+// En navegador normal / PWA cae de vuelta al comportamiento anterior (pestaña nueva).
+async function abrirQuizBrowser(url) {
+  const Cap = window.Capacitor;
+  if (Cap && Cap.isNativePlatform && Cap.isNativePlatform() && Cap.Plugins && Cap.Plugins.Browser) {
+    const { Browser } = Cap.Plugins;
+    let handle = null;
+    try {
+      handle = await Browser.addListener('browserFinished', async () => {
+        if (handle && handle.remove) handle.remove();
+        await onQuizBrowserCerrado();
+      });
+      await Browser.open({ url });
+    } catch (e) {
+      if (handle && handle.remove) handle.remove();
+      window.open(url, '_blank');
+    }
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+async function onQuizBrowserCerrado() {
+  await checkQuizCompletado();
+  await refrescarScoresCliente();
+  cerrarHojaReto();
+  const btnHome = document.querySelector('.tabs5 button[data-sec="home"]');
+  if (btnHome) btnHome.click();
+  window.scrollTo(0, 0);
+  cargarRetos();
+}
+
+async function refrescarScoresCliente() {
+  if (!cliente) return;
+  const { data } = await sbClient.from('fichas_clientes').select('scores, scores_actualizado').eq('id', cliente.id).maybeSingle();
+  if (data) {
+    cliente.scores = data.scores;
+    cliente.scores_actualizado = data.scores_actualizado;
+    pintarScores();
+    pintarFatigaHome();
+  }
+}
 async function completarQuiz() {
   if (!retoAbierto) return;
   const { error } = await sbClient.from('fichas_retos_asignados').update({ estado: 'cumplido', completado_at: new Date().toISOString() }).eq('id', retoAbierto.id);
