@@ -1,0 +1,23 @@
+# Wrangler: excluir de los "assets" estáticos que se suben al deploy.
+# (Esto NO afecta a git; es análogo a .gitignore pero para `wrangler deploy`.)
+
+# Proyecto Capacitor (app iOS de prueba local) - no forma parte del sitio web
+node_modules
+ios
+www
+scripts
+package.json
+package-lock.json
+capacitor.config.json
+
+# Control de versiones / build
+.git
+.gitignore
+.wrangler
+wrangler.jsonc
+*.log
+.DS_Store
+
+# Otros
+README.md
+Recursos
