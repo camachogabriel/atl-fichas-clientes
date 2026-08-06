@@ -89,6 +89,10 @@
   .lab-zona { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 10px; border-left: 3px solid var(--c, #21b57c); background: rgba(255,255,255,.04); border-radius: 6px; margin-bottom: 4px; font-size: 12.5px; }
   .lab-zona-nom { color: #e6e8eb; }
   .lab-zona-val { font-family: ui-monospace, 'SF Mono', 'Roboto Mono', Menlo, monospace; font-weight: 700; color: #fff; white-space: nowrap; }
+  .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 6px; }
+  .score-gauge { text-align: center; }
+  .score-gauge svg { display: block; margin: 0 auto; }
+  .score-gauge .lbl { font-size: 9.5px; color: #9aa4b2; margin-top: 4px; text-transform: uppercase; letter-spacing: .3px; line-height: 1.25; }
 
   /* ===== Retos / evaluaciones (estilo Strava/TrainingPeaks) ===== */
   #retos-lista { margin: -2px 0; }
@@ -268,6 +272,10 @@
       <div id="p-prueba"></div>
     </div>
 
+    <div id="p-scores-card" style="display:none">
+      <div id="p-scores"></div>
+    </div>
+
     <div class="card" id="coach-card" style="display:none">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Mi(s) entrenador(es)</h2>
       <div id="coach-lista"></div>
@@ -403,6 +411,10 @@
           <label>Evidencia (foto o video)</label>
           <label class="foto-btn" for="rt-archivo" id="rt-archivo-label">📎 Elegir archivo</label>
           <input type="file" id="rt-archivo" accept="image/*,video/*" style="display:none">
+        </div>
+        <div id="rt-campo-quiz" style="display:none">
+          <button class="btn" id="rt-quiz-iniciar" type="button" style="display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>Iniciar quiz</button>
+          <p class="sub" id="rt-quiz-estado" style="margin-top:8px;margin-bottom:0"></p>
         </div>
         <button class="btn" id="rt-cumplido" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="rt-cumplido-label">Marcar cumplido</span></button>
         <button class="btn linea" id="rt-fallido" style="margin-top:8px">No lo logré</button>
@@ -646,6 +658,7 @@ async function init() {
   pintarOnboarding();
   pintarDatos();
   pintarPrueba();
+  pintarScores();
   pintarFatigaHome();
   cargarEvaluaciones();
   cargarPagos();
@@ -929,6 +942,66 @@ async function pintarPrueba() {
       ${statsHtml ? `<div class="lab-stats-principales">${statsHtml}</div>` : ''}
       ${secMini ? `<div class="lab-stats-sec">${secMini}</div>` : ''}
       ${zonas ? `<div class="lab-zonas-titulo">Zonas de entrenamiento</div>${zonas}` : ''}
+    </div>`;
+}
+
+// ===== Perfil del deportista (scores del perfilador) =====
+const SCORE_LABELS = {
+  experiencia: 'Experiencia', nutricion: 'Nutrición', hidratacion: 'Hidratación',
+  flexibilidad: 'Flexibilidad', mecanica: 'Mecánica', tecnica_ruta: 'Técnica ruta',
+  tecnica_mtb: 'Técnica MTB', recuperacion: 'Recuperación', sueno: 'Sueño', estres: 'Estrés',
+};
+const SCORE_ORDEN = ['experiencia', 'nutricion', 'hidratacion', 'flexibilidad', 'mecanica', 'tecnica_ruta', 'tecnica_mtb', 'recuperacion', 'sueno', 'estres'];
+const SCORE_SUB_LABELS = {
+  tr_corner: 'Curvas (ruta)', tr_freno: 'Frenado (ruta)', tr_equil: 'Equilibrio (ruta)',
+  tm_desc: 'Descensos (MTB)', tm_curva: 'Curvas (MTB)', tm_obst: 'Obstáculos (MTB)', tm_subida: 'Subidas (MTB)', tm_equil: 'Equilibrio (MTB)',
+};
+const SCORE_DIN_LABELS = { adherencia: 'Adherencia', animo: 'Ánimo', fatiga: 'Fatiga', satisfaccion: 'Satisfacción' };
+
+function scoreColor(v) {
+  if (v < 4) return '#e07856';
+  if (v < 7) return '#fecb15';
+  return '#21b57c';
+}
+function gaugeSvg(v) {
+  const r = 26, c = 2 * Math.PI * r;
+  const val = Math.max(0, Math.min(10, Number(v) || 0));
+  const off = c * (1 - val / 10);
+  return `<svg width="60" height="60" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="#24252a" stroke-width="6"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="${scoreColor(val)}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 32 32)"/>
+    <text x="32" y="37" text-anchor="middle" font-size="15" font-weight="800" fill="#fff" font-family="ui-monospace,'SF Mono','Roboto Mono',Menlo,monospace">${val.toFixed(1).replace(/\.0$/, '')}</text>
+  </svg>`;
+}
+function pintarScores() {
+  const scores = cliente.scores || {};
+  const claves = SCORE_ORDEN.filter(k => scores[k] != null);
+  if (!claves.length) { $('p-scores-card').style.display = 'none'; return; }
+  $('p-scores-card').style.display = 'block';
+
+  const gauges = claves.map(k => `<div class="score-gauge">${gaugeSvg(scores[k])}<div class="lbl">${SCORE_LABELS[k]}</div></div>`).join('');
+
+  const mini = (k, v) => `<div class="lab-mini"><div class="k">${k}</div><div class="v">${Number(v).toFixed(1)} / 10</div></div>`;
+  const subClaves = Object.keys(SCORE_SUB_LABELS).filter(k => scores[k] != null);
+  const subHtml = subClaves.length ? `<div class="lab-zonas-titulo" style="margin-top:14px">Detalle técnico</div><div class="lab-stats-sec">${subClaves.map(k => mini(SCORE_SUB_LABELS[k], scores[k])).join('')}</div>` : '';
+
+  const dinClaves = Object.keys(SCORE_DIN_LABELS).filter(k => scores[k] != null);
+  const dinHtml = dinClaves.length ? `<div class="lab-zonas-titulo" style="margin-top:14px">Seguimiento reciente</div><div class="lab-stats-sec">${dinClaves.map(k => mini(SCORE_DIN_LABELS[k], scores[k])).join('')}</div>` : '';
+
+  const fecha = cliente.scores_actualizado ? `<div class="lab-fecha">Actualizado: ${ATL.fmtFecha(cliente.scores_actualizado.slice(0, 10))}</div>` : '';
+
+  $('p-scores').innerHTML = `
+    <div class="lab-card">
+      <div class="lab-header">
+        <div class="lab-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg></div>
+        <div>
+          <div class="lab-title">Perfil del deportista</div>
+          ${fecha}
+        </div>
+      </div>
+      <div class="score-grid">${gauges}</div>
+      ${subHtml}
+      ${dinHtml}
     </div>`;
 }
 
@@ -1368,10 +1441,13 @@ window.abrirReto = (id) => {
   $('rt-pendiente').style.display = (!esActualizacion && r.estado === 'pendiente') ? 'block' : 'none';
   $('rt-aceptado').style.display = mostrarFormulario ? 'block' : 'none';
   $('rt-fallido').style.display = esActualizacion ? 'none' : 'block';
-  $('rt-cumplido-label').textContent = esActualizacion ? 'Guardar dato' : 'Marcar cumplido';
+  $('rt-cumplido-label').textContent = esActualizacion ? 'Guardar dato' : (reto.tipo === 'quiz' ? 'Ya lo completé' : 'Marcar cumplido');
+  $('rt-quiz-estado').textContent = '';
   if (mostrarFormulario) {
     const esNumero = reto.tipo === 'numero';
     const esArchivo = reto.tipo === 'foto' || reto.tipo === 'video';
+    const esQuiz = reto.tipo === 'quiz';
+    $('rt-campo-quiz').style.display = esQuiz ? 'block' : 'none';
     $('rt-campo-numero').style.display = esNumero ? 'block' : 'none';
     if (esNumero) {
       const campos = (reto.campos_actualizar && reto.campos_actualizar.length > 0)
@@ -1414,6 +1490,36 @@ $('rt-archivo').addEventListener('change', () => {
   $('rt-archivo-label').textContent = retoArchivoSel ? '📎 ' + retoArchivoSel.name : '📎 Elegir archivo';
 });
 
+// ===== Retos tipo 'quiz' (abre el perfilador y autocompleta al volver) =====
+$('rt-quiz-iniciar').onclick = () => {
+  if (!retoAbierto) return;
+  const reto = retoAbierto.fichas_retos || {};
+  if (!reto.quiz_tipo) return;
+  retoAbierto.__quizOpenedAt = new Date().toISOString();
+  const url = `https://camachogabriel.github.io/ATLKSYS/ATL-Profile-Sys/index.html?tipo=${encodeURIComponent(reto.quiz_tipo)}&atl_id=${encodeURIComponent(cliente.id)}`;
+  window.open(url, '_blank');
+  $('rt-quiz-estado').textContent = 'Cuando termines el quiz y vuelvas aquí, lo marcamos como cumplido automáticamente.';
+};
+async function completarQuiz() {
+  if (!retoAbierto) return;
+  const { error } = await sbClient.from('fichas_retos_asignados').update({ estado: 'cumplido', completado_at: new Date().toISOString() }).eq('id', retoAbierto.id);
+  if (error) return;
+  $('rt-quiz-estado').textContent = '✅ ¡Quiz completado!';
+  $('rt-ok').textContent = '✅ ¡Cumplido!'; $('rt-ok').style.display = 'block';
+  setTimeout(() => { cerrarHojaReto(); cargarRetos(); if (typeof cargarMisInsignias === 'function') cargarMisInsignias(); }, 1800);
+}
+async function checkQuizCompletado() {
+  if (!retoAbierto || $('hoja-reto').style.display === 'none') return;
+  const reto = retoAbierto.fichas_retos || {};
+  if (reto.tipo !== 'quiz' || !reto.quiz_tipo) return;
+  if (retoAbierto.estado === 'cumplido' || retoAbierto.estado === 'completado') return;
+  if (!retoAbierto.__quizOpenedAt) return;
+  const { data } = await sbClient.from('perfil_evaluaciones').select('id').eq('atl_id', cliente.id).eq('tipo', reto.quiz_tipo).gte('created_at', retoAbierto.__quizOpenedAt).order('created_at', { ascending: false }).limit(1);
+  if (data && data.length) completarQuiz();
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkQuizCompletado(); });
+window.addEventListener('focus', checkQuizCompletado);
+
 function cerrarHojaReto() { $('hoja-reto').style.display = 'none'; retoAbierto = null; }
 $('rt-cerrar').onclick = cerrarHojaReto;
 $('rt-cerrar-btn').onclick = cerrarHojaReto;
@@ -1442,6 +1548,15 @@ $('rt-cumplido').onclick = async () => {
   if (!retoAbierto) return;
   const reto = retoAbierto.fichas_retos || {};
   const err = $('rt-err'); err.style.display = 'none';
+  if (reto.tipo === 'quiz') {
+    const btn = $('rt-cumplido'); btn.disabled = true; $('rt-cumplido-label').textContent = 'Verificando...';
+    const desde = retoAbierto.__quizOpenedAt || retoAbierto.created_at;
+    const { data } = await sbClient.from('perfil_evaluaciones').select('id').eq('atl_id', cliente.id).eq('tipo', reto.quiz_tipo).gte('created_at', desde).limit(1);
+    btn.disabled = false; $('rt-cumplido-label').textContent = 'Ya lo completé';
+    if (!data || !data.length) { err.textContent = 'Aún no detectamos tu respuesta. Abre el quiz y complétalo primero.'; err.style.display = 'block'; return; }
+    await completarQuiz();
+    return;
+  }
   let respuesta = null, archivo_path = null;
   if (reto.tipo === 'numero') {
     const inputs = Array.from(document.querySelectorAll('.rt-valor-campo'));
