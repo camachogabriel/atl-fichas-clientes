@@ -182,6 +182,7 @@
 
 <div class="menu-flot der" id="menu-perfil">
   <button id="op-editar-perfil"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Editar perfil</button>
+  <button id="op-mis-tiquetes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Mis tiquetes</button>
   <button id="op-cambiar-clave"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Cambiar contraseña</button>
   <button id="op-salir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Salir</button>
 </div>
@@ -249,12 +250,19 @@
       <div id="insignias-cliente-lista" class="cargando">Cargando...</div>
     </div>
     <div class="card">
-      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Mis tiquetes</h2>
-      <div id="mis-tickets-lista" class="cargando">Cargando...</div>
-    </div>
-    <div class="card">
       <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Historial de pagos</h2>
       <div id="pago-lista" class="cargando">Cargando...</div>
+    </div>
+  </section>
+
+  <!-- ===== MIS TIQUETES ===== -->
+  <section id="sec-mis-tiquetes" style="display:none">
+    <button class="volver" id="tq-volver">← Volver</button>
+    <div class="card">
+      <h2 class="h2-izq"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Mis tiquetes</h2>
+      <p class="sub">Tus solicitudes de cambio de plan, soporte y revisión de entrenamiento.</p>
+      <div id="mis-tickets-lista" class="cargando">Cargando...</div>
+      <button class="btn linea" id="tq-nuevo" style="margin-top:10px">➕ Abrir tiquete</button>
     </div>
   </section>
 
@@ -926,7 +934,7 @@ $('op-editar-perfil').onclick = () => {
   cerrarMenus();
   document.querySelector('.tabs5').style.display = 'none';
   $('chat-caja').style.display = 'none';
-  ['sec-home', 'sec-calendario', 'sec-chat', 'sec-evaluaciones', 'sec-pendiente'].forEach(id => $(id).style.display = 'none');
+  ['sec-home', 'sec-calendario', 'sec-chat', 'sec-evaluaciones', 'sec-pendiente', 'sec-mis-tiquetes'].forEach(id => $(id).style.display = 'none');
   $('sec-editar-perfil').style.display = 'block';
   window.scrollTo(0, 0);
 
@@ -974,6 +982,27 @@ $('ep-volver').onclick = () => {
   $('sec-home').style.display = 'block';
   window.scrollTo(0, 0);
 };
+
+// ===== Mis tiquetes (desde el menú del avatar) =====
+$('op-mis-tiquetes').onclick = () => {
+  cerrarMenus();
+  document.querySelector('.tabs5').style.display = 'none';
+  $('chat-caja').style.display = 'none';
+  ['sec-home', 'sec-calendario', 'sec-chat', 'sec-evaluaciones', 'sec-pendiente', 'sec-editar-perfil'].forEach(id => $(id).style.display = 'none');
+  $('sec-mis-tiquetes').style.display = 'block';
+  window.scrollTo(0, 0);
+  cargarMisTickets();
+};
+$('tq-volver').onclick = () => {
+  $('sec-mis-tiquetes').style.display = 'none';
+  if (cliente.estado === 'pendiente') { $('sec-pendiente').style.display = 'block'; window.scrollTo(0, 0); return; }
+  document.querySelector('.tabs5').style.display = 'flex';
+  document.querySelectorAll('.tabs5 button[data-sec]').forEach(x => x.classList.remove('on'));
+  document.querySelector('.tabs5 button[data-sec="home"]').classList.add('on');
+  $('sec-home').style.display = 'block';
+  window.scrollTo(0, 0);
+};
+$('tq-nuevo').onclick = () => abrirHojaTicket(null);
 
 $('ep-foto-archivo').addEventListener('change', async () => {
   const f = $('ep-foto-archivo').files[0];

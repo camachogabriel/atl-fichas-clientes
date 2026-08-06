@@ -2695,16 +2695,25 @@ window.verFotoSolicitud = async (path) => {
 window.actualizarEstadoSolicitud = async (id, nuevoEstado) => {
   const { data: { session } } = await sbClient.auth.getSession();
   const fila = { estado: nuevoEstado };
+  let nota = null;
   if (nuevoEstado === 'resuelta' || nuevoEstado === 'rechazada') {
-    const nota = prompt(nuevoEstado === 'resuelta' ? '¿Algún comentario para el cliente? (opcional)' : '¿Motivo del rechazo? (opcional)');
+    nota = prompt(nuevoEstado === 'resuelta' ? '¿Algún comentario para el cliente? (opcional)' : '¿Motivo del rechazo? (opcional)');
     if (nota) fila.respuesta_coach = nota;
     fila.resuelta_at = new Date().toISOString();
     fila.resuelta_por = session.user.id;
   }
-  const { error } = await sbClient.from('fichas_solicitudes_cambio').update(fila).eq('id', id);
+  const { data: sol, error } = await sbClient.from('fichas_solicitudes_cambio').update(fila).eq('id', id)
+    .select('*, fichas_solicitud_tipos(etiqueta)').single();
   if (error) { alert('Error: ' + error.message); return; }
   if (nuevoEstado === 'resuelta' || nuevoEstado === 'rechazada') {
     await sbClient.from('fichas_alertas').update({ resuelta: true, resuelta_at: new Date().toISOString(), resuelta_por: session.user.id }).eq('solicitud_cambio_id', id);
+    // Documentamos el cierre del tiquete en el chat (en vez de una notificación aparte)
+    const etiqueta = (sol.fichas_solicitud_tipos || {}).etiqueta || sol.tipo;
+    const catNombre = SOLICITUD_CATEGORIA_NOMBRE[sol.categoria] || sol.categoria;
+    const cuerpo = nuevoEstado === 'resuelta'
+      ? `✅ Resolví tu tiquete de ${catNombre}: ${etiqueta}.${nota ? ' ' + nota : ''}`
+      : `✖ Tu tiquete de ${catNombre}: ${etiqueta} fue rechazado.${nota ? ' Motivo: ' + nota : ''}`;
+    await sbClient.from('fichas_mensajes').insert({ cliente_id: sol.cliente_id, autor_id: session.user.id, autor_rol: 'coach', cuerpo });
   }
   cargarSolicitudesDetalle();
   cargarAlertasDetalle();
