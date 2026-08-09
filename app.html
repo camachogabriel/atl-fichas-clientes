@@ -590,7 +590,11 @@ function cerrarMenus() { $('menu-perfil').style.display = 'none'; $('menu-not').
 $('btn-avatar').onclick = (e) => { e.stopPropagation(); const m = $('menu-perfil'); const abrir = m.style.display !== 'block'; cerrarMenus(); m.style.display = abrir ? 'block' : 'none'; };
 $('btn-bell').onclick = (e) => { e.stopPropagation(); const m = $('menu-not'); const abrir = m.style.display !== 'block'; cerrarMenus(); m.style.display = abrir ? 'block' : 'none'; };
 document.body.addEventListener('click', cerrarMenus);
-$('op-salir').onclick = async () => { await sbClient.auth.signOut(); location.href = 'index.html'; };
+$('op-salir').onclick = async () => {
+  if (pushTokenActual) { await sbClient.from('fichas_push_tokens').delete().eq('token', pushTokenActual); }
+  await sbClient.auth.signOut();
+  location.href = 'index.html';
+};
 $('op-cambiar-clave').onclick = async () => {
   const nueva = prompt('Nueva contraseña (mínimo 8 caracteres):');
   if (!nueva) return;
@@ -922,6 +926,57 @@ async function init() {
 
   cargarSolicitudTipos().then(cargarMisTickets);
   $('op-ayuda-urgente').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Necesito ayuda urgente.')}`;
+
+  configurarPush();
+}
+
+// ===== Notificaciones push (app nativa de iPhone) =====
+// NOTA TEMPORAL: mientras depuramos el registro, se usan alert() además de
+// console.warn para que los errores se vean directo en pantalla sin Xcode.
+let pushTokenActual = null;
+async function configurarPush() {
+  const Cap = window.Capacitor;
+  if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform() || !Cap.Plugins || !Cap.Plugins.PushNotifications) {
+    console.warn('Push: plugin PushNotifications no disponible en este build.');
+    return;
+  }
+  const { PushNotifications } = Cap.Plugins;
+  try {
+    let permiso = await PushNotifications.checkPermissions();
+    if (permiso.receive !== 'granted') permiso = await PushNotifications.requestPermissions();
+    if (permiso.receive !== 'granted') { alert('🔕 Push: permiso no concedido (' + permiso.receive + ')'); return; }
+
+    await PushNotifications.addListener('registration', async (token) => {
+      if (!token || !token.value) { alert('⚠️ Push: el evento de registro llegó sin token.'); return; }
+      if (!cliente) { alert('⚠️ Push: token recibido pero el perfil del cliente aún no había cargado.'); return; }
+      pushTokenActual = token.value;
+      const { error } = await sbClient.from('fichas_push_tokens').upsert(
+        { cliente_id: cliente.id, token: token.value, platform: 'ios', updated_at: new Date().toISOString() },
+        { onConflict: 'token' },
+      );
+      if (error) alert('❌ Push: no se pudo guardar el token en Supabase: ' + error.message);
+      else alert('✅ Push activado correctamente para este dispositivo.');
+    });
+    await PushNotifications.addListener('registrationError', (err) => {
+      alert('❌ Push: error nativo de registro: ' + JSON.stringify(err));
+    });
+    await PushNotifications.addListener('pushNotificationReceived', () => {
+      cargarNotificaciones();
+    });
+    await PushNotifications.addListener('pushNotificationActionPerformed', (accion) => {
+      const data = (accion.notification && accion.notification.data) || {};
+      cerrarMenus();
+      const btnChat = document.querySelector('.tabs5 button[data-sec="chat"]');
+      const btnHome = document.querySelector('.tabs5 button[data-sec="home"]');
+      if (data.seccion === 'chat' && btnChat) btnChat.click();
+      else if (btnHome) btnHome.click();
+      cargarNotificaciones();
+    });
+
+    await PushNotifications.register();
+  } catch (e) {
+    alert('❌ Push: excepción al configurar: ' + (e && e.message ? e.message : JSON.stringify(e)));
+  }
 }
 
 function pintarHome() {
