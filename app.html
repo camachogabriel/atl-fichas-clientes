@@ -187,7 +187,7 @@
   <button id="op-salir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Salir</button>
   <div style="padding:8px 14px 2px;font-size:10.5px;color:#6b7280;border-top:1px solid #2d333b;margin-top:4px" id="app-build-tag"></div>
 </div>
-<div id="push-debug" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#111;color:#7CFC00;font-size:11px;line-height:1.5;padding:8px 10px;white-space:pre-wrap;max-height:40vh;overflow-y:auto"></div>
+<div id="push-debug" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#111;color:#7CFC00;font-size:11px;line-height:1.5;padding:calc(10px + env(safe-area-inset-top)) 10px 10px;white-space:pre-wrap;max-height:50vh;overflow-y:auto"></div>
 <div class="menu-flot der" id="menu-not">
   <div id="not-lista" style="max-height:70vh;overflow-y:auto"><div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div></div>
 </div>
@@ -913,6 +913,10 @@ async function init() {
     return;
   }
 
+  // Se llama de primero y aislado (tiene su propio try/catch) para que ningún
+  // error en el resto de la carga de la pantalla lo bloquee silenciosamente.
+  configurarPush();
+
   await cargarObjetivosCliente();
   pintarHome();
   cargarCoaches();
@@ -928,12 +932,10 @@ async function init() {
 
   cargarSolicitudTipos().then(cargarMisTickets);
   $('op-ayuda-urgente').href = `${ATL.WHATSAPP}?text=${encodeURIComponent('Hola, soy ' + cliente.nombre + '. Necesito ayuda urgente.')}`;
-
-  configurarPush();
 }
 
 // ===== Versión del build (para verificar que el celular tiene el código nuevo) =====
-const APP_BUILD = '2026-08-09.4-push-debug';
+const APP_BUILD = '2026-08-09.5-push-debug';
 (function () {
   const tag = document.getElementById('app-build-tag');
   if (tag) tag.textContent = 'Versión: ' + APP_BUILD;
