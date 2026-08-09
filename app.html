@@ -185,7 +185,9 @@
   <button id="op-mis-tiquetes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.1v-2a4 4 0 0 1 4-4h14"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.9v2a4 4 0 0 1-4 4H3"/></svg>Mis tiquetes</button>
   <button id="op-cambiar-clave"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Cambiar contraseña</button>
   <button id="op-salir"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:8px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Salir</button>
+  <div style="padding:8px 14px 2px;font-size:10.5px;color:#6b7280;border-top:1px solid #2d333b;margin-top:4px" id="app-build-tag"></div>
 </div>
+<div id="push-debug" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#111;color:#7CFC00;font-size:11px;line-height:1.5;padding:8px 10px;white-space:pre-wrap;max-height:40vh;overflow-y:auto"></div>
 <div class="menu-flot der" id="menu-not">
   <div id="not-lista" style="max-height:70vh;overflow-y:auto"><div class="item-not"><div class="d">Sin notificaciones por ahora.</div></div></div>
 </div>
@@ -930,35 +932,55 @@ async function init() {
   configurarPush();
 }
 
+// ===== Versión del build (para verificar que el celular tiene el código nuevo) =====
+const APP_BUILD = '2026-08-09.4-push-debug';
+(function () {
+  const tag = document.getElementById('app-build-tag');
+  if (tag) tag.textContent = 'Versión: ' + APP_BUILD;
+})();
+
 // ===== Notificaciones push (app nativa de iPhone) =====
-// NOTA TEMPORAL: mientras depuramos el registro, se usan alert() además de
-// console.warn para que los errores se vean directo en pantalla sin Xcode.
+// NOTA TEMPORAL: mientras depuramos el registro, el estado queda escrito en
+// un banner fijo arriba de la pantalla (#push-debug) además de en consola,
+// porque alert() puede no mostrarse en algunos contextos de WKWebView.
 let pushTokenActual = null;
+function pushDebug(msg) {
+  console.warn('[PUSH]', msg);
+  const el = document.getElementById('push-debug');
+  if (el) {
+    el.style.display = 'block';
+    el.textContent = `[${APP_BUILD}] ${new Date().toLocaleTimeString()}\n${msg}`;
+  }
+}
 async function configurarPush() {
   const Cap = window.Capacitor;
-  if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform() || !Cap.Plugins || !Cap.Plugins.PushNotifications) {
-    console.warn('Push: plugin PushNotifications no disponible en este build.');
-    return;
-  }
+  if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) { pushDebug('No es plataforma nativa (Capacitor.isNativePlatform() = false).'); return; }
+  if (!Cap.Plugins || !Cap.Plugins.PushNotifications) { pushDebug('Plugin PushNotifications no disponible en este build (falta sync:ios).'); return; }
+  pushDebug('Iniciando configuración de push...');
   const { PushNotifications } = Cap.Plugins;
   try {
     let permiso = await PushNotifications.checkPermissions();
-    if (permiso.receive !== 'granted') permiso = await PushNotifications.requestPermissions();
-    if (permiso.receive !== 'granted') { alert('🔕 Push: permiso no concedido (' + permiso.receive + ')'); return; }
+    pushDebug('checkPermissions: ' + JSON.stringify(permiso));
+    if (permiso.receive !== 'granted') {
+      permiso = await PushNotifications.requestPermissions();
+      pushDebug('requestPermissions: ' + JSON.stringify(permiso));
+    }
+    if (permiso.receive !== 'granted') { pushDebug('🔕 Permiso no concedido (' + permiso.receive + ').'); return; }
 
     await PushNotifications.addListener('registration', async (token) => {
-      if (!token || !token.value) { alert('⚠️ Push: el evento de registro llegó sin token.'); return; }
-      if (!cliente) { alert('⚠️ Push: token recibido pero el perfil del cliente aún no había cargado.'); return; }
+      if (!token || !token.value) { pushDebug('⚠️ Evento "registration" llegó sin token.'); return; }
+      pushDebug('📩 Token recibido: ' + token.value.slice(0, 16) + '...');
+      if (!cliente) { pushDebug('⚠️ Token recibido pero el perfil del cliente aún no había cargado.'); return; }
       pushTokenActual = token.value;
       const { error } = await sbClient.from('fichas_push_tokens').upsert(
         { cliente_id: cliente.id, token: token.value, platform: 'ios', updated_at: new Date().toISOString() },
         { onConflict: 'token' },
       );
-      if (error) alert('❌ Push: no se pudo guardar el token en Supabase: ' + error.message);
-      else alert('✅ Push activado correctamente para este dispositivo.');
+      if (error) pushDebug('❌ No se pudo guardar el token en Supabase: ' + error.message);
+      else pushDebug('✅ Push activado correctamente para este dispositivo.');
     });
     await PushNotifications.addListener('registrationError', (err) => {
-      alert('❌ Push: error nativo de registro: ' + JSON.stringify(err));
+      pushDebug('❌ Error nativo de registro: ' + JSON.stringify(err));
     });
     await PushNotifications.addListener('pushNotificationReceived', () => {
       cargarNotificaciones();
@@ -973,9 +995,12 @@ async function configurarPush() {
       cargarNotificaciones();
     });
 
+    pushDebug('Listeners listos, llamando a register()...');
+
     await PushNotifications.register();
+    pushDebug('register() llamado, esperando token o error...');
   } catch (e) {
-    alert('❌ Push: excepción al configurar: ' + (e && e.message ? e.message : JSON.stringify(e)));
+    pushDebug('❌ Excepción al configurar: ' + (e && e.message ? e.message : JSON.stringify(e)));
   }
 }
 
