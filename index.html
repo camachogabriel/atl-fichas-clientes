@@ -30,9 +30,31 @@ document.getElementById('logo').src = ATL.LOGO;
 const $ = (id) => document.getElementById(id);
 function error(m) { $('error').textContent = m; $('error').style.display = m ? 'block' : 'none'; }
 
+// onboarding.html y coach.html no se empaquetan dentro de la app nativa (son solo web),
+// así que si estamos corriendo como app de iPhone hay que abrirlos en el navegador externo
+// en vez de navegar dentro del WebView local, o iOS da "no such file".
+function abrirExterno(url) {
+  const Cap = window.Capacitor;
+  if (Cap && Cap.isNativePlatform && Cap.isNativePlatform() && Cap.Plugins && Cap.Plugins.Browser) {
+    Cap.Plugins.Browser.open({ url });
+  } else {
+    location.href = url;
+  }
+}
+
 async function destino(session) {
   const { data } = await sbClient.rpc('fichas_es_coach');
-  location.href = data ? 'coach.html' : 'app.html';
+  if (data) {
+    const Cap = window.Capacitor;
+    if (Cap && Cap.isNativePlatform && Cap.isNativePlatform()) {
+      error('Esta app es para clientes. Ingresa al panel de coach desde la versión web.');
+      await sbClient.auth.signOut();
+      return;
+    }
+    location.href = 'coach.html';
+  } else {
+    location.href = 'app.html';
+  }
 }
 sbClient.auth.getSession().then(({ data }) => { if (data.session) destino(data.session); });
 
@@ -51,14 +73,29 @@ $('entrar').onclick = async () => {
 };
 $('password').addEventListener('keydown', e => { if (e.key === 'Enter') $('entrar').click(); });
 
-$('crear').onclick = () => { location.href = 'onboarding.html'; };
+$('crear').onclick = () => { abrirExterno('https://clientes.athletetrainlab.com/onboarding'); };
 
 $('olvide').onclick = async () => {
   error('');
   const email = $('email').value.trim();
   if (!email) return error('Escribe tu correo arriba y vuelve a tocar "¿Olvidaste tu contraseña?".');
-  const { error: e } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname.replace(/[^/]*$/, '') + 'clave.html' });
-  if (e) return error('No pudimos enviar el correo de recuperación.');
+  $('olvide').disabled = true;
+  const textoOriginal = $('olvide').textContent;
+  $('olvide').textContent = 'Enviando...';
+  const Cap = window.Capacitor;
+  const esNativo = Cap && Cap.isNativePlatform && Cap.isNativePlatform();
+  const redirectTo = esNativo
+    ? 'https://clientes.athletetrainlab.com/clave'
+    : location.origin + location.pathname.replace(/[^/]*$/, '') + 'clave.html';
+  const { error: e } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo });
+  $('olvide').textContent = textoOriginal;
+  if (e) {
+    $('olvide').disabled = false;
+    if (/security purposes|rate limit/i.test(e.message)) {
+      return error('Ya enviamos un correo hace poco. Espera un minuto antes de volver a intentar (y revisa spam).');
+    }
+    return error('No pudimos enviar el correo de recuperación.');
+  }
   $('aviso').textContent = '📬 Te enviamos un correo para restablecer tu contraseña.';
   $('aviso').style.display = 'block';
 };

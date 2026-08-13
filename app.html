@@ -1858,7 +1858,7 @@ $('rt-quiz-iniciar').onclick = async () => {
   const reto = retoAbierto.fichas_retos || {};
   if (!reto.quiz_tipo) return;
   retoAbierto.__quizOpenedAt = new Date().toISOString();
-  const url = `https://camachogabriel.github.io/ATLKSYS/ATL-Profile-Sys/index.html?tipo=${encodeURIComponent(reto.quiz_tipo)}&atl_id=${encodeURIComponent(cliente.id)}`;
+  const url = `https://quiz.athletetrainlab.com/ATL-Profile-Sys/?tipo=${encodeURIComponent(reto.quiz_tipo)}&atl_id=${encodeURIComponent(cliente.id)}`;
   $('rt-quiz-estado').textContent = 'Cuando termines el quiz y vuelvas aquí, lo marcamos como cumplido automáticamente.';
   if (retoAbierto.estado === 'pendiente') {
     const { error } = await sbClient.from('fichas_retos_asignados').update({ estado: 'aceptado', aceptado_at: new Date().toISOString() }).eq('id', retoAbierto.id);
