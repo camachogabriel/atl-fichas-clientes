@@ -66,5 +66,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>AthleteTrainLab usa la cámara para que puedas tomar la foto de tu perfil.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AthleteTrainLab necesita acceso a tus fotos para que puedas elegir la imagen de tu perfil.</string>
 </dict>
 </plist>
