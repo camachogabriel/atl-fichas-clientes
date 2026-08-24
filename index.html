@@ -30,6 +30,11 @@ document.getElementById('logo').src = ATL.LOGO;
 const $ = (id) => document.getElementById(id);
 function error(m) { $('error').textContent = m; $('error').style.display = m ? 'block' : 'none'; }
 
+if (new URLSearchParams(location.search).get('cuenta') === 'eliminada') {
+  $('aviso').textContent = '✅ Tu cuenta y tus datos fueron eliminados correctamente.';
+  $('aviso').style.display = 'block';
+}
+
 // onboarding.html y coach.html no se empaquetan dentro de la app nativa (son solo web),
 // así que si estamos corriendo como app de iPhone hay que abrirlos en el navegador externo
 // en vez de navegar dentro del WebView local, o iOS da "no such file".
