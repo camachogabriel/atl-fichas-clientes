@@ -2175,18 +2175,18 @@ function pintarRetosDetalle() {
   $('d-retos').innerHTML = vis.map(a => {
     const r = a.fichas_retos || {};
     const [cl, tx] = ESTADO_RETO_PILL[a.estado] || ['gris', a.estado];
-    const verArchivo = a.archivo_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="verArchivoReto('${a.archivo_path}')">Ver archivo</button>` : '';
+    const verArchivo = a.archivo_path ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="event.stopPropagation();verArchivoReto('${a.archivo_path}')" title="Ver archivo adjunto">Ver archivo</button>` : '';
     const respuestaTxt = formatearRespuestaReto(a.respuesta, r);
     const respuesta = respuestaTxt ? `<div class="det" style="margin-top:4px">📋 ${respuestaTxt}</div>` : '';
-    const repetir = `<button class="pill gris" style="border:none;cursor:pointer" onclick="repetirRetoAsignado('${a.id}')" title="Repetir / reenviar">🔁</button>`;
+    const repetir = `<button class="pill gris" style="border:none;cursor:pointer" onclick="event.stopPropagation();repetirRetoAsignado('${a.id}')" title="Repetir / reenviar">🔁</button>`;
     const puedeArchivar = a.archivado || ESTADOS_RETO_TERMINALES.includes(a.estado);
     const archivar = puedeArchivar
-      ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="toggleArchivarReto('${a.id}')" title="${a.archivado ? 'Desarchivar' : 'Archivar'}">${a.archivado ? '📤' : '🗄'}</button>`
+      ? `<button class="pill gris" style="border:none;cursor:pointer" onclick="event.stopPropagation();toggleArchivarReto('${a.id}')" title="${a.archivado ? 'Desarchivar' : 'Archivar'}">${a.archivado ? '📤' : '🗄'}</button>`
       : '';
-    return `<div class="item" style="align-items:flex-start">
+    return `<div class="item" style="align-items:flex-start;cursor:pointer" onclick="toggleDetalleReto('${a.id}')">
       <div style="flex:1;min-width:0">
         <div class="tit">${RETO_CATEGORIA_ICONO[r.categoria] || '🎯'} ${esc(r.titulo || '—')}</div>
-        <div class="det">${a.fecha_limite ? 'Vence: ' + ATL.fmtFecha(a.fecha_limite) : 'Sin fecha límite'}</div>
+        <div class="det">${a.fecha_limite ? 'Vence: ' + ATL.fmtFecha(a.fecha_limite) : 'Sin fecha límite'} · <u>ver detalle</u></div>
         ${respuesta}
       </div>
       <span style="display:flex;gap:6px;align-items:center">
@@ -2194,11 +2194,35 @@ function pintarRetosDetalle() {
         <span class="pill ${cl}">${tx}</span>
         ${repetir}
         ${archivar}
-        <button class="pill rojo" style="border:none;cursor:pointer" onclick="borrarRetoAsignado('${a.id}')">🗑</button>
+        <button class="pill rojo" style="border:none;cursor:pointer" onclick="event.stopPropagation();borrarRetoAsignado('${a.id}')" title="Borrar tarea asignada">🗑</button>
       </span>
-    </div>`;
+    </div><div id="reto-det-${a.id}"></div>`;
   }).join('') || `<p class="sub">${retosDetalleFiltro === 'historial' ? 'Sin tareas en el historial.' : 'Sin tareas asignadas.'}</p>`;
 }
+function detalleTareaAsignada(a) {
+  const r = a.fichas_retos || {};
+  const [, tx] = ESTADO_RETO_PILL[a.estado] || ['gris', a.estado];
+  const fila = (k, v) => (v === null || v === undefined || v === '') ? '' : `<div class="dato"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  const respuestaCompleta = a.respuesta && typeof a.respuesta === 'object'
+    ? Object.entries(a.respuesta).map(([k, v]) => `<div class="dato"><div class="k">${esc(k)}</div><div class="v">${esc(typeof v === 'object' && v !== null ? JSON.stringify(v) : v)}</div></div>`).join('')
+    : '';
+  return `<div style="background:#fafbfc;border:1px solid var(--borde);border-radius:10px;padding:12px 14px;margin:4px 0 10px">
+    ${fila('Categoría', esc(RETO_CATEGORIA_NOMBRE[r.categoria] || r.categoria || '—'))}
+    ${fila('Estado', esc(tx))}
+    ${r.descripcion ? fila('Descripción', esc(r.descripcion).replace(/\n/g, '<br>')) : ''}
+    ${fila('Asignada', a.created_at ? new Date(a.created_at).toLocaleString('es-CR', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '')}
+    ${fila('Aceptada', a.aceptado_at ? new Date(a.aceptado_at).toLocaleString('es-CR', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '')}
+    ${fila('Completada', a.completado_at ? new Date(a.completado_at).toLocaleString('es-CR', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '')}
+    ${respuestaCompleta ? `<div class="k" style="font-size:11.5px;color:var(--gris-claro);text-transform:uppercase;letter-spacing:.4px;margin-top:10px">Respuesta completa</div>${respuestaCompleta}` : ''}
+  </div>`;
+}
+window.toggleDetalleReto = (id) => {
+  const div = document.getElementById('reto-det-' + id);
+  if (!div) return;
+  if (div.innerHTML) { div.innerHTML = ''; return; }
+  const a = retosAsignadosCache.find(x => x.id === id);
+  if (a) div.innerHTML = detalleTareaAsignada(a);
+};
 $('retos-tab-activas').onclick = () => { retosDetalleFiltro = 'activas'; $('retos-tab-activas').classList.add('on'); $('retos-tab-historial').classList.remove('on'); pintarRetosDetalle(); };
 $('retos-tab-historial').onclick = () => { retosDetalleFiltro = 'historial'; $('retos-tab-historial').classList.add('on'); $('retos-tab-activas').classList.remove('on'); pintarRetosDetalle(); };
 window.toggleArchivarReto = async (id) => {
