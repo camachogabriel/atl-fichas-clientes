@@ -1,0 +1,11 @@
+{
+  "name": "ATL Coach",
+  "short_name": "ATL Coach",
+  "description": "Chat, alertas críticas y próximos eventos de AthleteTrainLab para el coach.",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#000000",
+  "theme_color": "#000000"
+}

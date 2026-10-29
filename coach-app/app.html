@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ATL Coach</title>
+<link rel="stylesheet" href="assets/coach.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+</head>
+<body>
+
+<div class="top">
+  <div class="marca"><img id="logo" alt="AthleteTrainLab" style="height:30px"><span id="mi-nombre" style="font-weight:600;color:#9aa4b2;font-size:13px"></span></div>
+  <button class="salir" id="btn-salir">Salir</button>
+</div>
+
+<div class="wrap">
+
+  <!-- ===== INICIO: alertas críticas + próximos eventos ===== -->
+  <div id="sec-inicio">
+    <div class="card" id="alertas-card">
+      <h2><span>🔴 Alertas críticas</span><span id="alertas-n" class="pill gris">0</span></h2>
+      <div id="alertas-lista" class="cargando">Cargando...</div>
+    </div>
+
+    <div class="card">
+      <h2><span>📅 Próximos eventos</span></h2>
+      <div id="eventos-lista" class="cargando">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- ===== CHATS: bandeja ===== -->
+  <div id="sec-chats" style="display:none">
+    <div class="card">
+      <input type="text" id="chats-buscar" placeholder="Buscar cliente..." style="margin-bottom:6px">
+      <div id="chats-lista" class="cargando">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- ===== CHAT: hilo ===== -->
+  <div id="sec-hilo" style="display:none">
+    <button class="link" id="hilo-volver" style="margin-bottom:10px">← Volver</button>
+    <div class="hilo-cab">
+      <div class="avatar" id="ch-avatar">?</div>
+      <div style="font-weight:800;font-size:16px" id="ch-nombre"></div>
+    </div>
+    <div class="card" style="padding:12px">
+      <button class="link" id="ch-anteriores" style="display:none;margin-bottom:8px">Cargar mensajes anteriores</button>
+      <div id="ch-mensajes"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="chat-caja" id="chat-caja" style="display:none">
+  <input type="text" id="ch-input" placeholder="Escribe un mensaje..." autocomplete="off">
+  <button id="ch-enviar" aria-label="Enviar">➤</button>
+</div>
+
+<div class="tabs">
+  <button id="tab-inicio" class="on">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
+    Inicio<span class="badge" id="badge-alertas" style="display:none">0</span>
+  </button>
+  <button id="tab-chats">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    Chats<span class="badge" id="badge-chats" style="display:none">0</span>
+  </button>
+</div>
+
+<script>
+document.getElementById('logo').src = ATL.LOGO;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
+const TZ = 'America/Costa_Rica';
+const fmtFechaHora = (ts) => new Date(ts).toLocaleString('es-CR', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+
+let miUserId = null, clientes = [], inboxCache = [], seccion = 'inicio';
+let hiloClienteId = null, hiloDesde = null, realtime = null;
+
+const TIPO_ICONO_EVENTO = { cita: '🩺', prueba: '🧪', evaluacion: '📋', entrenamiento: '🏃', carrera: '🏁', otro: '📌' };
+const COLOR_SEM = { alta: '#ee2f63', media: '#fecb15', baja: '#21b57c' };
+
+// ---------- Navegación ----------
+function mostrar(sec) {
+  seccion = sec;
+  $('sec-inicio').style.display = sec === 'inicio' ? 'block' : 'none';
+  $('sec-chats').style.display = sec === 'chats' ? 'block' : 'none';
+  $('sec-hilo').style.display = sec === 'hilo' ? 'block' : 'none';
+  $('chat-caja').style.display = sec === 'hilo' ? 'flex' : 'none';
+  $('tab-inicio').classList.toggle('on', sec === 'inicio');
+  $('tab-chats').classList.toggle('on', sec === 'chats' || sec === 'hilo');
+  window.scrollTo(0, 0);
+}
+$('tab-inicio').onclick = () => mostrar('inicio');
+$('tab-chats').onclick = () => { mostrar('chats'); cargarInbox(); };
+$('hilo-volver').onclick = () => { hiloClienteId = null; mostrar('chats'); pintarInbox(); };
+
+$('btn-salir').onclick = async () => {
+  await quitarTokenPush();
+  await sbClient.auth.signOut();
+  location.href = 'index.html';
+};
+
+// ---------- Arranque ----------
+async function init() {
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) { location.href = 'index.html'; return; }
+  const { data: esCoach } = await sbClient.rpc('fichas_es_coach');
+  if (!esCoach) { await sbClient.auth.signOut(); location.href = 'index.html'; return; }
+  miUserId = session.user.id;
+  const { data: yo } = await sbClient.from('fichas_coaches').select('nombre').eq('user_id', miUserId).maybeSingle();
+  if (yo && yo.nombre) $('mi-nombre').textContent = '· ' + yo.nombre.split(' ')[0];
+
+  configurarPush(); // aislado, tiene su propio try/catch
+  const { data: cls } = await sbClient.from('fichas_clientes').select('id, nombre, foto_path').order('nombre');
+  clientes = cls || [];
+  await Promise.all([cargarAlertas(), cargarEventos(), cargarInbox()]);
+  suscribirRealtime();
+}
+
+// ---------- Alertas críticas ----------
+async function cargarAlertas() {
+  const { data } = await sbClient.from('fichas_alertas')
+    .select('*, fichas_alertas_catalogo(etiqueta)')
+    .eq('resuelta', false).eq('criticidad', 'alta')
+    .order('created_at', { ascending: false });
+  const alertas = data || [];
+  $('alertas-n').textContent = alertas.length;
+  $('alertas-n').className = 'pill ' + (alertas.length ? 'rojo' : 'verde');
+  const b = $('badge-alertas');
+  if (alertas.length) { b.textContent = alertas.length; b.style.display = 'inline-block'; } else b.style.display = 'none';
+  $('alertas-lista').className = '';
+  $('alertas-lista').innerHTML = alertas.length ? alertas.map((a) => {
+    const c = clientes.find((x) => x.id === a.cliente_id) || { nombre: '—' };
+    const etiqueta = (a.fichas_alertas_catalogo || {}).etiqueta || a.tipo;
+    return `<div class="item">
+      <div style="min-width:0;flex:1;cursor:pointer" onclick="abrirChat('${a.cliente_id}')">
+        <div class="tit">${esc(c.nombre)}</div>
+        <div class="det">${esc(etiqueta)}${a.detalle ? ' · ' + esc(a.detalle) : ''} · ${new Date(a.created_at).toLocaleDateString('es-CR', { timeZone: TZ, day: 'numeric', month: 'short' })}</div>
+      </div>
+      <button class="pill verde" onclick="resolverAlerta('${a.id}', this)">✓ Resolver</button>
+    </div>`;
+  }).join('') : '<p class="sub" style="margin:0">Sin alertas críticas. ✅</p>';
+}
+window.resolverAlerta = async (id, btn) => {
+  btn.disabled = true; btn.textContent = '...';
+  const { error } = await sbClient.from('fichas_alertas').update({ resuelta: true, resuelta_at: new Date().toISOString(), resuelta_por: miUserId }).eq('id', id);
+  if (error) { alert('No se pudo resolver: ' + error.message); btn.disabled = false; btn.textContent = '✓ Resolver'; return; }
+  cargarAlertas();
+};
+
+// ---------- Próximos eventos ----------
+async function cargarEventos() {
+  const ahora = new Date().toISOString();
+  const { data } = await sbClient.from('fichas_eventos').select('*').gte('fecha_fin', ahora).order('fecha_inicio', { ascending: true }).limit(15);
+  let eventos = data || [];
+  // eventos sin fecha_fin: se toman por fecha_inicio
+  const { data: sinFin } = await sbClient.from('fichas_eventos').select('*').is('fecha_fin', null).gte('fecha_inicio', ahora).order('fecha_inicio', { ascending: true }).limit(15);
+  eventos = [...eventos, ...(sinFin || [])].sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio)).slice(0, 10);
+  $('eventos-lista').className = '';
+  $('eventos-lista').innerHTML = eventos.length ? eventos.map((e) => {
+    const grupal = !e.cliente_id;
+    const cli = grupal ? 'Grupal' : ((clientes.find((c) => c.id === e.cliente_id) || {}).nombre || '—');
+    const color = grupal ? '#4a53c9' : '#6b7280';
+    return `<div class="item" style="border-left:4px solid ${color};padding-left:10px">
+      <div><div class="tit"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${COLOR_SEM[e.importancia] || COLOR_SEM.media};margin-right:6px"></span>${TIPO_ICONO_EVENTO[e.tipo] || '📌'} ${esc(e.titulo)}</div>
+      <div class="det">${esc(fmtFechaHora(e.fecha_inicio))} · <b style="color:${grupal ? '#8d95ff' : '#9aa4b2'}">${esc(cli)}</b></div></div>
+    </div>`;
+  }).join('') : '<p class="sub" style="margin:0">No hay eventos próximos.</p>';
+}
+
+// ---------- Bandeja de chats ----------
+async function cargarInbox() {
+  const { data, error } = await sbClient.rpc('fichas_inbox');
+  if (error) { $('chats-lista').className = 'cargando'; $('chats-lista').textContent = 'No se pudo cargar la bandeja.'; return; }
+  inboxCache = data || [];
+  actualizarBadgeChats();
+  pintarInbox();
+}
+function actualizarBadgeChats() {
+  const n = inboxCache.filter((c) => !c.archivado).reduce((s, c) => s + Number(c.no_leidos || 0), 0);
+  const b = $('badge-chats');
+  if (n > 0) { b.textContent = n; b.style.display = 'inline-block'; } else b.style.display = 'none';
+}
+function pintarInbox() {
+  const q = ($('chats-buscar').value || '').trim().toLowerCase();
+  const lista = inboxCache.filter((c) => !c.archivado).filter((c) => !q || (c.nombre || '').toLowerCase().includes(q));
+  $('chats-lista').className = '';
+  if (!lista.length) { $('chats-lista').innerHTML = '<p class="sub" style="margin:0">No hay conversaciones.</p>'; return; }
+  $('chats-lista').innerHTML = lista.map((c) => {
+    const inicial = ((c.nombre || '?').trim()[0] || '?').toUpperCase();
+    const previo = c.ultimo_mensaje || '';
+    const prefijo = c.ultimo_autor_rol === 'coach' ? 'Tú: ' : '';
+    const hora = c.ultimo_at ? new Date(c.ultimo_at).toLocaleString('es-CR', { timeZone: TZ, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+    return `<div class="item" style="cursor:pointer" onclick="abrirChat('${c.cliente_id}')">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">
+        <div class="avatar">${esc(inicial)}</div>
+        <div style="min-width:0"><div class="tit">${esc(c.nombre)}</div>
+        <div class="det" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${prefijo}${esc(previo.slice(0, 54))}${previo.length > 54 ? '…' : ''}</div></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0"><div style="font-size:11px;color:#9aa4b2">${esc(hora)}</div>
+      ${c.no_leidos > 0 ? `<span class="pill rojo" style="margin-top:4px;display:inline-block">${c.no_leidos}</span>` : ''}</div>
+    </div>`;
+  }).join('');
+}
+$('chats-buscar').addEventListener('input', pintarInbox);
+
+// ---------- Hilo de chat ----------
+function burbujaHTML(m) {
+  const mio = m.autor_rol === 'coach';
+  return `<div class="burbuja ${mio ? 'mio' : 'suyo'}">${esc(m.cuerpo)}<div class="hora">${new Date(m.created_at).toLocaleString('es-CR', { timeZone: TZ, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</div></div>`;
+}
+window.abrirChat = async (clienteId) => {
+  hiloClienteId = clienteId;
+  const cli = clientes.find((c) => c.id === clienteId) || inboxCache.find((c) => c.cliente_id === clienteId) || {};
+  const nombre = cli.nombre || '—';
+  $('ch-nombre').textContent = nombre;
+  const av = $('ch-avatar');
+  av.style.backgroundImage = ''; av.textContent = ((nombre.trim()[0]) || '?').toUpperCase();
+  if (cli.foto_path) {
+    sbClient.storage.from('fichas-fotos').createSignedUrl(cli.foto_path, 3600).then(({ data }) => {
+      if (data) { av.style.backgroundImage = `url(${data.signedUrl})`; av.textContent = ''; }
+    });
+  }
+  mostrar('hilo');
+  await cargarHilo();
+  const entrada = inboxCache.find((c) => c.cliente_id === clienteId);
+  if (entrada) { entrada.no_leidos = 0; actualizarBadgeChats(); }
+};
+async function cargarHilo() {
+  $('ch-mensajes').innerHTML = '<p class="sub">Cargando...</p>';
+  $('ch-anteriores').style.display = 'none';
+  hiloDesde = new Date(Date.now() - 30 * 86400000).toISOString();
+  const { data } = await sbClient.from('fichas_mensajes').select('*').eq('cliente_id', hiloClienteId).gte('created_at', hiloDesde).order('created_at', { ascending: true });
+  $('ch-mensajes').innerHTML = (data && data.length) ? data.map(burbujaHTML).join('') : '<p class="sub">Sin mensajes en el último mes.</p>';
+  $('ch-anteriores').style.display = 'block'; $('ch-anteriores').disabled = false; $('ch-anteriores').textContent = 'Cargar mensajes anteriores';
+  window.scrollTo(0, document.body.scrollHeight);
+  await sbClient.from('fichas_mensajes').update({ leido_at: new Date().toISOString() }).eq('cliente_id', hiloClienteId).eq('autor_rol', 'cliente').is('leido_at', null);
+}
+$('ch-anteriores').onclick = async () => {
+  const btn = $('ch-anteriores'); btn.disabled = true; btn.textContent = 'Cargando...';
+  const hasta = hiloDesde;
+  const desde = new Date(new Date(hasta).getTime() - 30 * 86400000).toISOString();
+  const { data } = await sbClient.from('fichas_mensajes').select('*').eq('cliente_id', hiloClienteId).gte('created_at', desde).lt('created_at', hasta).order('created_at', { ascending: true });
+  if (data && data.length) {
+    $('ch-mensajes').insertAdjacentHTML('afterbegin', data.map(burbujaHTML).join(''));
+    hiloDesde = desde; btn.disabled = false; btn.textContent = 'Cargar mensajes anteriores';
+  } else {
+    btn.textContent = 'No hay más mensajes anteriores';
+  }
+};
+async function enviarMensaje() {
+  const inp = $('ch-input');
+  const texto = inp.value.trim();
+  if (!texto || !hiloClienteId) return;
+  inp.value = '';
+  const { error } = await sbClient.from('fichas_mensajes').insert({ cliente_id: hiloClienteId, autor_id: miUserId, autor_rol: 'coach', cuerpo: texto });
+  if (error) alert('No se pudo enviar: ' + error.message);
+}
+$('ch-enviar').onclick = enviarMensaje;
+$('ch-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') enviarMensaje(); });
+
+// ---------- Tiempo real ----------
+function suscribirRealtime() {
+  if (realtime) return;
+  realtime = sbClient.channel('coach-app')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fichas_mensajes' }, async (payload) => {
+      const m = payload.new;
+      if (seccion === 'hilo' && hiloClienteId === m.cliente_id) {
+        $('ch-mensajes').insertAdjacentHTML('beforeend', burbujaHTML(m));
+        window.scrollTo(0, document.body.scrollHeight);
+        if (m.autor_rol === 'cliente') await sbClient.from('fichas_mensajes').update({ leido_at: new Date().toISOString() }).eq('id', m.id);
+      }
+      cargarInbox();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'fichas_alertas' }, () => cargarAlertas())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'fichas_eventos' }, () => cargarEventos())
+    .subscribe();
+}
+// Al volver a la app, refrescar todo
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && miUserId) { cargarAlertas(); cargarEventos(); cargarInbox(); }
+});
+
+// ---------- Push nativo (iPhone) ----------
+let pushTokenActual = null;
+async function configurarPush() {
+  const Cap = window.Capacitor;
+  if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) return;
+  if (!Cap.Plugins || !Cap.Plugins.PushNotifications) return;
+  const { PushNotifications } = Cap.Plugins;
+  try {
+    let permiso = await PushNotifications.checkPermissions();
+    if (permiso.receive !== 'granted') permiso = await PushNotifications.requestPermissions();
+    if (permiso.receive !== 'granted') return;
+
+    await PushNotifications.addListener('registration', async (token) => {
+      if (!token || !token.value || !miUserId) return;
+      pushTokenActual = token.value;
+      const { error } = await sbClient.from('fichas_coach_push_tokens').upsert(
+        { coach_user_id: miUserId, token: token.value, platform: 'ios', updated_at: new Date().toISOString() },
+        { onConflict: 'token' },
+      );
+      if (error) console.error('No se pudo guardar el token de push:', error.message);
+    });
+    await PushNotifications.addListener('registrationError', (err) => console.error('Error de registro de push:', err));
+    await PushNotifications.addListener('pushNotificationReceived', () => { cargarAlertas(); cargarInbox(); });
+    await PushNotifications.addListener('pushNotificationActionPerformed', (accion) => {
+      const data = (accion.notification && accion.notification.data) || {};
+      cargarAlertas(); cargarInbox();
+      if (data.seccion === 'chat' && data.cliente_id) abrirChat(data.cliente_id);
+      else mostrar('inicio');
+    });
+    await PushNotifications.register();
+  } catch (e) {
+    console.error('Excepción configurando push:', e);
+  }
+}
+async function quitarTokenPush() {
+  try { if (pushTokenActual) await sbClient.from('fichas_coach_push_tokens').delete().eq('token', pushTokenActual); } catch (_) {}
+}
+
+init();
+</script>
+</body>
+</html>
